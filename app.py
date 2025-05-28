@@ -128,7 +128,7 @@ def init_database():
         
         -- Создаем админа по умолчанию (пароль: admin123)
         INSERT OR IGNORE INTO users (username, password, role) 
-        VALUES ('admin', 'admin1234', 'admin');
+        VALUES ('admin', 'admin123', 'admin');
         
         -- Индексы для производительности
         CREATE INDEX IF NOT EXISTS idx_courts_tournament ON courts_data(tournament_id);
@@ -828,7 +828,6 @@ def serve_xml_file(filename):
         return Response(f"<!-- Ошибка: {str(e)} -->", mimetype='application/xml'), 500
 
 @app.route('/api/settings', methods=['GET', 'POST'])
-@require_auth
 def manage_settings():
     """Управление настройками"""
     if request.method == 'GET':
@@ -868,6 +867,11 @@ def manage_settings():
             return jsonify({"error": str(e)}), 500
     
     elif request.method == 'POST':
+        
+        # POST запросы ТРЕБУЮТ аутентификации
+        if 'authenticated' not in session or not session['authenticated']:
+            return jsonify({'error': 'Требуется аутентификация', 'auth_required': True}), 401
+            
         try:
             settings = request.get_json()
             
