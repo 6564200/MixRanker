@@ -188,13 +188,13 @@ class XMLGenerator:
                                     participants_list.append(participant_info)
                 
                 # Сортируем участников по индексу
-                participants_list.sort(key=lambda x: x.get("index", 0))
+                # participants_list.sort(key=lambda x: x.get("index", 0))
                 
                 # Добавляем информацию об участниках в плоском формате
                 for i, participant in enumerate(participants_list, 1):
                     try:
-                        if not isinstance(participant, dict) or not participant.get("players"):
-                            continue
+                        #if not isinstance(participant, dict) or not participant.get("players"):
+                        #    continue
                             
                         # Первый игрок
                         if len(participant["players"]) > 0:
