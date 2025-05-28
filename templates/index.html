@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vMixRanker v2.5 - Управление турнирами</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/main.css" rel="stylesheet">
+</head>
+<body>
+	<!-- navbar -->
+	<nav class="navbar navbar-expand-lg sticky-top">
+		<div class="container-fluid">
+			<span class="navbar-brand">
+				<i class="fas fa-trophy me-2"></i>vMixRanker v2.5
+			</span>
+			<div class="d-flex align-items-center">
+				<span class="badge bg-success me-3" id="statusBadge">
+					<i class="fas fa-circle pulse me-1"></i>Онлайн
+				</span>
+				
+				<!-- Информация о пользователе -->
+				<div class="auth-user-info me-3" id="authUserInfo" style="display: none;">
+					<i class="fas fa-user"></i>
+					<span id="currentUsername"></span>
+					<button class="btn btn-outline-danger btn-sm ms-2" onclick="logout()">
+						<i class="fas fa-sign-out-alt"></i>
+					</button>
+				</div>
+				
+				<button class="theme-toggle me-3" onclick="toggleTheme()" title="Переключить тему">
+					<i class="fas fa-moon" id="themeIcon"></i>
+				</button>
+				<button class="btn btn-outline-primary btn-sm" onclick="refreshAllData()">
+					<i class="fas fa-sync-alt me-1"></i>Обновить
+				</button>
+			</div>
+		</div>
+	</nav>
+
+    <div class="container-fluid p-3">
+        <div class="main-container">
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tournament-tab" data-bs-toggle="tab" data-bs-target="#tournament-pane" type="button" role="tab">
+                        <i class="fas fa-trophy me-2"></i>Турниры
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="courts-tab" data-bs-toggle="tab" data-bs-target="#courts-pane" type="button" role="tab">
+                        <i class="fas fa-table-tennis me-2"></i>Корты
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="xml-tab" data-bs-toggle="tab" data-bs-target="#xml-pane" type="button" role="tab">
+                        <i class="fas fa-code me-2"></i>XML для vMix
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-pane" type="button" role="tab">
+                        <i class="fas fa-cog me-2"></i>Настройки
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content p-4" id="mainTabContent">
+                <!-- Tournament Tab -->
+                <div class="tab-pane fade show active" id="tournament-pane" role="tabpanel">
+                    <div class="row">
+                        <div class="col-lg-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fas fa-plus me-2"></i>Загрузить турнир</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="tournamentForm">
+                                        <div class="mb-3">
+                                            <label class="form-label">ID турнира с rankedin.com</label>
+                                            <input type="text" class="form-control" id="tournamentId" placeholder="Например: 53340" required>
+                                            <div class="form-text">Введите только ID турнира</div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fas fa-download me-2"></i>Загрузить турнир
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-8">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Загруженные турниры</h5>
+                                    <span class="badge bg-info" id="tournamentCount">0</span>
+                                </div>
+                                <div class="card-body" id="tournamentList">
+                                    <div class="text-center text-muted py-5">
+                                        <i class="fas fa-trophy fa-3x mb-3 opacity-50"></i>
+                                        <p>Турниры не загружены</p>
+                                        <small>Введите ID турнира и нажмите "Загрузить турнир"</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Courts Tab -->
+                <div class="tab-pane fade" id="courts-pane" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-table-tennis me-2"></i>Мониторинг кортов</h5>
+                            <div class="d-flex align-items-center">
+                                <span class="me-3 text-muted small">Обновление каждые <span id="refreshInterval">30</span> сек</span>
+                                <button class="btn btn-outline-primary btn-sm me-2" onclick="refreshCourts()">
+                                    <i class="fas fa-sync-alt me-1"></i>Обновить
+                                </button>
+                                <span class="badge bg-success" id="courtCount">0 кортов</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="court-grid" id="courtGrid">
+                                <div class="text-center text-muted py-5 w-100">
+                                    <i class="fas fa-table-tennis fa-3x mb-3 opacity-50"></i>
+                                    <p>Данные о кортах не загружены</p>
+                                    <small>Загрузите турнир для мониторинга кортов</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- XML Generation Tab -->
+				<div class="tab-pane fade" id="xml-pane" role="tabpanel">
+					<div class="row">
+						<div class="col-lg-4">
+							<div class="card">
+								<div class="card-header">
+									<h5 class="mb-0"><i class="fas fa-broadcast-tower me-2"></i>Live XML для vMix</h5>
+								</div>
+								<div class="card-body">
+									<div class="alert alert-success">
+										<i class="fas fa-info-circle me-2"></i>
+										<strong>Live XML</strong> - всегда актуальные данные без кеширования. 
+										Эти ссылки обновляются в реальном времени.
+									</div>
+									<div class="mb-3">
+										<label class="form-label">Выберите турнир</label>
+										<select class="form-select" id="xmlTournamentSelect">
+											<option value="">Сначала загрузите турнир</option>
+										</select>
+									</div>
+									<button class="btn btn-success w-100 mb-3" onclick="showLiveXMLList()" id="showLiveXMLBtn" disabled>
+										<i class="fas fa-broadcast-tower me-2"></i>Показать Live XML ссылки
+									</button>
+									
+									<div class="border-top pt-3">
+										<h6 class="text-muted mb-2">Дополнительные функции:</h6>
+										<div class="d-grid gap-2">
+											<button class="btn btn-outline-info btn-sm" onclick="generateAllXMLForTournament()" id="generateAllBtn" disabled>
+												<i class="fas fa-layer-group me-2"></i>Создать статические XML
+											</button>
+											<button class="btn btn-outline-secondary btn-sm" onclick="testAllLiveXML()" id="testAllBtn" disabled>
+												<i class="fas fa-play me-2"></i>Тестировать все Live XML
+											</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						
+						<div class="col-lg-8">
+							<div class="card">
+								<div class="card-header d-flex justify-content-between align-items-center">
+									<h5 class="mb-0">
+										<i class="fas fa-broadcast-tower me-2"></i>Live XML ссылки для vMix
+										<span class="live-indicator ms-2" title="Обновляются в реальном времени"></span>
+									</h5>
+									<div class="d-flex gap-2">
+										<button class="btn btn-outline-success btn-sm" onclick="refreshLiveXMLList()">
+											<i class="fas fa-sync-alt me-1"></i>Обновить
+										</button>
+										<button class="btn btn-outline-info btn-sm" onclick="copyAllLiveXML()">
+											<i class="fas fa-copy me-1"></i>Копировать все
+										</button>
+									</div>
+								</div>
+								
+								<div class="card-body">
+									<div id="liveXMLList">
+										<div class="text-center text-muted py-5">
+											<i class="fas fa-broadcast-tower fa-3x mb-3 opacity-50"></i>
+											<p>Live XML ссылки не загружены</p>
+											<small>Выберите турнир для отображения live ссылок</small>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+                <!-- Settings Tab -->
+                <div class="tab-pane fade" id="settings-pane" role="tabpanel">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Основные настройки</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="settings-card">
+                                        <div class="mb-3">
+                                            <label class="form-label">Интервал обновления (секунды)</label>
+                                            <input type="number" class="form-control" id="refreshIntervalInput" value="30" min="5" max="300">
+                                            <div class="form-text">Как часто обновлять данные кортов (5-300 сек)</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Тема интерфейса</label>
+                                            <select class="form-select" id="themeSelect">
+                                                <option value="light">Светлая</option>
+                                                <option value="dark">Темная</option>
+                                                <option value="auto">Системная</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="autoRefreshEnabled" checked>
+                                                <label class="form-check-label" for="autoRefreshEnabled">
+                                                    Автоматическое обновление
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="debugMode">
+                                                <label class="form-check-label" for="debugMode">
+                                                    Режим отладки
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-primary" onclick="saveSettings()">
+                                            <i class="fas fa-save me-2"></i>Сохранить настройки
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Информация о системе</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="settings-card">
+                                        <div class="row mb-2">
+                                            <div class="col-6"><strong>Версия:</strong></div>
+                                            <div class="col-6">v2.5.0</div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-6"><strong>API статус:</strong></div>
+                                            <div class="col-6">
+                                                <span class="badge bg-success" id="apiStatus">Активно</span>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-6"><strong>Турниров загружено:</strong></div>
+                                            <div class="col-6" id="totalTournaments">0</div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-6"><strong>Кортов отслеживается:</strong></div>
+                                            <div class="col-6" id="totalCourts">0</div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-6"><strong>XML файлов создано:</strong></div>
+                                            <div class="col-6" id="totalXMLFiles">0</div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6"><strong>Последнее обновление:</strong></div>
+                                            <div class="col-6">
+                                                <small id="lastUpdate">-</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner"></div>
+    </div>
+
+	<!-- Модальное окно авторизации -->
+	<div class="auth-overlay" id="authOverlay" style="display: none;">
+		<div class="auth-modal">
+			<h4 class="text-center mb-4">
+				<i class="fas fa-lock me-2"></i>Авторизация
+			</h4>
+			<p class="text-center text-muted mb-4">
+				Для выполнения этого действия требуется авторизация
+			</p>
+			<form id="authForm">
+				<div class="mb-3">
+					<label class="form-label">Имя пользователя</label>
+					<input type="text" class="form-control" id="authUsername" required>
+				</div>
+				<div class="mb-3">
+					<label class="form-label">Пароль</label>
+					<input type="password" class="form-control" id="authPassword" required>
+				</div>
+				<button type="submit" class="btn btn-primary w-100 mb-2">
+					<i class="fas fa-sign-in-alt me-2"></i>Войти
+				</button>
+				<button type="button" class="btn btn-outline-secondary w-100" onclick="closeAuthModal()">
+					Отмена
+				</button>
+			</form>
+			<div class="mt-3 text-center">
+				<small class="text-muted">
+					По умолчанию: admin / admin123<br>
+					Для изменения пользователей отредактируйте таблицу users в БД
+				</small>
+			</div>
+		</div>
+	</div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
