@@ -612,22 +612,22 @@ class XMLGenerator:
         # Информация о турнире (если есть)
         if tournament_data:
             metadata = tournament_data.get("metadata", {})
-            ET.SubElement(root, "tournamentName").text = metadata.get("name", "Турнир")
-            ET.SubElement(root, "tournamentSport").text = self._get_sport_name(metadata.get("sport", 5))
+            # ET.SubElement(root, "tournamentName").text = metadata.get("name", "Турнир")
+            # ET.SubElement(root, "tournamentSport").text = self._get_sport_name(metadata.get("sport", 5))
         
         # Базовая информация о корте
-        ET.SubElement(root, "courtId").text = str(court_data.get("court_id", ""))
+        # ET.SubElement(root, "courtId").text = str(court_data.get("court_id", ""))
         ET.SubElement(root, "courtName").text = court_data.get("court_name", "Корт")
         ET.SubElement(root, "courtStatus").text = court_data.get("event_state", "")
-        ET.SubElement(root, "courtSport").text = court_data.get("sport", "")
+        # ET.SubElement(root, "courtSport").text = court_data.get("sport", "")
         
         # === ТЕКУЩИЙ МАТЧ ===
         current_class = court_data.get("current_class_name") or court_data.get("class_name", "")
         if current_class:
             ET.SubElement(root, "currentClassName").text = current_class
-            ET.SubElement(root, "currentMatchId").text = str(court_data.get("current_match_id", ""))
+            # ET.SubElement(root, "currentMatchId").text = str(court_data.get("current_match_id", ""))
             ET.SubElement(root, "currentMatchState").text = court_data.get("current_match_state", "")
-            ET.SubElement(root, "currentIsSingles").text = str(court_data.get("current_is_singles", False))
+            # ET.SubElement(root, "currentIsSingles").text = str(court_data.get("current_is_singles", False))
             
             # Дополнительная информация о текущем матче
             if court_data.get("current_duration_seconds"):
@@ -639,28 +639,36 @@ class XMLGenerator:
         team1_players = court_data.get("current_first_participant", court_data.get("first_participant", []))
         if team1_players:
             for i, player in enumerate(team1_players, 1):
-                ET.SubElement(root, f"player{i}Id").text = str(player.get("id", ""))
+                # ET.SubElement(root, f"player{i}Id").text = str(player.get("id", ""))
                 ET.SubElement(root, f"player{i}FirstName").text = player.get("firstName", "")
                 ET.SubElement(root, f"player{i}MiddleName").text = player.get("middleName", "")
                 ET.SubElement(root, f"player{i}LastName").text = player.get("lastName", "")
                 ET.SubElement(root, f"player{i}FullName").text = player.get("fullName", "")
-                ET.SubElement(root, f"player{i}Country").text = player.get("countryCode", "")
+                # ET.SubElement(root, f"player{i}Country").text = player.get("countryCode", "")
                 ET.SubElement(root, f"player{i}LastNameShort").text = player.get("lastNameShort", "")
                 ET.SubElement(root, f"player{i}InitialLastName").text = player.get("initialLastName", "")
+        else:
+            for i in range(1, 5):
+                ET.SubElement(root, f"player{i}FirstName").text = ''
+                ET.SubElement(root, f"player{i}MiddleName").text = ''
+                ET.SubElement(root, f"player{i}LastName").text = ''
+                ET.SubElement(root, f"player{i}FullName").text = ''
+                ET.SubElement(root, f"player{i}LastNameShort").text = ''
+                ET.SubElement(root, f"player{i}InitialLastName").text = ''
         
         # Участники команды 2 (текущий матч)
         team2_players = court_data.get("current_second_participant", court_data.get("second_participant", []))
         if team2_players:
             for i, player in enumerate(team2_players, 1):
                 player_num = i + 2  # Команда 2 начинается с player3, player4
-                ET.SubElement(root, f"player{player_num}Id").text = str(player.get("id", ""))
+                # ET.SubElement(root, f"player{player_num}Id").text = str(player.get("id", ""))
                 ET.SubElement(root, f"player{player_num}FirstName").text = player.get("firstName", "")
                 ET.SubElement(root, f"player{player_num}MiddleName").text = player.get("middleName", "")
                 ET.SubElement(root, f"player{player_num}LastName").text = player.get("lastName", "")
                 ET.SubElement(root, f"player{player_num}FullName").text = player.get("fullName", "")
-                ET.SubElement(root, f"player{player_num}Country").text = player.get("countryCode", "")
+                # ET.SubElement(root, f"player{player_num}Country").text = player.get("countryCode", "")
                 ET.SubElement(root, f"player{player_num}LastNameShort").text = player.get("lastNameShort", "")
-                ET.SubElement(root, f"player{player_num}InitialLastName").text = player.get("initialLastName", "")
+                ET.SubElement(root, f"player{player_num}InitialLastName").text = player.get("initialLastName", "")                
         
         # Счет текущего матча
         ET.SubElement(root, "team1Score").text = str(court_data.get("current_first_participant_score", court_data.get("first_participant_score", 0)))
@@ -684,6 +692,10 @@ class XMLGenerator:
             
             team1_full = [p.get("fullName", "") for p in team1_players if p.get("fullName")]
             ET.SubElement(root, "team1NamesFull").text = "/".join(team1_full)
+        else:
+            ET.SubElement(root, "team1NamesShort").text = ''
+            ET.SubElement(root, "team1NamesInitial").text = ''
+            ET.SubElement(root, "team1NamesFull").text = ''
         
         if team2_players:
             team2_shorts = [p.get("lastNameShort", "") for p in team2_players if p.get("lastNameShort")]
@@ -694,26 +706,30 @@ class XMLGenerator:
             
             team2_full = [p.get("fullName", "") for p in team2_players if p.get("fullName")]
             ET.SubElement(root, "team2NamesFull").text = "/".join(team2_full)
+        else:
+            ET.SubElement(root, "team1NamesShort").text = ''
+            ET.SubElement(root, "team1NamesInitial").text = ''
+            ET.SubElement(root, "team1NamesFull").text = ''
         
         # === СЛЕДУЮЩИЙ МАТЧ (если есть) ===
         if court_data.get("next_class_name"):
             ET.SubElement(root, "nextClassName").text = court_data["next_class_name"]
-            ET.SubElement(root, "nextMatchId").text = str(court_data.get("next_match_id", ""))
+            # ET.SubElement(root, "nextMatchId").text = str(court_data.get("next_match_id", ""))
             ET.SubElement(root, "nextStartTime").text = court_data.get("next_start_time", "")
             ET.SubElement(root, "nextScheduledTime").text = court_data.get("next_scheduled_time", "")
             ET.SubElement(root, "nextMatchState").text = court_data.get("next_match_state", "")
-            ET.SubElement(root, "nextIsSingles").text = str(court_data.get("next_is_singles", False))
+            # ET.SubElement(root, "nextIsSingles").text = str(court_data.get("next_is_singles", False))
             
             # Участники следующего матча - команда 1
             next_team1 = court_data.get("next_first_participant", [])
             if next_team1:
                 for i, player in enumerate(next_team1, 1):
-                    ET.SubElement(root, f"nextPlayer{i}Id").text = str(player.get("id", ""))
+                    # ET.SubElement(root, f"nextPlayer{i}Id").text = str(player.get("id", ""))
                     ET.SubElement(root, f"nextPlayer{i}FirstName").text = player.get("firstName", "")
                     ET.SubElement(root, f"nextPlayer{i}MiddleName").text = player.get("middleName", "")
                     ET.SubElement(root, f"nextPlayer{i}LastName").text = player.get("lastName", "")
                     ET.SubElement(root, f"nextPlayer{i}FullName").text = player.get("fullName", "")
-                    ET.SubElement(root, f"nextPlayer{i}Country").text = player.get("countryCode", "")
+                    # ET.SubElement(root, f"nextPlayer{i}Country").text = player.get("countryCode", "")
                     ET.SubElement(root, f"nextPlayer{i}LastNameShort").text = player.get("lastNameShort", "")
                     ET.SubElement(root, f"nextPlayer{i}InitialLastName").text = player.get("initialLastName", "")
             
@@ -722,12 +738,12 @@ class XMLGenerator:
             if next_team2:
                 for i, player in enumerate(next_team2, 1):
                     player_num = i + 2  # Команда 2 начинается с nextPlayer3, nextPlayer4
-                    ET.SubElement(root, f"nextPlayer{player_num}Id").text = str(player.get("id", ""))
+                    # ET.SubElement(root, f"nextPlayer{player_num}Id").text = str(player.get("id", ""))
                     ET.SubElement(root, f"nextPlayer{player_num}FirstName").text = player.get("firstName", "")
                     ET.SubElement(root, f"nextPlayer{player_num}MiddleName").text = player.get("middleName", "")
                     ET.SubElement(root, f"nextPlayer{player_num}LastName").text = player.get("lastName", "")
                     ET.SubElement(root, f"nextPlayer{player_num}FullName").text = player.get("fullName", "")
-                    ET.SubElement(root, f"nextPlayer{player_num}Country").text = player.get("countryCode", "")
+                    # ET.SubElement(root, f"nextPlayer{player_num}Country").text = player.get("countryCode", "")
                     ET.SubElement(root, f"nextPlayer{player_num}LastNameShort").text = player.get("lastNameShort", "")
                     ET.SubElement(root, f"nextPlayer{player_num}InitialLastName").text = player.get("initialLastName", "")
             
@@ -751,8 +767,28 @@ class XMLGenerator:
                 
                 next_team2_full = [p.get("fullName", "") for p in next_team2 if p.get("fullName")]
                 ET.SubElement(root, "nextTeam2NamesFull").text = "/".join(next_team2_full)
+        else:
+            ET.SubElement(root, "nextClassName").text = ''
+            ET.SubElement(root, "nextStartTime").text = ''
+            ET.SubElement(root, "nextScheduledTime").text = ''
+            ET.SubElement(root, "nextMatchState").text = ''
+            
+            for i in range(1, 5):
+                    ET.SubElement(root, f"nextPlayer{i}FirstName").text = ''
+                    ET.SubElement(root, f"nextPlayer{i}MiddleName").text = ''
+                    ET.SubElement(root, f"nextPlayer{i}LastName").text = ''
+                    ET.SubElement(root, f"nextPlayer{i}FullName").text = ''
+                    ET.SubElement(root, f"nextPlayer{i}LastNameShort").text = ''
+                    ET.SubElement(root, f"nextPlayer{i}InitialLastName").text = ''
+            
+            ET.SubElement(root, "nextTeam1NamesShort").text = ''
+            ET.SubElement(root, "nextTeam1NamesInitial").text = ''
+            ET.SubElement(root, "nextTeam1NamesFull").text = ''
+            ET.SubElement(root, "nextTeam2NamesShort").text = ''
+            ET.SubElement(root, "nextTeam2NamesInitial").text = ''
+            ET.SubElement(root, "nextTeam2NamesFull").text = ''
         
-        # Время обновления (всегда актуальное)
+        # Время обновления
         ET.SubElement(root, "updated").text = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         
         return self._prettify_xml(root)
