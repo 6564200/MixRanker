@@ -306,12 +306,15 @@ class XMLGenerator:
                         p2 = match.get("participant2", 0)
                         match_prefix = f"id{p1}vs{p2}Match"
                         
+                        
+                        
                         ET.SubElement(matches, f"{match_prefix}_state").text = str(match.get("state", 0))
                         ET.SubElement(matches, f"{match_prefix}_court").text = str(match.get("court", ""))
                         ET.SubElement(matches, f"{match_prefix}_date").text = str(match.get("date", ""))
                         ET.SubElement(matches, f"{match_prefix}_is_played").text = str(match.get("is_played", False))
                         
                         # Счет матча
+                        
                         match_results = match.get("match_results", {})
                         if isinstance(match_results, dict) and match_results.get("HasScore") and match_results.get("Score"):
                             score_data = match_results["Score"]
@@ -320,7 +323,7 @@ class XMLGenerator:
                                 second_score = int(score_data.get("SecondParticipantScore", 0))
                                 
                                 ET.SubElement(matches, f"{match_prefix}_first_second_score").text = f"{first_score}-{second_score}"
-                                
+                                    
                                 winner = "first" if score_data.get("IsFirstParticipantWinner") else "second"
                                 ET.SubElement(matches, f"{match_prefix}_winner").text = winner
                                 
@@ -337,7 +340,10 @@ class XMLGenerator:
                                             ET.SubElement(matches, f"{match_prefix}_set{set_index}_winner").text = set_winner
                         else:
                             # Если нет счета
-                            ET.SubElement(matches, f"{match_prefix}_first_second_score").text = "0-0"
+                            if (matches.find(f"id{p2}ShortTeam_name")).text == 'Bye':
+                                ET.SubElement(matches, f"{match_prefix}_first_second_score").text = "●"
+                            else:
+                                ET.SubElement(matches, f"{match_prefix}_first_second_score").text = "-"
                             ET.SubElement(matches, f"{match_prefix}_winner").text = ""
                             
                     except Exception as e:
@@ -401,16 +407,13 @@ class XMLGenerator:
             # Добавляем базовую структуру чтобы XML был валидным
             self._add_error_xml(root, f"Критическая ошибка: {str(e)}")
 
-    def _add_error_xml(self, root: ET.Element, error_message: str):
-        """Добавляет структуру ошибки в XML"""
-        data_tab = ET.SubElement(root, "DataTab")
-        matches = ET.SubElement(data_tab, "matches")
-        ET.SubElement(matches, "error").text = error_message
-        ET.SubElement(matches, "classes").text = "Ошибка"
-        ET.SubElement(matches, "type").text = "Ошибка загрузки данных"
-  
+
+
+
+
+
     def _add_elimination_data(self, root: ET.Element, class_data: Dict, draw_index: int):
-        """Добавляет данные игр на выбывание"""
+        """Добавляет данные игр на выбывание в плоском формате"""
         elimination_data = class_data.get("elimination", [])
         if draw_index < len(elimination_data):
             elim_data = elimination_data[draw_index]
@@ -418,203 +421,189 @@ class XMLGenerator:
             if "Elimination" in elim_data:
                 bracket_data = elim_data["Elimination"]
                 
-                # Информация о сетке
-                bracket = ET.SubElement(root, "bracket")
-                ET.SubElement(bracket, "width").text = str(bracket_data.get("Width", 0))
-                ET.SubElement(bracket, "height").text = str(bracket_data.get("Height", 0))
-                ET.SubElement(bracket, "draw_type").text = str(bracket_data.get("DrawType", 0))
-                ET.SubElement(bracket, "consolation").text = str(bracket_data.get("Consolation", 0))
-                ET.SubElement(bracket, "places_start").text = str(bracket_data.get("PlacesStartPos", 1))
-                ET.SubElement(bracket, "places_end").text = str(bracket_data.get("PlacesEndPos", 1))
-                ET.SubElement(bracket, "is_qualification").text = str(bracket_data.get("IsQualification", False))
-                ET.SubElement(bracket, "is_for_teams").text = str(bracket_data.get("IsForTeams", False))
-                ET.SubElement(bracket, "is_for_doubles").text = str(bracket_data.get("IsForDoubles", True))
+                # Создаем плоский формат вместо иерархического
+                participants = ET.SubElement(root, "participants")
                 
-                # Участники первого раунда
+                # Определяем места
+                places_start = bracket_data.get("PlacesStartPos", 1)
+                places_end = bracket_data.get("PlacesEndPos", 1)
+                places_text = f"{places_start}-{places_end}" if places_start != places_end else str(places_start)
+                ET.SubElement(participants, "places").text = places_text
+                
+                # Добавляем информацию о классе
+                class_name = class_data.get("class_info", {}).get("Name", f"Категория {draw_index}")
+                ET.SubElement(participants, "class_name").text = class_name
+                
+                # 1. Обрабатываем участников первого раунда (round_0)
                 if bracket_data.get("FirstRoundParticipantCells"):
-                    participants = ET.SubElement(bracket, "participants")
-                    for participant_data in bracket_data["FirstRoundParticipantCells"]:
-                        participant = ET.SubElement(participants, "participant")
-                        ET.SubElement(participant, "event_participant_id").text = str(participant_data.get("EventParticipantId", 0))
-                        ET.SubElement(participant, "participant_type").text = str(participant_data.get("ParticipantType", 0))
-                        ET.SubElement(participant, "is_qualifier").text = str(participant_data.get("IsQualifier", False))
-                        ET.SubElement(participant, "seed").text = str(participant_data.get("Seed", ""))
-                        ET.SubElement(participant, "draw_id").text = str(participant_data.get("DrawId", 0))
-                        
-                        # Игроки в команде
-                        players = ET.SubElement(participant, "players")
-                        
-                        # Первый игрок
-                        if participant_data.get("FirstPlayer"):
-                            first_player = participant_data["FirstPlayer"]
-                            player1 = ET.SubElement(players, "player")
-                            ET.SubElement(player1, "id").text = str(first_player.get("Id", 0))
-                            ET.SubElement(player1, "name").text = first_player.get("Name", "")
-                            ET.SubElement(player1, "rankedin_id").text = first_player.get("RankedinId", "")
-                            ET.SubElement(player1, "country").text = first_player.get("CountryShort", "")
-                            ET.SubElement(player1, "rating_begin").text = str(first_player.get("RatingBegin", 0) or 0)
-                            ET.SubElement(player1, "rating_end").text = str(first_player.get("RatingEnd", 0) or 0)
-                        
-                        # Второй игрок
-                        if participant_data.get("SecondPlayer"):
-                            second_player = participant_data["SecondPlayer"]
-                            player2 = ET.SubElement(players, "player")
-                            ET.SubElement(player2, "id").text = str(second_player.get("Id", 0))
-                            ET.SubElement(player2, "name").text = second_player.get("Name", "")
-                            ET.SubElement(player2, "rankedin_id").text = second_player.get("RankedinId", "")
-                            ET.SubElement(player2, "country").text = second_player.get("CountryShort", "")
-                            ET.SubElement(player2, "rating_begin").text = str(second_player.get("RatingBegin", 0) or 0)
-                            ET.SubElement(player2, "rating_end").text = str(second_player.get("RatingEnd", 0) or 0)
-                        
-                        # Название команды
+                    for i, participant_data in enumerate(bracket_data["FirstRoundParticipantCells"], 1):
+                        # Формируем название команды
                         team_names = []
                         if participant_data.get("FirstPlayer", {}).get("Name"):
                             team_names.append(participant_data["FirstPlayer"]["Name"])
                         if participant_data.get("SecondPlayer", {}).get("Name"):
                             team_names.append(participant_data["SecondPlayer"]["Name"])
-                        ET.SubElement(participant, "team_name").text = (" / ".join(team_names)).replace(" ", "")
-                
-                # Раунды и матчи
-                if bracket_data.get("DrawData"):
-                    rounds = ET.SubElement(bracket, "rounds")
-                    
-                    for round_index, round_matches in enumerate(bracket_data["DrawData"]):
-                        round_elem = ET.SubElement(rounds, "round")
-                        ET.SubElement(round_elem, "number").text = str(round_index + 1)
+                        team_name = "/".join(team_names)
                         
-                        # Матчи раунда
-                        matches = ET.SubElement(round_elem, "matches")
-                        for match_data in round_matches:
-                            if match_data:  # Проверяем, что матч не null
-                                match = ET.SubElement(matches, "match")
-                                
-                                # Основная информация о матче
-                                ET.SubElement(match, "match_id").text = str(match_data.get("MatchId", 0))
-                                ET.SubElement(match, "challenge_id").text = str(match_data.get("ChallengeId", 0))
-                                ET.SubElement(match, "round").text = str(match_data.get("Round", 0))
-                                ET.SubElement(match, "max_round").text = str(match_data.get("MaxRound", 0))
-                                ET.SubElement(match, "court").text = match_data.get("CourtName", "")
-                                ET.SubElement(match, "date").text = match_data.get("Date", "")
-                                ET.SubElement(match, "match_state").text = str(match_data.get("MatchState", 0))
-                                ET.SubElement(match, "match_order").text = str(match_data.get("MatchOrder", 0))
-                                ET.SubElement(match, "is_published").text = str(match_data.get("IsPublished", False))
-                                ET.SubElement(match, "has_qualifiers").text = str(match_data.get("HasQualifiers", False))
-                                
-                                # Challenger (первый участник)
-                                challenger = ET.SubElement(match, "challenger")
-                                challenger_data = match_data.get("ChallengerParticipant", {})
-                                ET.SubElement(challenger, "event_participant_id").text = str(challenger_data.get("EventParticipantId", 0))
-                                ET.SubElement(challenger, "seed").text = str(challenger_data.get("Seed", ""))
-                                ET.SubElement(challenger, "is_qualifier").text = str(challenger_data.get("IsQualifier", False))
-                                
-                                # Игроки challenger
-                                challenger_players = ET.SubElement(challenger, "players")
-                                if challenger_data.get("FirstPlayer"):
-                                    first_player = challenger_data["FirstPlayer"]
-                                    player1 = ET.SubElement(challenger_players, "player")
-                                    ET.SubElement(player1, "id").text = str(first_player.get("Id", 0))
-                                    ET.SubElement(player1, "name").text = first_player.get("Name", "")
-                                    ET.SubElement(player1, "rankedin_id").text = first_player.get("RankedinId", "")
-                                    ET.SubElement(player1, "country").text = first_player.get("CountryShort", "")
-                                    ET.SubElement(player1, "rating_begin").text = str(first_player.get("RatingBegin", 0) or 0)
-                                    ET.SubElement(player1, "rating_end").text = str(first_player.get("RatingEnd", 0) or 0)
-                                
-                                if challenger_data.get("SecondPlayer"):
-                                    second_player = challenger_data["SecondPlayer"]
-                                    player2 = ET.SubElement(challenger_players, "player")
-                                    ET.SubElement(player2, "id").text = str(second_player.get("Id", 0))
-                                    ET.SubElement(player2, "name").text = second_player.get("Name", "")
-                                    ET.SubElement(player2, "rankedin_id").text = second_player.get("RankedinId", "")
-                                    ET.SubElement(player2, "country").text = second_player.get("CountryShort", "")
-                                    ET.SubElement(player2, "rating_begin").text = str(second_player.get("RatingBegin", 0) or 0)
-                                    ET.SubElement(player2, "rating_end").text = str(second_player.get("RatingEnd", 0) or 0)
-                                
-                                # Название команды challenger
-                                challenger_names = []
-                                if challenger_data.get("FirstPlayer", {}).get("Name"):
-                                    challenger_names.append(challenger_data["FirstPlayer"]["Name"])
-                                if challenger_data.get("SecondPlayer", {}).get("Name"):
-                                    challenger_names.append(challenger_data["SecondPlayer"]["Name"])
-                                ET.SubElement(challenger, "team_name").text = (" / ".join(challenger_names)).replace(" ", "")
-                                
-                                # Challenged (второй участник)
-                                challenged = ET.SubElement(match, "challenged")
-                                challenged_data = match_data.get("ChallengedParticipant", {})
-                                ET.SubElement(challenged, "event_participant_id").text = str(challenged_data.get("EventParticipantId", 0))
-                                ET.SubElement(challenged, "seed").text = str(challenged_data.get("Seed", ""))
-                                ET.SubElement(challenged, "is_qualifier").text = str(challenged_data.get("IsQualifier", False))
-                                
-                                # Игроки challenged
-                                challenged_players = ET.SubElement(challenged, "players")
-                                if challenged_data.get("FirstPlayer"):
-                                    first_player = challenged_data["FirstPlayer"]
-                                    player1 = ET.SubElement(challenged_players, "player")
-                                    ET.SubElement(player1, "id").text = str(first_player.get("Id", 0))
-                                    ET.SubElement(player1, "name").text = first_player.get("Name", "")
-                                    ET.SubElement(player1, "rankedin_id").text = first_player.get("RankedinId", "")
-                                    ET.SubElement(player1, "country").text = first_player.get("CountryShort", "")
-                                    ET.SubElement(player1, "rating_begin").text = str(first_player.get("RatingBegin", 0) or 0)
-                                    ET.SubElement(player1, "rating_end").text = str(first_player.get("RatingEnd", 0) or 0)
-                                
-                                if challenged_data.get("SecondPlayer"):
-                                    second_player = challenged_data["SecondPlayer"]
-                                    player2 = ET.SubElement(challenged_players, "player")
-                                    ET.SubElement(player2, "id").text = str(second_player.get("Id", 0))
-                                    ET.SubElement(player2, "name").text = second_player.get("Name", "")
-                                    ET.SubElement(player2, "rankedin_id").text = second_player.get("RankedinId", "")
-                                    ET.SubElement(player2, "country").text = second_player.get("CountryShort", "")
-                                    ET.SubElement(player2, "rating_begin").text = str(second_player.get("RatingBegin", 0) or 0)
-                                    ET.SubElement(player2, "rating_end").text = str(second_player.get("RatingEnd", 0) or 0)
-                                
-                                # Название команды challenged
-                                challenged_names = []
-                                if challenged_data.get("FirstPlayer", {}).get("Name"):
-                                    challenged_names.append(challenged_data["FirstPlayer"]["Name"])
-                                if challenged_data.get("SecondPlayer", {}).get("Name"):
-                                    challenged_names.append(challenged_data["SecondPlayer"]["Name"])
-                                ET.SubElement(challenged, "team_name").text = " / ".join(challenged_names)
-                                
-                                # Результат матча
-                                match_view_model = match_data.get("MatchViewModel", {})
-                                result = ET.SubElement(match, "result")
-                                ET.SubElement(result, "has_score").text = str(match_view_model.get("HasScore", False))
-                                ET.SubElement(result, "is_played").text = str(match_view_model.get("IsPlayed", False))
-                                ET.SubElement(result, "has_cancellation").text = str(match_view_model.get("HasCancellation", False))
-                                
-                                # Счет, если есть
-                                if match_view_model.get("HasScore") and match_view_model.get("Score"):
-                                    score_data = match_view_model["Score"]
-                                    score = ET.SubElement(result, "score")
-                                    ET.SubElement(score, "first_score").text = str(score_data.get("FirstParticipantScore", 0))
-                                    ET.SubElement(score, "second_score").text = str(score_data.get("SecondParticipantScore", 0))
-                                    ET.SubElement(score, "winner").text = "challenger" if score_data.get("IsFirstParticipantWinner") else "challenged"
-                                    
-                                    # Детальный счет по сетам
-                                    if score_data.get("DetailedScoring"):
-                                        sets = ET.SubElement(score, "sets")
-                                        for set_index, set_data in enumerate(score_data["DetailedScoring"]):
-                                            set_elem = ET.SubElement(sets, "set")
-                                            set_elem.set("number", str(set_index + 1))
-                                            ET.SubElement(set_elem, "first_score").text = str(set_data.get("FirstParticipantScore", 0))
-                                            ET.SubElement(set_elem, "second_score").text = str(set_data.get("SecondParticipantScore", 0))
-                                            ET.SubElement(set_elem, "winner").text = "challenger" if set_data.get("IsFirstParticipantWinner") else "challenged"
-                                
-                                # Победитель матча
-                                if match_data.get("WinnerParticipantId"):
-                                    ET.SubElement(match, "winner_participant_id").text = str(match_data["WinnerParticipantId"])
+                        # Создаем сокращенное название
+                        short_name = self._create_short_name(team_name)
+                        
+                        # Добавляем поля
+                        ET.SubElement(participants, f"round_0_team_{i}_name").text = team_name
+                        ET.SubElement(participants, f"round_0_team_{i}_ShortName").text = short_name
                 
-                # Все матчи (включая DrawCells для дополнительной информации)
-                if bracket_data.get("DrawCells"):
-                    all_matches = ET.SubElement(bracket, "draw_cells")
-                    for cell_index, cell_data in enumerate(bracket_data["DrawCells"]):
-                        if cell_data:
-                            cell = ET.SubElement(all_matches, "cell")
-                            ET.SubElement(cell, "index").text = str(cell_index)
-                            ET.SubElement(cell, "round").text = str(cell_data.get("Round", 0))
-                            ET.SubElement(cell, "match_id").text = str(cell_data.get("MatchId", 0))
-                            ET.SubElement(cell, "court").text = cell_data.get("CourtName", "")
-                            ET.SubElement(cell, "date").text = cell_data.get("Date", "")
-    
+                # 2. Обрабатываем матчи по раундам
+                if bracket_data.get("DrawData"):
+                    # Группируем матчи по номеру раунда из данных
+                    matches_by_round = {}
+                    
+                    for round_matches in bracket_data["DrawData"]:
+                        for match_data in round_matches:
+                            if match_data:
+                                # Получаем номер раунда из данных матча
+                                round_number = match_data.get("Round", 1)
+                                if round_number not in matches_by_round:
+                                    matches_by_round[round_number] = []
+                                matches_by_round[round_number].append(match_data)
+                    
+                    # Обрабатываем матчи сгруппированные по раундам
+                    for round_number in sorted(matches_by_round.keys()):
+                        round_matches = matches_by_round[round_number]
+                        
+                        match_counter = 1
+                        for match_data in round_matches:
+                            match_view_model = match_data.get("MatchViewModel", {})
+                            prefix = f"round_{round_number}_{match_counter}"
+                                
+                            # Корт
+                            ET.SubElement(participants, f"{prefix}_court").text = match_data.get("CourtName", "")
+                                
+                            # Статус матча
+                            is_played = match_view_model.get("IsPlayed", False)
+                            has_score = match_view_model.get("HasScore", False)
+                            
+                            ET.SubElement(participants, f"{prefix}_is_played").text = str(is_played)
+                            ET.SubElement(participants, f"{prefix}_has_score").text = str(has_score)
+                                
+                            if is_played and has_score:
+                                # Матч сыгран - заполняем данные
+                                winner_id = match_data.get("WinnerParticipantId")
+                                if winner_id:
+                                    winning_team = self._find_winner_team_name(match_data, winner_id)
+                                    ET.SubElement(participants, f"{prefix}_team").text = winning_team
+                                    short_name = self._create_short_name(winning_team)
+                                    ET.SubElement(participants, f"{prefix}_Shortteam").text = short_name
+                                    
+                                    # Имя первого игрока победившей команды
+                                    challenger_data = match_data.get("ChallengerParticipant", {})
+                                    challenged_data = match_data.get("ChallengedParticipant", {})
+                                    
+                                    if challenger_data.get("EventParticipantId") == winner_id:
+                                        first_player_name = challenger_data.get("FirstPlayer", {}).get("Name", "")
+                                        second_player_name = challenger_data.get("SecondPlayer", {}).get("Name", "")
+                                        
+                                    else:
+                                        first_player_name = challenged_data.get("FirstPlayer", {}).get("Name", "")
+                                        second_player_name = challenged_data.get("SecondPlayer", {}).get("Name", "")
+                                    
+                                    ET.SubElement(participants, f"{prefix}_player1_name").text = first_player_name
+                                    ET.SubElement(participants, f"{prefix}_player2_name").text = second_player_name
+                                
+                                # Счет
+                                score_data = match_view_model.get("Score", {})
+                                score_summary = self._format_score_summary(score_data)
+                                sets_summary = self._format_sets_summary(score_data)
+                                
+                                ET.SubElement(participants, f"{prefix}_score").text = score_summary
+                                ET.SubElement(participants, f"{prefix}_sets_summary").text = sets_summary
+                            else:
+                                # Матч не сыгран - пустые поля
+                                ET.SubElement(participants, f"{prefix}_team").text = ""
+                                ET.SubElement(participants, f"{prefix}_player1_name").text = ""
+                                ET.SubElement(participants, f"{prefix}_score").text = ""
+                                ET.SubElement(participants, f"{prefix}_sets_summary").text = ""
+                            
+                            match_counter += 1
+
+    def _create_short_name(self, full_name: str) -> str:
+        """Создает сокращенное имя: первая буква + точка + фамилия"""
+        if not full_name or "/" not in full_name:
+            return full_name
+        
+        parts = full_name.split("/")
+        short_parts = []
+        
+        for part in parts:
+            part = part.strip()
+            if " " in part:
+                name_parts = part.split(" ")
+                first_name = name_parts[0].strip()
+                last_name = " ".join(name_parts[1:]).strip()
+                if first_name and last_name:
+                    short_name = f"{first_name[0]}.{last_name.replace(' ', '')}"
+                    short_parts.append(short_name)
+                else:
+                    short_parts.append(part)
+            else:
+                short_parts.append(part)
+        
+        return "/".join(short_parts)
+
+    def _find_winner_team_name(self, match_data: Dict, winner_id: int) -> str:
+        """Находит название команды-победителя по ID"""
+        challenger_data = match_data.get("ChallengerParticipant", {})
+        challenged_data = match_data.get("ChallengedParticipant", {})
+        
+        if challenger_data.get("EventParticipantId") == winner_id:
+            return self._get_team_name_from_players(
+                challenger_data.get("FirstPlayer", {}),
+                challenger_data.get("SecondPlayer", {})
+            )
+        elif challenged_data.get("EventParticipantId") == winner_id:
+            return self._get_team_name_from_players(
+                challenged_data.get("FirstPlayer", {}),
+                challenged_data.get("SecondPlayer", {})
+            )
+        
+        return ""
+
+    def _get_team_name_from_players(self, first_player: Dict, second_player: Dict) -> str:
+        """Формирует название команды из имен игроков"""
+        names = []
+        if first_player and first_player.get("Name"):
+            names.append(first_player["Name"])
+        if second_player and second_player.get("Name"):
+            names.append(second_player["Name"])
+        return "/".join(names)
+
+    def _format_score_summary(self, score_data: Dict) -> str:
+        """Форматирует итоговый счет"""
+        if not score_data:
+            return ""
+        
+        first_score = score_data.get("FirstParticipantScore", 0)
+        second_score = score_data.get("SecondParticipantScore", 0)
+        return f"{first_score}-{second_score}"
+
+    def _format_sets_summary(self, score_data: Dict) -> str:
+        """Форматирует детальный счет по сетам"""
+        if not score_data or not score_data.get("DetailedScoring"):
+            return ""
+        
+        sets_summary = []
+        for i, set_data in enumerate(score_data["DetailedScoring"]):
+            first_score = set_data.get("FirstParticipantScore", 0)
+            second_score = set_data.get("SecondParticipantScore", 0)
+            sets_summary.append(f"Set {i+1}: {first_score}-{second_score}")
+        
+        return " ".join(sets_summary)    
+
+
+
+
+
+
+
 
     def generate_court_score_xml(self, court_data: Dict, tournament_data: Dict = None) -> str:
         """Генерирует упрощенный XML для счета на конкретном корте с поддержкой следующего матча"""
