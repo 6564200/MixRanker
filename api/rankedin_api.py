@@ -292,14 +292,14 @@ class RankedinAPI:
         return [
             {
                 "id": player.get("id", ""),
-                "firstName": player.get("firstName", "").strip(),
-                "middleName": player.get("middleName", ""),
-                "lastName": player.get("lastName", "").strip(),
+                "firstName": (player.get("firstName") or "").strip(),
+                "middleName": (player.get("middleName") or "").strip(),
+                "lastName": (player.get("lastName") or "").strip(),
                 "countryCode": player.get("countryCode", ""),
-                "fullName": f"{player.get('firstName', '').strip()} {player.get('lastName', '').strip()}".strip(),
+                "fullName": f"{(player.get('firstName') or '').strip()} {(player.get('lastName') or '').strip()}".strip(),
                 # Новые поля для vMix (пункты 3 и 4)
-                "lastNameShort": player.get("lastName", "").strip()[:3].upper() if player.get("lastName", "").strip() else "",
-                "initialLastName": f"{player.get('firstName', '').strip()[:1]}. {player.get('lastName', '').strip()}".strip() if player.get('firstName', '').strip() and player.get('lastName', '').strip() else ""
+                "lastNameShort": (player.get("lastName") or "").strip()[:3].upper() if (player.get("lastName") or "").strip() else "",
+                "initialLastName": f"{(player.get('firstName') or '').strip()[:1]}. {(player.get('lastName') or '').strip()}".strip() if (player.get('firstName') or '').strip() and (player.get('lastName') or '').strip() else ""
             }
             for player in players_data
         ]
