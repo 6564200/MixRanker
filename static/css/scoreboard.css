@@ -1,0 +1,149 @@
+@font-face {
+    font-family: 'TT Bluescreens';
+    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
+    font-weight: bold;
+    font-style: italic;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    width: 390px;
+    height: 110px;
+    background: transparent;
+    font-family: 'TT Bluescreens', 'Orbitron', monospace;
+    font-weight: bold;
+    font-style: italic;
+    overflow: hidden;
+    position: relative;
+}
+
+.scoreboard {
+    width: 100%;
+    height: 90px;
+    display: flex;
+    flex-direction: column;
+    border: 2px solid #fff;
+    background: rgba(0, 0, 0, 0.8);
+    position: relative;
+}
+
+
+
+.team-row {
+    height: 43px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #333;
+    position: relative;
+}
+
+.team-row:last-child {
+    border-bottom: none;
+}
+
+.team-name {
+    width: 200px;
+    color: #fff;
+    font-size: 14px;
+    padding: 0 10px;
+    text-align: left;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    line-height: 1.1;
+}
+
+.sets {
+    display: flex;
+    color: #fff;
+    font-size: 14px;
+    text-align: center;
+}
+
+.set {
+    width: 30px;
+    height: 30px;
+    margin: 0 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid #666;
+    border-radius: 3px;
+}
+
+.score {
+    width: 60px;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 900;
+    text-align: center;
+    background: rgba(0,0,0,0.5);
+    border-left: 2px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+.team1 {
+    background: linear-gradient(90deg, rgba(0,100,200,0.3) 0%, rgba(0,0,0,0.8) 100%);
+}
+
+.team2 {
+    background: linear-gradient(90deg, rgba(200,50,0,0.3) 0%, rgba(0,0,0,0.8) 100%);
+}
+
+.no-match {
+    justify-content: center;
+    height: 86px;
+}
+
+.no-match .team-name {
+    width: 100%;
+    text-align: center;
+    font-size: 24px;
+    color: #888;
+}
+
+.next-match .team-name {
+    color: #aaa;
+    font-size: 13px;
+}
+
+.next-match .score {
+    color: #666;
+    font-size: 16px;
+}
+
+.info-bar {
+    height: 20px;
+    background: rgba(0, 0, 0, 0.9);
+    border-top: 1px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    font-size: 10px;
+    color: #ccc;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+.tournament-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.court-name {
+    flex-shrink: 0;
+    margin-left: 10px;
+}
