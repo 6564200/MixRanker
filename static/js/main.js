@@ -799,8 +799,23 @@ function copyToClipboard(text) {
 
 function formatPlayerNames(players) {
     if (!players || players.length === 0) return 'Неизвестные игроки';
-    return players.map(p => `${p.firstName} ${p.lastName}`).join(' / ');
+    
+    return players.map(p => {
+        const firstName = (p.firstName || '').trim();
+        const lastName = (p.lastName || '').trim();
+        
+        if (firstName && lastName) {
+            return `${firstName} ${lastName}`;
+        } else if (firstName) {
+            return firstName;
+        } else if (lastName) {
+            return lastName;
+        } else {
+            return 'Игрок';
+        }
+    }).filter(name => name && name !== 'Игрок').join(' / ') || 'Неизвестные игроки';
 }
+
 
 function getCourtStatus(court) {
     // Проверяем статус корта из API
