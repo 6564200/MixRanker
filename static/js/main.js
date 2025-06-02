@@ -652,14 +652,7 @@ function renderLiveXMLList(liveXMLInfo) {
 						<button class="btn btn-sm btn-success" onclick="testLiveXML('${xmlType.live_url}')" title="Тест">
 							<i class="fas fa-play"></i>
 						</button>
-						${xmlType.type === 'court_score' ? `
-							<button class="btn btn-sm btn-warning" onclick="openCourtHTML('${tournament_id}', '${xmlType.court_id}')" title="HTML Scoreboard">
-								<i class="fas fa-tv"></i>
-							</button>
-							<button class="btn btn-sm btn-outline-warning" onclick="generateCourtHTML('${tournament_id}', '${xmlType.court_id}')" title="Создать HTML">
-								<i class="fas fa-file-code"></i>
-							</button>
-						` : ''}
+
 						<button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('${baseUrl}${xmlType.live_url}')" title="Копировать">
 							<i class="fas fa-copy"></i>
 						</button>
