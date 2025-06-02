@@ -115,6 +115,8 @@ class RankedinAPI:
         
         return result
     
+
+
     # ЗАПРОС №5: Планировщик кортов
     def get_court_planner(self, tournament_id: str, dates: List[str]) -> Optional[Dict]:
         """
@@ -127,11 +129,16 @@ class RankedinAPI:
             "dates": dates
         }
         
-        logger.info(f"Получение расписания кортов для турнира {tournament_id}")
+        logger.info(f"Получение расписания кортов для турнира {tournament_id}, даты: {dates}")
         result = self._make_request(url, method='POST', data=data)
         
+        if result:
+            logger.info(f"Планировщик кортов для турнира {tournament_id}: получено {len(result) if isinstance(result, list) else 'object'}")
+        else:
+            logger.warning(f"Не удалось получить планировщик кортов для турнира {tournament_id}")
+        
         return result
-    
+
     # ЗАПРОС №6: Использование кортов
     def get_court_usage(self, tournament_id: str, dates: List[str]) -> Optional[Dict]:
         """
@@ -144,10 +151,24 @@ class RankedinAPI:
             "dates": dates
         }
         
-        logger.info(f"Получение использования кортов для турнира {tournament_id}")
+        logger.info(f"Получение использования кортов для турнира {tournament_id}, даты: {dates}")
         result = self._make_request(url, method='POST', data=data)
         
+        if result:
+            if isinstance(result, list):
+                logger.info(f"Использование кортов для турнира {tournament_id}: получено {len(result)} матчей")
+                # Логируем первый матч для примера
+                if len(result) > 0:
+                    first_match = result[0]
+                    logger.info(f"Пример матча: CourtId={first_match.get('CourtId')}, MatchDate={first_match.get('MatchDate')}, Teams={first_match.get('ChallengerName')} vs {first_match.get('ChallengedName')}")
+            else:
+                logger.info(f"Использование кортов для турнира {tournament_id}: получен объект типа {type(result)}")
+        else:
+            logger.warning(f"Не удалось получить использование кортов для турнира {tournament_id}")
+        
         return result
+
+
     
     # ЗАПРОС №7: Табло корта
     def get_court_scoreboard(self, court_id: str) -> Optional[Dict]:
@@ -658,7 +679,12 @@ class RankedinAPI:
         if dates:
             tournament_data["dates"] = dates
             
-            # 6. Использование кортов
+            # 5. Планировщик кортов (запрос №5)
+            court_planner = self.get_court_planner(tournament_id, dates)
+            if court_planner:
+                tournament_data["court_planner"] = court_planner
+            
+            # 6. Использование кортов с расписанием матчей (запрос №6)
             court_usage = self.get_court_usage(tournament_id, dates)
             if court_usage:
                 tournament_data["court_usage"] = court_usage
@@ -722,6 +748,10 @@ class RankedinAPI:
         logger.info(f"Завершена полная загрузка турнира {tournament_id}: {total_rr} групповых, {total_elim} на выбывание")
         return tournament_data
    
+   
+   
+   
+    
     def get_all_courts_data(self, court_ids: List[str]) -> List[Dict]:
         """Получение данных всех кортов"""
         courts_data = []
@@ -872,6 +902,11 @@ class RankedinAPI:
             import traceback
             logger.error(f"Traceback: {traceback.format_exc()}")
             return xml_types  # Возвращаем пустой список вместо None
+    
+    
+    
+    
+    
 
 # Функции-обертки для обратной совместимости
 def fetch_tournament_data(tournament_class_id: str) -> Optional[Dict]:
