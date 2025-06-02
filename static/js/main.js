@@ -535,16 +535,19 @@ function renderCourts() {
                     <small class="text-muted">
                         <i class="fas fa-sync me-1"></i>Обновлено: ${formatTime(new Date())}
                     </small>
-                    <div class="d-flex gap-1">
-                        ${hasCurrentMatch || hasNextMatch ? `
-                            <button class="btn btn-sm btn-outline-primary" onclick="generateCourtXML('${court.court_id}')">
-                                <i class="fas fa-code me-1"></i>XML
-                            </button>
-                        ` : ''}
-                        <button class="btn btn-sm btn-outline-info" onclick="refreshSingleCourt('${court.court_id}')">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                    </div>
+					<div class="d-flex gap-1">
+						${hasCurrentMatch || hasNextMatch ? `
+							<button class="btn btn-sm btn-outline-primary" onclick="generateCourtXML('${court.court_id}')">
+								<i class="fas fa-code me-1"></i>XML
+							</button>
+							<button class="btn btn-sm btn-warning" onclick="openCourtHTML('${currentTournamentId}', '${court.court_id}')" title="HTML Scoreboard">
+								<i class="fas fa-tv"></i>
+							</button>
+						` : ''}
+						<button class="btn btn-sm btn-outline-info" onclick="refreshSingleCourt('${court.court_id}')">
+							<i class="fas fa-sync-alt"></i>
+						</button>
+					</div>
                 </div>
             </div>
         `;
@@ -606,6 +609,7 @@ async function loadLiveXMLList(tournamentId) {
 
 function renderLiveXMLList(liveXMLInfo) {
     const container = document.getElementById('liveXMLList');
+	const tournament_id = liveXMLInfo.tournament_id || document.getElementById('xmlTournamentSelect').value;
     
     if (!liveXMLInfo.live_xml_types || liveXMLInfo.live_xml_types.length === 0) {
         container.innerHTML = `
@@ -632,46 +636,54 @@ function renderLiveXMLList(liveXMLInfo) {
         </div>
         
         ${liveXMLInfo.live_xml_types.map(xmlType => `
-            <div class="live-xml-card mb-3 p-3 border rounded">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div class="flex-grow-1">
-                        <h6 class="mb-1">
-                            <i class="fas fa-${getXMLTypeIcon(xmlType.type)} me-2"></i>
-                            ${xmlType.name}
-                        </h6>
-                        <small class="text-muted">${xmlType.description}</small>
-                        <div class="mt-1">
-                            <span class="badge bg-info">${xmlType.update_frequency}</span>
-                        </div>
-                    </div>
-                    <div class="d-flex flex-column gap-1">
-                        <button class="btn btn-sm btn-success" onclick="testLiveXML('${xmlType.live_url}')" title="Тест">
-                            <i class="fas fa-play"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('${baseUrl}${xmlType.live_url}')" title="Копировать">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-info" onclick="openInNewTab('${xmlType.live_url}')" title="Открыть">
-                            <i class="fas fa-external-link-alt"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="mt-2">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-success text-white">
-                            <i class="fas fa-broadcast-tower"></i>
-                        </span>
-                        <input type="text" class="form-control font-monospace" 
-                               value="${baseUrl}${xmlType.live_url}" 
-                               readonly onclick="this.select()">
-                    </div>
-                    <small class="text-muted">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Используйте эту ссылку в vMix для получения актуальных данных
-                    </small>
-                </div>
-            </div>
+			<div class="live-xml-card mb-3 p-3 border rounded">
+				<div class="d-flex justify-content-between align-items-start mb-2">
+					<div class="flex-grow-1">
+						<h6 class="mb-1">
+							<i class="fas fa-${getXMLTypeIcon(xmlType.type)} me-2"></i>
+							${xmlType.name}
+						</h6>
+						<small class="text-muted">${xmlType.description}</small>
+						<div class="mt-1">
+							<span class="badge bg-info">${xmlType.update_frequency}</span>
+						</div>
+					</div>
+					<div class="d-flex flex-column gap-1">
+						<button class="btn btn-sm btn-success" onclick="testLiveXML('${xmlType.live_url}')" title="Тест">
+							<i class="fas fa-play"></i>
+						</button>
+						${xmlType.type === 'court_score' ? `
+							<button class="btn btn-sm btn-warning" onclick="openCourtHTML('${tournament_id}', '${xmlType.court_id}')" title="HTML Scoreboard">
+								<i class="fas fa-tv"></i>
+							</button>
+							<button class="btn btn-sm btn-outline-warning" onclick="generateCourtHTML('${tournament_id}', '${xmlType.court_id}')" title="Создать HTML">
+								<i class="fas fa-file-code"></i>
+							</button>
+						` : ''}
+						<button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('${baseUrl}${xmlType.live_url}')" title="Копировать">
+							<i class="fas fa-copy"></i>
+						</button>
+						<button class="btn btn-sm btn-outline-info" onclick="openInNewTab('${xmlType.live_url}')" title="Открыть">
+							<i class="fas fa-external-link-alt"></i>
+						</button>
+					</div>
+				</div>
+				
+				<div class="mt-2">
+					<div class="input-group input-group-sm">
+						<span class="input-group-text bg-success text-white">
+							<i class="fas fa-broadcast-tower"></i>
+						</span>
+						<input type="text" class="form-control font-monospace" 
+							   value="${baseUrl}${xmlType.live_url}" 
+							   readonly onclick="this.select()">
+					</div>
+					<small class="text-muted">
+						<i class="fas fa-info-circle me-1"></i>
+						Используйте эту ссылку в vMix для получения актуальных данных
+					</small>
+				</div>
+			</div>
         `).join('')}
         
         <div class="alert alert-info mt-3">
@@ -687,6 +699,42 @@ function renderLiveXMLList(liveXMLInfo) {
 }
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
+
+function openCourtHTML(tournamentId, courtId) {
+    // Открываем Live HTML scoreboard в новом окне
+    const liveUrl = `/api/html-live/${tournamentId}/${courtId}`;
+    window.open(liveUrl, '_blank', 'width=390,height=90,resizable=no,scrollbars=no,menubar=no,toolbar=no');
+}
+
+function generateCourtHTML(tournamentId, courtId) {
+    // Генерируем статический HTML файл
+    showLoading(true);
+    
+    fetch(`/api/html/${tournamentId}/${courtId}`)
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
+        })
+        .then(fileInfo => {
+            showAlert(`HTML Scoreboard создан: ${fileInfo.filename}`, 'success');
+            
+            // Предлагаем открыть файл
+            const openFile = confirm('Открыть созданный HTML файл?');
+            if (openFile) {
+                window.open(fileInfo.url, '_blank', 'width=390,height=90,resizable=no,scrollbars=no,menubar=no,toolbar=no');
+            }
+        })
+        .catch(error => {
+            showAlert(`Ошибка создания HTML: ${error.message}`, 'danger');
+        })
+        .finally(() => {
+            showLoading(false);
+        });
+}
+
 function getXMLTypeIcon(type) {
     const icons = {
         'court_score': 'scoreboard',
