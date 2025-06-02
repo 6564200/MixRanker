@@ -29,6 +29,7 @@ os.makedirs('api', exist_ok=True)
 os.makedirs('static/css', exist_ok=True)
 os.makedirs('static/js', exist_ok=True)
 os.makedirs('templates', exist_ok=True)
+os.makedirs('static/fonts', exist_ok=True)
 
 # Настройка логирования
 logging.basicConfig(
@@ -111,6 +112,14 @@ def init_database():
             FOREIGN KEY (tournament_id) REFERENCES tournaments(id)
         );
         
+        CREATE TABLE IF NOT EXISTS tournament_schedule (
+            tournament_id TEXT PRIMARY KEY,
+            court_planner TEXT,
+            court_usage TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (tournament_id) REFERENCES tournaments(id)
+        );
+        
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL,
@@ -135,7 +144,10 @@ def init_database():
         CREATE INDEX IF NOT EXISTS idx_courts_updated ON courts_data(updated_at);
         CREATE INDEX IF NOT EXISTS idx_xml_tournament ON xml_files(tournament_id);
     ''')
-    
+
+
+
+
     conn.commit()
     conn.close()
     logger.info("База данных инициализирована")
@@ -409,6 +421,40 @@ def load_tournament(tournament_id):
             json.dumps(tournament_data.get("draw_data", {})),
             "active"
         ))
+        
+        
+        
+        # Сохраняем дополнительные данные расписания в отдельную таблицу
+        court_planner_data = tournament_data.get("court_planner")
+        court_usage_data = tournament_data.get("court_usage")
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tournament_schedule (
+                tournament_id TEXT PRIMARY KEY,
+                court_planner TEXT,
+                court_usage TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (tournament_id) REFERENCES tournaments(id)
+            )
+        ''')
+        
+                
+        logger.info(f"Сохраняем данные расписания для турнира {tournament_id}:")
+        logger.info(f"  court_planner: {type(court_planner_data)} ({len(court_planner_data) if isinstance(court_planner_data, (list, dict)) else 'not list/dict'})")
+        logger.info(f"  court_usage: {type(court_usage_data)} ({len(court_usage_data) if isinstance(court_usage_data, (list, dict)) else 'not list/dict'})")
+
+        
+        
+        cursor.execute('''
+            INSERT OR REPLACE INTO tournament_schedule 
+            (tournament_id, court_planner, court_usage, updated_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        ''', (
+            tournament_id,
+            json.dumps(tournament_data.get("court_planner")),
+            json.dumps(tournament_data.get("court_usage"))
+        ))      
+        
         
         conn.commit()
         conn.close()
@@ -851,7 +897,8 @@ def manage_settings():
                 "auto_refresh": True,
                 "debug_mode": False,
                 "theme": "light",
-                "xml_cleanup_hours": 24
+                "xml_cleanup_hours": 24,
+                "schedule_update_interval": 10
             }
             
             # Объединение с дефолтными настройками
@@ -1010,6 +1057,36 @@ def refresh_all_data():
                             SET draw_data = ?, updated_at = CURRENT_TIMESTAMP 
                             WHERE id = ?
                         ''', (json.dumps(updated_draw_data), tournament_id))
+
+                # 3. Обновление расписания
+                cursor.execute('SELECT dates FROM tournaments WHERE id = ?', (tournament_id,))
+                dates_row = cursor.fetchone()
+                
+                if dates_row and dates_row[0]:
+                    dates = json.loads(dates_row[0])
+                    if dates:
+                        try:
+                            # Обновляем court_planner
+                            fresh_court_planner = api.get_court_planner(tournament_id, dates)
+                            
+                            # Обновляем court_usage  
+                            fresh_court_usage = api.get_court_usage(tournament_id, dates)
+                            
+                            if fresh_court_planner or fresh_court_usage:
+                                cursor.execute('''
+                                    INSERT OR REPLACE INTO tournament_schedule 
+                                    (tournament_id, court_planner, court_usage, updated_at)
+                                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                                ''', (
+                                    tournament_id,
+                                    json.dumps(fresh_court_planner),
+                                    json.dumps(fresh_court_usage)
+                                ))
+                                logger.debug(f"Обновлено расписание для турнира {tournament_id}")
+                        except Exception as e:
+                            logger.error(f"Ошибка обновления расписания турнира {tournament_id}: {e}")
+                            continue
+
                         
             except Exception as e:
                 logger.error(f"Ошибка обновления турнира {tournament_id}: {e}")
@@ -1030,6 +1107,103 @@ def refresh_all_data():
         logger.error(f"Ошибка обновления данных: {e}")
         return jsonify({"error": str(e)}), 500
 
+
+# В app.py добавить новые роуты:
+
+@app.route('/html/<filename>')
+def serve_html_file(filename):
+    """Отдача HTML файлов с динамическим обновлением"""
+    try:
+        # Парсим имя файла для получения информации о корте
+        parts = filename.replace('.html', '').split('_')
+        
+        if len(parts) >= 3 and 'scoreboard' in filename:
+            tournament_id = parts[0]
+            court_id = parts[2]
+            
+            # Обновляем данные корта
+            tournament_data = get_tournament_data_from_db(tournament_id)
+            if tournament_data:
+                try:
+                    court_data = api.get_court_scoreboard(court_id)
+                    if court_data and "error" not in court_data:
+                        html_content = xml_manager.generator.generate_court_scoreboard_html(court_data, tournament_data)
+                        
+                        # Сохраняем обновленный файл
+                        filepath = f'xml_files/{filename}'
+                        with open(filepath, 'w', encoding='utf-8') as f:
+                            f.write(html_content)
+                        
+                except Exception as e:
+                    logger.error(f"Ошибка обновления HTML файла {filename}: {e}")
+        
+        # Отдаем файл
+        return send_file(f'xml_files/{filename}', 
+                        mimetype='text/html',
+                        as_attachment=False,
+                        download_name=filename)
+    except FileNotFoundError:
+        return "<html><body><h1>HTML файл не найден</h1></body></html>", 404
+    except Exception as e:
+        logger.error(f"Ошибка отдачи HTML файла {filename}: {e}")
+        return f"<html><body><h1>Ошибка: {str(e)}</h1></body></html>", 500
+
+@app.route('/api/html/<tournament_id>/<court_id>')
+def generate_court_html(tournament_id, court_id):
+    """Генерация HTML scoreboard для корта"""
+    try:
+        # Получение данных турнира и корта
+        tournament_data = get_tournament_data_from_db(tournament_id)
+        if not tournament_data:
+            return jsonify({"error": "Турнир не найден"}), 404
+        
+        court_data = api.get_court_scoreboard(str(court_id))
+        if "error" in court_data:
+            return jsonify({"error": "Ошибка получения данных корта"}), 500
+        
+        # Формируем информацию о типе для совместимости
+        xml_type_info = {
+            "id": f"court_{court_id}",
+            "name": f"Корт {court_id} - Scoreboard HTML",
+            "type": "court_score",
+            "court_id": court_id,
+            "court_name": court_data.get("court_name", f"Корт {court_id}")
+        }
+        
+        # Генерация HTML файла
+        file_info = xml_manager.generate_and_save_html(xml_type_info, tournament_data, court_data)
+        
+        return jsonify(file_info)
+        
+    except Exception as e:
+        logger.error(f"Ошибка генерации HTML для корта {court_id}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/html-live/<tournament_id>/<court_id>')
+def get_live_court_html(tournament_id, court_id):
+    """Получение актуального HTML scoreboard без сохранения файла"""
+    try:
+        # Получение данных турнира и корта
+        tournament_data = get_tournament_data_from_db(tournament_id)
+        if not tournament_data:
+            return "<html><body><h1>Турнир не найден</h1></body></html>", 404
+        
+        court_data = api.get_court_scoreboard(str(court_id))
+        if "error" in court_data:
+            return "<html><body><h1>Ошибка получения данных корта</h1></body></html>", 500
+        
+        # Генерация HTML без сохранения
+        html_content = xml_manager.generator.generate_court_scoreboard_html(court_data, tournament_data)
+        
+        # Возвращаем HTML
+        return Response(html_content, mimetype='text/html; charset=utf-8')
+        
+    except Exception as e:
+        logger.error(f"Ошибка получения live HTML для корта {court_id}: {e}")
+        return f"<html><body><h1>Ошибка: {str(e)}</h1></body></html>", 500
+
+
+
 # === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
 def get_tournament_data_from_db(tournament_id: str) -> dict:
@@ -1044,11 +1218,20 @@ def get_tournament_data_from_db(tournament_id: str) -> dict:
         ''', (tournament_id,))
         
         tournament_row = cursor.fetchone()
-        conn.close()
         
         if not tournament_row:
             logger.warning(f"Турнир {tournament_id} не найден в базе данных")
+            conn.close()
             return None
+        
+        # Получаем данные расписания
+        cursor.execute('''
+            SELECT court_planner, court_usage 
+            FROM tournament_schedule WHERE tournament_id = ?
+        ''', (tournament_id,))
+        
+        schedule_row = cursor.fetchone()
+        conn.close()
         
         # Безопасный парсинг JSON данных
         def safe_json_loads(json_str, default=None):
@@ -1069,7 +1252,21 @@ def get_tournament_data_from_db(tournament_id: str) -> dict:
             "draw_data": safe_json_loads(tournament_row[4], {})
         }
         
-        logger.debug(f"Загружены данные турнира {tournament_id}: metadata={bool(tournament_data['metadata'])}, classes={len(tournament_data['classes'])}, draw_data={len(tournament_data['draw_data'])}")
+        # Добавляем данные расписания если есть
+        if schedule_row:
+            court_planner_data = safe_json_loads(schedule_row[0])
+            court_usage_data = safe_json_loads(schedule_row[1])
+            
+            tournament_data["court_planner"] = court_planner_data
+            tournament_data["court_usage"] = court_usage_data
+            
+            logger.info(f"Загружены данные расписания для турнира {tournament_id}:")
+            logger.info(f"  court_planner: {type(court_planner_data)} ({len(court_planner_data) if isinstance(court_planner_data, (list, dict)) else 'not list/dict'})")
+            logger.info(f"  court_usage: {type(court_usage_data)} ({len(court_usage_data) if isinstance(court_usage_data, (list, dict)) else 'not list/dict'})")
+        else:
+            logger.warning(f"Нет данных расписания для турнира {tournament_id} в таблице tournament_schedule")
+        
+        logger.debug(f"Загружены данные турнира {tournament_id}: metadata={bool(tournament_data['metadata'])}, classes={len(tournament_data['classes'])}, draw_data={len(tournament_data['draw_data'])}, court_usage={bool(tournament_data.get('court_usage'))}")
         
         return tournament_data
         
@@ -1078,6 +1275,8 @@ def get_tournament_data_from_db(tournament_id: str) -> dict:
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
         return None
+        
+        
 
 def save_xml_file_info(tournament_id: str, file_info: dict):
     """Сохранение информации о XML файле в базу данных"""
@@ -1153,6 +1352,8 @@ class AutoRefreshService:
         self.running = False
         self.thread = None
         self.interval = 30  # секунды
+        self.schedule_update_counter = 0  # Счетчик для расписания
+        self.schedule_update_interval = 10  # Обновлять расписание каждые 10 циклов
     
     def start(self):
         """Запуск автоматического обновления"""
@@ -1200,12 +1401,21 @@ class AutoRefreshService:
                             self.interval = 30
                     
                     if auto_refresh:
+                        # Увеличиваем счетчик для обновления расписания
+                        self.schedule_update_counter += 1
+                        should_update_schedule = (self.schedule_update_counter >= self.schedule_update_interval)
+                        
+                        if should_update_schedule:
+                            self.schedule_update_counter = 0  # Сбрасываем счетчик
+                            logger.debug("Время обновления расписания")
+                            
                         # Получение всех активных турниров
                         cursor.execute('SELECT id FROM tournaments WHERE status = ?', ('active',))
                         tournament_ids = [row[0] for row in cursor.fetchall()]
                         
                         updated_courts = 0
                         updated_tables = 0
+                        updated_schedules = 0
                         
                         for tournament_id in tournament_ids:
                             try:
@@ -1275,13 +1485,46 @@ class AutoRefreshService:
                                             WHERE id = ?
                                         ''', (json.dumps(updated_draw_data), tournament_id))
                                         
+                                        
+                                # 3. Обновление расписания (реже чем основные данные)
+                                if should_update_schedule:
+                                    try:
+                                        cursor.execute('SELECT dates FROM tournaments WHERE id = ?', (tournament_id,))
+                                        dates_row = cursor.fetchone()
+                                        
+                                        if dates_row and dates_row[0]:
+                                            dates = json.loads(dates_row[0])
+                                            if dates:
+                                                # Обновляем court_planner
+                                                fresh_court_planner = api.get_court_planner(tournament_id, dates)
+                                                
+                                                # Обновляем court_usage  
+                                                fresh_court_usage = api.get_court_usage(tournament_id, dates)
+                                                
+                                                if fresh_court_planner or fresh_court_usage:
+                                                    cursor.execute('''
+                                                        INSERT OR REPLACE INTO tournament_schedule 
+                                                        (tournament_id, court_planner, court_usage, updated_at)
+                                                        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                                                    ''', (
+                                                        tournament_id,
+                                                        json.dumps(fresh_court_planner),
+                                                        json.dumps(fresh_court_usage)
+                                                    ))
+                                                    updated_schedules += 1
+                                                    logger.debug(f"Автообновление: обновлено расписание для турнира {tournament_id}")
+                                    except Exception as e:
+                                        logger.error(f"Ошибка обновления расписания турнира {tournament_id}: {e}")
+                                        
+                                        
+                                        
                             except Exception as e:
                                 logger.error(f"Ошибка обновления турнира {tournament_id}: {e}")
                                 continue
                         
                         conn.commit()
                         if updated_courts > 0 or updated_tables > 0:
-                            logger.debug(f"Автоматическое обновление: {updated_courts} кортов, {updated_tables} турнирных таблиц")
+                            logger.debug(f"Автоматическое обновление: {updated_courts} кортов, {updated_tables} турнирных таблиц, {updated_schedules} расписаний")
                     
                     conn.close()
                     
@@ -1422,10 +1665,9 @@ if __name__ == '__main__':
     
     # Вывод информации о запуске
     print("=" * 60)
-    print("🏆 vMixRanker v2.0 - Система интеграции турниров с vMix")
+    print("🏆 vMixRanker v2.5 - Система интеграции турниров с vMix")
     print("=" * 60)
-    print(f"🌐 Веб-интерфейс: http://localhost:5000")
-    print(f"📊 API базовый URL: http://localhost:5000/api")
+
     print("🔗 Основные endpoints:")
     print("   POST /api/tournament/<id> - Загрузка турнира")
     print("   GET  /api/tournaments - Список турниров")
@@ -1433,7 +1675,6 @@ if __name__ == '__main__':
     print("   GET  /api/xml/<id>/<type> - Генерация XML")
     print("   GET  /api/xml-live/<id>/<type> - Live XML данные")
     print("=" * 60)
-    print("💡 Для остановки нажмите Ctrl+C")
     print("📝 Логи сохраняются в logs/vmix_ranker.log")
     print("=" * 60)
     
