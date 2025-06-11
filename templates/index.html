@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="robots" content="noindex, nofollow">
     <title>vMixRanker v2.5 - Управление турнирами</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -146,24 +147,49 @@
 										<strong>Live XML</strong> - всегда актуальные данные без кеширования. 
 										Эти ссылки обновляются в реальном времени.
 									</div>
+									
 									<div class="mb-3">
 										<label class="form-label">Выберите турнир</label>
 										<select class="form-select" id="xmlTournamentSelect">
 											<option value="">Сначала загрузите турнир</option>
 										</select>
 									</div>
+									
+									<!-- Live XML кнопка -->
 									<button class="btn btn-success w-100 mb-3" onclick="showLiveXMLList()" id="showLiveXMLBtn" disabled>
 										<i class="fas fa-broadcast-tower me-2"></i>Показать Live XML ссылки
 									</button>
 									
+									<!-- HTML расписание -->
+									<div class="border-top pt-3 mb-3">
+										<h6 class="text-muted mb-2">HTML расписание:</h6>
+										<div class="row">
+											<div class="col-6">
+												<button class="btn btn-outline-warning btn-sm w-100" onclick="console.log('Кнопка Статический нажата'); generateScheduleHTML()" id="generateScheduleBtn" disabled>
+													<i class="fas fa-file-code me-1"></i>Статический
+												</button>
+											</div>
+											<div class="col-6">
+												<button class="btn btn-outline-info btn-sm w-100" onclick="openScheduleHTML()" id="openLiveScheduleBtn" disabled>
+													<i class="fas fa-external-link-alt me-1"></i>Live
+												</button>
+											</div>
+										</div>
+										<small class="text-muted mt-1 d-block">
+											<i class="fas fa-info-circle me-1"></i>
+											Live - сегодняшняя дата, Статический - выбор даты
+										</small>
+									</div>
+									
+									<!-- Дополнительные функции -->
 									<div class="border-top pt-3">
 										<h6 class="text-muted mb-2">Дополнительные функции:</h6>
 										<div class="d-grid gap-2">
-											<button class="btn btn-outline-info btn-sm" onclick="generateAllXMLForTournament()" id="generateAllBtn" disabled>
-												<i class="fas fa-layer-group me-2"></i>Создать статические XML
+											<button class="btn btn-outline-primary btn-sm" onclick="generateAllXMLForTournament()" id="generateAllBtn" disabled>
+												<i class="fas fa-layer-group me-1"></i>Создать статические XML
 											</button>
 											<button class="btn btn-outline-secondary btn-sm" onclick="testAllLiveXML()" id="testAllBtn" disabled>
-												<i class="fas fa-play me-2"></i>Тестировать все Live XML
+												<i class="fas fa-play me-1"></i>Тестировать все Live XML
 											</button>
 										</div>
 									</div>
@@ -200,8 +226,7 @@
 							</div>
 						</div>
 					</div>
-				</div>
-
+				</div>				
                 <!-- Settings Tab -->
                 <div class="tab-pane fade" id="settings-pane" role="tabpanel">
                     <div class="row">
@@ -323,12 +348,6 @@
 					Отмена
 				</button>
 			</form>
-			<div class="mt-3 text-center">
-				<small class="text-muted">
-					По умолчанию: admin / admin123<br>
-					Для изменения пользователей отредактируйте таблицу users в БД
-				</small>
-			</div>
 		</div>
 	</div>
 
