@@ -224,117 +224,6 @@ def init_database():
         logger.error(f"Ошибка инициализации базы данных: {e}")
         raise
 
-
-
-
-
-# Глобальный кеш для последних успешных ответов
-response_cache = {}
-cache_lock = threading.Lock()
-
-class ResponseCache:
-    """Кеш для хранения последних успешных ответов"""
-    
-    def __init__(self, max_age_minutes=30):
-        self.cache = {}
-        self.max_age = timedelta(minutes=max_age_minutes)
-        self.lock = threading.Lock()
-    
-    def _get_cache_key(self, endpoint, params=None):
-        """Создает ключ кеша"""
-        if params:
-            params_str = "&".join([f"{k}={v}" for k, v in sorted(params.items())])
-            return f"{endpoint}?{params_str}"
-        return endpoint
-    
-    def get(self, endpoint, params=None):
-        """Получает закешированный ответ"""
-        with self.lock:
-            cache_key = self._get_cache_key(endpoint, params)
-            
-            if cache_key in self.cache:
-                cached_data, timestamp = self.cache[cache_key]
-                
-                # Проверяем срок действия
-                if datetime.now() - timestamp < self.max_age:
-                    logger.debug(f"Возвращаем кешированные данные для {cache_key}")
-                    return cached_data
-                else:
-                    # Удаляем устаревшие данные
-                    del self.cache[cache_key]
-                    logger.debug(f"Кеш устарел для {cache_key}")
-            
-            return None
-    
-    def set(self, endpoint, data, params=None):
-        """Сохраняет успешный ответ в кеш"""
-        with self.lock:
-            cache_key = self._get_cache_key(endpoint, params)
-            self.cache[cache_key] = (data, datetime.now())
-            logger.debug(f"Сохранен в кеш: {cache_key}")
-    
-    def clear_old_entries(self):
-        """Очищает старые записи кеша"""
-        with self.lock:
-            now = datetime.now()
-            keys_to_remove = []
-            
-            for cache_key, (data, timestamp) in self.cache.items():
-                if now - timestamp >= self.max_age:
-                    keys_to_remove.append(cache_key)
-            
-            for key in keys_to_remove:
-                del self.cache[key]
-            
-            if keys_to_remove:
-                logger.debug(f"Очищено {len(keys_to_remove)} устаревших записей кеша")
-
-# Создаем глобальный экземпляр кеша
-api_cache = ResponseCache(max_age_minutes=30)
-
-def cached_response(endpoint, generator_func, params=None, use_cache_on_error=True):
-    """
-    Декоратор для кеширования ответов API
-    
-    Args:
-        endpoint: строка идентификации endpoint
-        generator_func: функция генерации ответа
-        params: параметры для ключа кеша
-        use_cache_on_error: использовать кеш при ошибках
-    """
-    try:
-        # Пытаемся сгенерировать свежий ответ
-        fresh_response = generator_func()
-        
-        # Если успешно - сохраняем в кеш
-        if fresh_response is not None:
-            api_cache.set(endpoint, fresh_response, params)
-            return fresh_response
-        else:
-            # Если ответ None - пытаемся использовать кеш
-            if use_cache_on_error:
-                cached_response = api_cache.get(endpoint, params)
-                if cached_response is not None:
-                    logger.warning(f"Используем кешированные данные для {endpoint} (fresh_response is None)")
-                    return cached_response
-            return None
-            
-    except Exception as e:
-        logger.error(f"Ошибка генерации ответа для {endpoint}: {e}")
-        
-        # При ошибке пытаемся использовать кеш
-        if use_cache_on_error:
-            cached_response = api_cache.get(endpoint, params)
-            if cached_response is not None:
-                logger.warning(f"Используем кешированные данные для {endpoint} (из-за ошибки: {str(e)})")
-                return cached_response
-        
-        # Если нет кеша - пробрасываем ошибку
-        raise
-
-
-
-
 # Безопасные заголовки    
 @app.after_request
 def set_secure_headers(response):
@@ -525,8 +414,7 @@ def get_live_elimination_html(tournament_id, class_id, draw_index):
         tournament_data = get_tournament_data_from_db(tournament_id)
         if not tournament_data:
             return "<html><body><h1>Турнир не найден</h1></body></html>", 404
-        
-        # ОБНОВЛЯЕМ СВЕЖИЕ ДАННЫЕ ELIMINATION ИЗ RANKEDIN.COM
+
         logger.info(f"Обновление elimination данных для класса {class_id} из rankedin.com")
 
         # Получаем полный свежий набор всех данных класса
@@ -541,8 +429,7 @@ def get_live_elimination_html(tournament_id, class_id, draw_index):
                 tournament_data["draw_data"][str(class_id)]["round_robin"] = fresh_round_robin_data
                 
                 logger.info(f"Обновлены данные класса {class_id}: {len(fresh_elimination_data)} elimination, {len(fresh_round_robin_data)} round_robin")
-                
-                # СОХРАНЯЕМ ОБНОВЛЕННЫЕ ДАННЫЕ В БД для других запросов
+
                 try:
                     conn = get_db_connection()
                     cursor = conn.cursor()
@@ -585,8 +472,7 @@ def get_live_elimination_html(tournament_id, class_id, draw_index):
         
         # Генерация HTML с обновленными данными
         html_content = xml_manager.generator.generate_elimination_html(tournament_data, xml_type_info)
-        
-        # Возвращаем HTML
+
         return Response(html_content, mimetype='text/html; charset=utf-8')
         
     except Exception as e:
@@ -772,7 +658,6 @@ def get_tournaments():
 def get_tournament_courts(tournament_id):
     """Получение данных кортов турнира - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ"""
     try:
-        # 1. СНАЧАЛА получаем список кортов из БД
         def get_court_ids_transaction(conn):
             cursor = conn.cursor()
             cursor.execute('SELECT courts FROM tournaments WHERE id = ?', (tournament_id,))
@@ -792,11 +677,9 @@ def get_tournament_courts(tournament_id):
             
         if not court_ids:
             return jsonify([])
-        
-        # 2. ЗАТЕМ получение данных кортов через API (ВНЕ транзакции)
+
         courts_data = api.get_all_courts_data(court_ids)
         
-        # 3. БЫСТРОЕ сохранение в БД отдельной транзакцией
         def save_courts_transaction(conn):
             cursor = conn.cursor()
             for court_data in courts_data:
@@ -828,13 +711,11 @@ def get_tournament_courts(tournament_id):
 def get_xml_types(tournament_id):
     """Получение доступных типов XML для турнира"""
     try:
-        # Получение данных турнира из базы
         tournament_data = get_tournament_data_from_db(tournament_id)
         
         if not tournament_data:
             return jsonify({"error": "Турнир не найден"}), 404
         
-        # Генерация типов XML
         xml_types = api.get_xml_data_types(tournament_data)
         
         return jsonify(xml_types)
@@ -952,8 +833,6 @@ def get_live_xml_data(tournament_id, xml_type_id):
             
             xml_content = xml_manager.generator.generate_tournament_table_xml(tournament_data, xml_type_info)
 
-        
-        # Возвращаем XML как текст
         return Response(xml_content, mimetype='application/xml; charset=utf-8')
         
     except Exception as e:
