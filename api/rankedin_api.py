@@ -54,13 +54,10 @@ class RankedinAPI:
         https://api.rankedin.com/v1/metadata/GetFeatureMetadataAsync?feature=Tournament&id={tournamentId}
         """
         url = f"{self.api_base}/metadata/GetFeatureMetadataAsync"
-        params = f"?feature=Tournament&id={tournament_id}"
-        
-        logger.info(f"Получение метаданных турнира {tournament_id}")
-        result = self._make_request(url + params)
+        result = self._make_get_request("/metadata/GetFeatureMetadataAsync", {"feature": "Tournament", "id": tournament_id})
         
         if result:
-            logger.info(f"Метаданные турнира {tournament_id}: {result.get('name', 'Без названия')}")
+            logger.debug(f"Метаданные турнира {tournament_id}: {result.get('name', 'Без названия')}")
         
         return result
     
@@ -70,14 +67,10 @@ class RankedinAPI:
         Получение списка категорий турнира
         https://api.rankedin.com/v1/Tournament/GetTournamentClassesAsync?tournamentId={tournamentId}
         """
-        url = f"{self.api_base}/Tournament/GetTournamentClassesAsync"
-        params = f"?tournamentId={tournament_id}"
-        
-        logger.info(f"Получение категорий турнира {tournament_id}")
-        result = self._make_request(url + params)
+        result = self._make_get_request("/Tournament/GetTournamentClassesAsync", {"tournamentId": tournament_id})
         
         if result:
-            logger.info(f"Найдено {len(result)} категорий для турнира {tournament_id}")
+            logger.debug(f"Найдено {len(result)} категорий для турнира {tournament_id}")
         
         return result
     
@@ -87,14 +80,10 @@ class RankedinAPI:
         Получение информации о кортах турнира
         https://api.rankedin.com/v1/Tournament/GetTournamentTimetableInfoAsync/?tournamentId={tournamentId}
         """
-        url = f"{self.api_base}/Tournament/GetTournamentTimetableInfoAsync/"
-        params = f"?tournamentId={tournament_id}"
-        
-        logger.info(f"Получение информации о кортах турнира {tournament_id}")
-        result = self._make_request(url + params)
+        result = self._make_get_request("/Tournament/GetTournamentTimetableInfoAsync/", {"tournamentId": tournament_id})
         
         if result and 'Courts' in result:
-            logger.info(f"Найдено {len(result['Courts'])} кортов для турнира {tournament_id}")
+            logger.debug(f"Найдено {len(result['Courts'])} кортов для турнира {tournament_id}")
         
         return result
     
@@ -104,14 +93,10 @@ class RankedinAPI:
         Получение дат проведения турнира
         https://api.rankedin.com/v1/Tournament/GetTimetableDatesAsync?tournamentId={tournamentId}
         """
-        url = f"{self.api_base}/Tournament/GetTimetableDatesAsync"
-        params = f"?tournamentId={tournament_id}"
-        
-        logger.info(f"Получение дат турнира {tournament_id}")
-        result = self._make_request(url + params)
+        result = self._make_get_request("/Tournament/GetTimetableDatesAsync", {"tournamentId": tournament_id})
         
         if result:
-            logger.info(f"Турнир {tournament_id} проводится {len(result)} дней")
+            logger.debug(f"Турнир {tournament_id} проводится {len(result)} дней")
         
         return result
     
@@ -129,11 +114,11 @@ class RankedinAPI:
             "dates": dates
         }
         
-        logger.info(f"Получение расписания кортов для турнира {tournament_id}, даты: {dates}")
+        logger.debug(f"Получение расписания кортов для турнира {tournament_id}, даты: {dates}")
         result = self._make_request(url, method='POST', data=data)
         
         if result:
-            logger.info(f"Планировщик кортов для турнира {tournament_id}: получено {len(result) if isinstance(result, list) else 'object'}")
+            logger.debug(f"Планировщик кортов для турнира {tournament_id}: получено {len(result) if isinstance(result, list) else 'object'}")
         else:
             logger.warning(f"Не удалось получить планировщик кортов для турнира {tournament_id}")
         
@@ -151,18 +136,19 @@ class RankedinAPI:
             "dates": dates
         }
         
-        logger.info(f"Получение использования кортов для турнира {tournament_id}, даты: {dates}")
+        logger.debug(f"Получение использования кортов для турнира {tournament_id}, даты: {dates}")
         result = self._make_request(url, method='POST', data=data)
+        #print(f"--------------------------------------- {result} ---------")
         
         if result:
             if isinstance(result, list):
-                logger.info(f"Использование кортов для турнира {tournament_id}: получено {len(result)} матчей")
+                logger.debug(f"Использование кортов для турнира {tournament_id}: получено {len(result)} матчей")
                 # Логируем первый матч для примера
                 if len(result) > 0:
                     first_match = result[0]
-                    logger.info(f"Пример матча: CourtId={first_match.get('CourtId')}, MatchDate={first_match.get('MatchDate')}, Teams={first_match.get('ChallengerName')} vs {first_match.get('ChallengedName')}")
+                    logger.debug(f"Пример матча: CourtId={first_match.get('CourtId')}, MatchDate={first_match.get('MatchDate')}, Teams={first_match.get('ChallengerName')} vs {first_match.get('ChallengedName')}")
             else:
-                logger.info(f"Использование кортов для турнира {tournament_id}: получен объект типа {type(result)}")
+                logger.debug(f"Использование кортов для турнира {tournament_id}: получен объект типа {type(result)}")
         else:
             logger.warning(f"Не удалось получить использование кортов для турнира {tournament_id}")
         
@@ -253,17 +239,9 @@ class RankedinAPI:
             return {}
         
         result = {}
-        
-        # ID матча
         result[f"{prefix}_match_id"] = match_data.get("matchId")
-        
-        # Название класса/категории
         result[f"{prefix}_class_name"] = match_data.get("className", "")
-        
-        # Тип матча
         result[f"{prefix}_is_singles"] = match_data.get("isSinglesMatch", False)
-        
-        # Участники
         first_participants = match_data.get("firstParticipant", [])
         second_participants = match_data.get("secondParticipant", [])
         
@@ -275,29 +253,13 @@ class RankedinAPI:
             score_data = match_data["score"]
             result[f"{prefix}_first_participant_score"] = score_data.get("firstParticipantScore", 0)
             result[f"{prefix}_second_participant_score"] = score_data.get("secondParticipantScore", 0)
-            
-            # Информация о победителе
             result[f"{prefix}_is_winner_first"] = match_data.get("isFirstParticipantWinner")
-            
-            # Детализированные результаты по сетам
             detailed_result = score_data.get("detailedResult", [])
-            result[f"{prefix}_detailed_result"] = [
-                {
-                    "firstParticipantScore": set_data.get("firstParticipantScore", 0),
-                    "secondParticipantScore": set_data.get("secondParticipantScore", 0),
-                    "loserTiebreak": set_data.get("loserTiebreak")
-                }
-                for set_data in detailed_result
-            ]
-            
-            # Состояние матча
+            result[f"{prefix}_detailed_result"] = self._parse_detailed_result(detailed_result)
             result[f"{prefix}_match_state"] = "finished" if match_data.get("isFirstParticipantWinner") is not None else "playing"
-            
-            # Дополнительная информация
             result[f"{prefix}_duration_seconds"] = match_data.get("totalDurationInSeconds", 0)
             result[f"{prefix}_cancellation_type"] = match_data.get("cancellationType")
-        
-        # Время для следующего матча
+
         if prefix == "next":
             result[f"{prefix}_start_time"] = match_data.get("startTime", "")
             result[f"{prefix}_scheduled_time"] = match_data.get("startTime", "")  # Дублирование для совместимости
@@ -332,14 +294,10 @@ class RankedinAPI:
         Получение информации о классах и турнирных сетках
         https://api.rankedin.com/v1/tournament/GetClassesAndDrawNamesAsync/?tournamentId={tournamentId}
         """
-        url = f"{self.api_base}/tournament/GetClassesAndDrawNamesAsync/"
-        params = f"?tournamentId={tournament_id}"
-        
-        logger.info(f"Получение классов и сеток для турнира {tournament_id}")
-        result = self._make_request(url + params)
+        result = self._make_get_request("/tournament/GetClassesAndDrawNamesAsync/", {"tournamentId": tournament_id})
         
         if result and len(result) > 0:
-            logger.info(f"Найдено {len(result)} классов через GetClassesAndDrawNamesAsync для турнира {tournament_id}")
+            logger.debug(f"Найдено {len(result)} классов через GetClassesAndDrawNamesAsync для турнира {tournament_id}")
             return result
         else:
             logger.warning(f"GetClassesAndDrawNamesAsync вернул пустой результат для турнира {tournament_id}")
@@ -349,7 +307,7 @@ class RankedinAPI:
         """
         Fallback функция для создания структуры классов и сеток на основе данных GetTournamentClassesAsync
         """
-        logger.info(f"Используем fallback для получения данных классов турнира {tournament_id}")
+        logger.debug(f"Используем fallback для получения данных классов турнира {tournament_id}")
         
         classes_with_draws = []
         
@@ -384,7 +342,6 @@ class RankedinAPI:
                                 "DataCount": len(result)
                             }
                             found_draws.append(draw_info)
-                            logger.debug(f"Найдены данные для класса {class_id}: stage={stage}, strength={strength}, элементов={len(result)}")
                             
                     except Exception as e:
                         logger.debug(f"Ошибка проверки stage={stage}, strength={strength} для класса {class_id}: {e}")
@@ -393,11 +350,11 @@ class RankedinAPI:
             if found_draws:
                 class_with_draws["TournamentDraws"] = found_draws
                 classes_with_draws.append(class_with_draws)
-                logger.info(f"Класс {class_id}: найдено {len(found_draws)} сеток")
+                logger.debug(f"Класс {class_id}: найдено {len(found_draws)} сеток")
             else:
                 logger.warning(f"Для класса {class_id} не найдено сеток")
         
-        logger.info(f"Fallback: создано {len(classes_with_draws)} классов с сетками")
+        logger.debug(f"Fallback: создано {len(classes_with_draws)} классов с сетками")
         return classes_with_draws
 
     # ЗАПРОС №9: Групповые этапы (Round Robin) - УМНАЯ ВЕРСИЯ
@@ -409,11 +366,11 @@ class RankedinAPI:
         url = f"{self.api_base}/tournament/GetDrawsForStageAndStrengthAsync"
         params = f"?tournamentClassId={tournament_class_id}&drawStrength={draw_strength}&drawStage={draw_stage}&isReadonly=true&language=ru"
         
-        logger.info(f"Получение данных для класса {tournament_class_id}, stage={draw_stage}, strength={draw_strength}")
+        logger.debug(f"Получение данных для класса {tournament_class_id}, stage={draw_stage}, strength={draw_strength}")
         result = self._make_request(url + params)
         
         if result:
-            logger.info(f"Получено {len(result)} элементов данных для класса {tournament_class_id}")
+            logger.debug(f"Получено {len(result)} элементов данных для класса {tournament_class_id}")
             
             # Логируем типы данных для отладки
             round_robin_count = 0
@@ -431,7 +388,7 @@ class RankedinAPI:
                         
                     logger.debug(f"  BaseType={base_type}, RoundRobin={has_rr}, Elimination={has_elim}")
             
-            logger.info(f"Класс {tournament_class_id}: {round_robin_count} с RoundRobin, {elimination_count} с Elimination")
+            logger.debug(f"Класс {tournament_class_id}: {round_robin_count} с RoundRobin, {elimination_count} с Elimination")
             
             # Умная фильтрация для stage=0 (ожидаем групповые данные)
             if draw_stage == 0:
@@ -439,14 +396,14 @@ class RankedinAPI:
                 filtered_by_basetype = [item for item in result if isinstance(item, dict) and item.get("BaseType") == "RoundRobin"]
                 
                 if filtered_by_basetype:
-                    logger.info(f"Найдено {len(filtered_by_basetype)} элементов с BaseType=RoundRobin")
+                    logger.debug(f"Найдено {len(filtered_by_basetype)} элементов с BaseType=RoundRobin")
                     return filtered_by_basetype
                 
                 # Если нет элементов с BaseType=RoundRobin, фильтруем по содержимому
                 filtered_by_content = [item for item in result if isinstance(item, dict) and item.get("RoundRobin") is not None]
                 
                 if filtered_by_content:
-                    logger.info(f"Найдено {len(filtered_by_content)} элементов с полем RoundRobin")
+                    logger.debug(f"Найдено {len(filtered_by_content)} элементов с полем RoundRobin")
                     return filtered_by_content
                 
                 # Если нет ни того, ни другого, возвращаем все
@@ -455,7 +412,7 @@ class RankedinAPI:
         
         return result
 
-    # ЗАПРОС №10: Игры на выбывание (Elimination) - УМНАЯ ВЕРСИЯ
+    # ЗАПРОС №10: Игры на выбывание (Elimination)
     def get_elimination_draws(self, tournament_class_id: str, draw_strength: int = 0, draw_stage: int = 1) -> Optional[List[Dict]]:
         """
         Получение данных игр на выбывание
@@ -464,26 +421,26 @@ class RankedinAPI:
         url = f"{self.api_base}/tournament/GetDrawsForStageAndStrengthAsync"
         params = f"?tournamentClassId={tournament_class_id}&drawStrength={draw_strength}&drawStage={draw_stage}&isReadonly=true&language=ru"
         
-        logger.info(f"Получение данных на выбывание для класса {tournament_class_id}, stage={draw_stage}, strength={draw_strength}")
+        logger.debug(f"Получение данных на выбывание для класса {tournament_class_id}, stage={draw_stage}, strength={draw_strength}")
         result = self._make_request(url + params)
         
         if result:
-            logger.info(f"Получено {len(result)} элементов данных на выбывание для класса {tournament_class_id}")
+            logger.debug(f"Получено {len(result)} элементов данных на выбывание для класса {tournament_class_id}")
             
-            # Умная фильтрация для stage=1 (ожидаем данные на выбывание)
+            # ожидаем данные на выбывание
             if draw_stage == 1:
                 # Сначала пробуем фильтровать по BaseType = "Elimination"
                 filtered_by_basetype = [item for item in result if isinstance(item, dict) and item.get("BaseType") == "Elimination"]
                 
                 if filtered_by_basetype:
-                    logger.info(f"Найдено {len(filtered_by_basetype)} элементов с BaseType=Elimination")
+                    logger.debug(f"Найдено {len(filtered_by_basetype)} элементов с BaseType=Elimination")
                     return filtered_by_basetype
                 
                 # Если нет элементов с BaseType=Elimination, фильтруем по содержимому
                 filtered_by_content = [item for item in result if isinstance(item, dict) and item.get("Elimination") is not None]
                 
                 if filtered_by_content:
-                    logger.info(f"Найдено {len(filtered_by_content)} элементов с полем Elimination")
+                    logger.debug(f"Найдено {len(filtered_by_content)} элементов с полем Elimination")
                     return filtered_by_content
                 
                 # Если нет ни того, ни другого, возвращаем все
@@ -499,11 +456,7 @@ class RankedinAPI:
             "round_robin": [],
             "elimination": []
         }
-        
-        # Список проверенных комбинаций для избежания дублирования
         processed_items = set()
-        
-        # Пробуем разные комбинации stage и strength
         for stage in [0, 1, 2]:
             for strength in [0, 1, 2, 3]:
                 try:
@@ -531,30 +484,24 @@ class RankedinAPI:
                             if item_key in processed_items:
                                 continue
                             
-                            # УМНАЯ КЛАССИФИКАЦИЯ:
-                            # 1. Если BaseType соответствует содержимому - используем это
-                            # 2. Если BaseType не соответствует - классифицируем по содержимому
-                            
                             if base_type == "RoundRobin" and has_rr:
-                                # Идеальный случай: BaseType и содержимое совпадают
                                 all_draws["round_robin"].append(item)
                                 processed_items.add(item_key)
                                 logger.debug(f"Добавлен RoundRobin (идеальный): stage={stage}, strength={strength}")
                                 
                             elif base_type == "Elimination" and has_elim:
-                                # Идеальный случай: BaseType и содержимое совпадают
                                 all_draws["elimination"].append(item)
                                 processed_items.add(item_key)
                                 logger.debug(f"Добавлен Elimination (идеальный): consolation={consolation}")
                                 
                             elif has_rr and not has_elim:
-                                # Содержимое указывает на RoundRobin, независимо от BaseType
+                                # Содержимое указывает на RoundRobin
                                 all_draws["round_robin"].append(item)
                                 processed_items.add(item_key)
                                 logger.debug(f"Добавлен RoundRobin (по содержимому, BaseType={base_type})")
                                 
                             elif has_elim and not has_rr:
-                                # Содержимое указывает на Elimination, независимо от BaseType
+                                # Содержимое указывает на Elimination
                                 all_draws["elimination"].append(item)
                                 processed_items.add(item_key)
                                 logger.debug(f"Добавлен Elimination (по содержимому, BaseType={base_type})")
@@ -570,7 +517,7 @@ class RankedinAPI:
         if all_draws["elimination"]:
             all_draws["elimination"].sort(key=lambda x: x.get('Elimination', {}).get('Consolation', 0))
         
-        logger.info(f"Для класса {tournament_class_id}: {len(all_draws['round_robin'])} групповых, {len(all_draws['elimination'])} на выбывание")
+        logger.debug(f"Для класса {tournament_class_id}: {len(all_draws['round_robin'])} групповых, {len(all_draws['elimination'])} на выбывание")
         return all_draws
 
     def debug_tournament_structure(self, tournament_id: str, class_id: str = None) -> Dict:
@@ -641,12 +588,11 @@ class RankedinAPI:
         
         return debug_info
 
-
-
     # Комплексные методы для получения всех данных турнира
+
     def get_full_tournament_data(self, tournament_id: str) -> Dict[str, Any]:
-        """Получение всех данных турнира одним вызовом - исправленная версия"""
-        logger.info(f"Начало полной загрузки данных турнира {tournament_id}")
+        """Получение полных данных турнира включая расписание"""
+        logger.debug(f"Загрузка данных турнира {tournament_id}")
         
         tournament_data = {
             "tournament_id": tournament_id,
@@ -654,47 +600,41 @@ class RankedinAPI:
             "classes": [],
             "courts": [],
             "dates": [],
-            "court_usage": None,
             "draw_data": {},
+            "court_planner": {},
+            "court_usage": {},
             "loaded_at": datetime.now().isoformat()
         }
         
-        # 1. Метаданные турнира
-        metadata = self.get_tournament_metadata(tournament_id)
-        if metadata:
-            tournament_data["metadata"] = metadata
+        # 1. Базовые данные
+        tournament_data["metadata"] = self.get_tournament_metadata(tournament_id)
+        tournament_data["classes"] = self.get_tournament_classes(tournament_id) or []
         
-        # 2. Категории турнира
-        classes = self.get_tournament_classes(tournament_id)
-        if classes:
-            tournament_data["classes"] = classes
-        
-        # 3. Корты турнира
         courts_info = self.get_tournament_courts(tournament_id)
         if courts_info and "Courts" in courts_info:
             tournament_data["courts"] = courts_info["Courts"]
         
-        # 4. Даты турнира
-        dates = self.get_tournament_dates(tournament_id)
-        if dates:
-            tournament_data["dates"] = dates
-            
-            # 5. Планировщик кортов (запрос №5)
-            court_planner = self.get_court_planner(tournament_id, dates)
-            if court_planner:
-                tournament_data["court_planner"] = court_planner
-            
-            # 6. Использование кортов с расписанием матчей (запрос №6)
-            court_usage = self.get_court_usage(tournament_id, dates)
-            if court_usage:
-                tournament_data["court_usage"] = court_usage
+        tournament_data["dates"] = self.get_tournament_dates(tournament_id) or []
         
-        # 8. Классы и сетки - с fallback логикой
+        # 2. загрузка расписания
+        if tournament_data.get("dates"):
+            try:
+                logger.info(f"Загружаем расписание для турнира {tournament_id}")
+                tournament_data["court_planner"] = self.get_court_planner(tournament_id, tournament_data["dates"])
+                tournament_data["court_usage"] = self.get_court_usage(tournament_id, tournament_data["dates"])
+                
+                logger.info(f"Расписание загружено: court_planner={bool(tournament_data['court_planner'])}, court_usage={len(tournament_data['court_usage']) if isinstance(tournament_data['court_usage'], list) else 'not list'}")
+                
+            except Exception as e:
+                logger.error(f"Ошибка загрузки расписания: {e}")
+                tournament_data["court_planner"] = {}
+                tournament_data["court_usage"] = {}
+        
+        # 3. Классы и сетки
         classes_and_draws = self.get_classes_and_draws(tournament_id)
         
         if classes_and_draws and len(classes_and_draws) > 0:
-            # Используем данные от GetClassesAndDrawNamesAsync
-            logger.info("Используем данные от GetClassesAndDrawNamesAsync")
+            logger.debug("Используем данные от GetClassesAndDrawNamesAsync")
             for class_info in classes_and_draws:
                 class_id = class_info.get("Id")
                 if not class_id:
@@ -706,14 +646,13 @@ class RankedinAPI:
                     "elimination": []
                 }
                 
-                # Используем универсальную функцию для получения всех данных
+                # Получаем draw_data
                 all_draws = self.get_all_draws_for_class(str(class_id))
                 tournament_data["draw_data"][str(class_id)]["round_robin"] = all_draws["round_robin"]
                 tournament_data["draw_data"][str(class_id)]["elimination"] = all_draws["elimination"]
                 
         elif tournament_data.get("classes"):
-            # Fallback: используем данные от GetTournamentClassesAsync
-            logger.info("GetClassesAndDrawNamesAsync пуст, используем fallback через GetTournamentClassesAsync")
+            logger.debug("Используем fallback через GetTournamentClassesAsync")
             classes_with_draws = self.get_classes_and_draws_fallback(tournament_id, tournament_data["classes"])
             
             for class_info in classes_with_draws:
@@ -727,15 +666,14 @@ class RankedinAPI:
                     "elimination": []
                 }
                 
-                # Используем универсальную функцию
+                # Получаем draw_data
                 all_draws = self.get_all_draws_for_class(str(class_id))
                 tournament_data["draw_data"][str(class_id)]["round_robin"] = all_draws["round_robin"]
                 tournament_data["draw_data"][str(class_id)]["elimination"] = all_draws["elimination"]
         
         else:
             logger.error(f"Не удалось получить данные классов для турнира {tournament_id}")
-        
-        # Логируем результаты
+
         total_rr = 0
         total_elim = 0
         for class_id, class_data in tournament_data["draw_data"].items():
@@ -743,13 +681,26 @@ class RankedinAPI:
             elim_count = len(class_data.get("elimination", []))
             total_rr += rr_count
             total_elim += elim_count
-            logger.info(f"Класс {class_id}: {rr_count} групповых этапов, {elim_count} этапов на выбывание")
+            logger.debug(f"Класс {class_id}: {rr_count} групповых этапов, {elim_count} этапов на выбывание")
         
-        logger.info(f"Завершена полная загрузка турнира {tournament_id}: {total_rr} групповых, {total_elim} на выбывание")
-        return tournament_data
+        logger.info(f"Загрузка турнира {tournament_id} завершена: {total_rr} групповых, {total_elim} на выбывание, расписание={'загружено' if tournament_data.get('court_usage') else 'не загружено'}")
+        return tournament_data    
+    
    
-   
-   
+    def _make_get_request(self, endpoint: str, params: Dict[str, Any]) -> Optional[Dict]:
+        """Упрощает выполнение GET-запросов с параметрами"""
+        url = f"{self.api_base}{endpoint}"
+        try:
+            response = self.session.get(url, params=params, timeout=self.timeout)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.Timeout:
+            logger.error(f"Timeout при запросе к {url}")
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Ошибка запроса к {url}: {e}")
+        except json.JSONDecodeError as e:
+            logger.error(f"Ошибка декодирования JSON от {url}: {e}")
+        return None   
    
     
     def get_all_courts_data(self, court_ids: List[str]) -> List[Dict]:
@@ -762,16 +713,23 @@ class RankedinAPI:
                 courts_data.append(court_data)
         
         return courts_data
+        
+    def _parse_detailed_result(self, detailed: List[Dict]) -> List[Dict]:
+        """Парсит подробный счет по сетам"""
+        return [
+            {
+                "firstParticipantScore": s.get("firstParticipantScore", 0),
+                "secondParticipantScore": s.get("secondParticipantScore", 0),
+                "loserTiebreak": s.get("loserTiebreak")
+            }
+            for s in detailed if isinstance(s, dict)
+        ]
+        
 
     def get_xml_data_types(self, tournament_data: Dict) -> List[Dict]:
         """Генерирует список доступных типов XML на основе данных турнира"""
         xml_types = []
-        
-        # Проверяем входные данные
-        if not tournament_data or not isinstance(tournament_data, dict):
-            logger.error(f"get_xml_data_types: Неверные входные данные: {type(tournament_data)}")
-            return xml_types
-        
+
         try:
             # 1. Турнирные таблицы (из классов и сеток)
             draw_data = tournament_data.get("draw_data")
@@ -893,38 +851,11 @@ class RankedinAPI:
                                 "court_id": court_id,
                                 "court_name": court_name
                             })
-            
-            logger.info(f"Сгенерировано {len(xml_types)} типов XML")
+
             return xml_types
             
         except Exception as e:
-            logger.error(f"Ошибка в get_xml_data_types: {e}")
             import traceback
-            logger.error(f"Traceback: {traceback.format_exc()}")
+            logger.error(f"Ошибка в get_xml_data_types: {e}. Traceback: {traceback.format_exc()}")
             return xml_types  # Возвращаем пустой список вместо None
-    
-    
-    
-    
-    
-
-# Функции-обертки для обратной совместимости
-def fetch_tournament_data(tournament_class_id: str) -> Optional[Dict]:
-    """Обертка для старого кода - получение данных турнира"""
-    api = RankedinAPI()
-    return api.get_round_robin_draws(tournament_class_id)
-
-def get_court_ids(tournament_id: str) -> List[str]:
-    """Обертка для старого кода - получение ID кортов"""
-    api = RankedinAPI()
-    courts_info = api.get_tournament_courts(tournament_id)
-    
-    if courts_info and "Courts" in courts_info:
-        return [str(court.get("Item1")) for court in courts_info["Courts"] if court.get("Item1")]
-    
-    return []
-
-def get_court_scores(court_id: str) -> Dict:
-    """Обертка для старого кода - получение данных корта"""
-    api = RankedinAPI()
-    return api.get_court_scoreboard(court_id) or {"court_id": court_id, "error": "Ошибка получения данных"}
+            
