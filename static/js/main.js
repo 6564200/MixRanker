@@ -2,15 +2,14 @@
 // Глобальные переменные
 let tournaments = [];
 let courts = [];
-let xmlFiles = [];
 let currentTournamentId = null;
 let autoRefreshTimer = null;
 let refreshInterval = 30000; // 30 секунд
 let isAuthenticated = false;
 let currentUsername = '';
 let pendingAuthAction = null;
+let xmlFiles = [];
 
-// Инициализация приложения
 document.addEventListener('DOMContentLoaded', function() {
     loadSettings();
     initializeTheme();
@@ -46,7 +45,6 @@ function setupEventListeners() {
 }
 
 // ФУНКЦИИ для аутентификации
-
 async function checkAuthStatus() {
     // Проверяет статус аутентификации при загрузке страницы
     try {
@@ -82,20 +80,17 @@ function updateAuthUI(authenticated) {
 }
 
 function showAuthModal(callback) {
-    // Показывает модальное окно авторизации
     pendingAuthAction = callback;
     document.getElementById('authOverlay').style.display = 'flex';
 }
 
 function closeAuthModal() {
-    // Закрывает модальное окно авторизации
     document.getElementById('authOverlay').style.display = 'none';
     document.getElementById('authForm').reset();
     pendingAuthAction = null;
 }
 
 async function performLogin(username, password) {
-    // Выполняет авторизацию
     try {
         const response = await fetch('/api/auth/login', {
             method: 'POST',
@@ -134,7 +129,6 @@ async function performLogin(username, password) {
 }
 
 async function logout() {
-    // Выход из системы
     try {
         const response = await fetch('/api/auth/logout', {
             method: 'POST',
@@ -156,7 +150,6 @@ async function logout() {
 }
 
 function requireAuth(action) {
-    // Проверяет аутентификацию перед выполнением действия
     if (isAuthenticated) {
         action();
     } else {
@@ -211,8 +204,6 @@ async function handleTournamentSubmit(e) {
         showAlert('Введите ID турнира', 'warning');
         return;
     }
-
-    // Проверяем аутентификацию
     if (!isAuthenticated) {
         showAuthModal(() => loadTournamentWithAuth(tournamentId));
         return;
@@ -222,7 +213,6 @@ async function handleTournamentSubmit(e) {
 }
 
 async function loadTournamentWithAuth(tournamentId) {
-    // Загружает турнир с аутентификацией
     showLoading(true);
     
     try {
@@ -376,11 +366,9 @@ function renderCourts() {
     const container = document.getElementById('courtGrid');
     const countBadge = document.getElementById('courtCount');
     
-    // Проверяем, что courts является массивом
     if (!Array.isArray(courts)) {
         console.error('Courts data is not an array:', courts);
-        
-        // Если courts содержит ошибку
+
         if (courts && courts.error) {
             container.innerHTML = `
                 <div class="text-center text-muted py-5 w-100">
@@ -607,9 +595,10 @@ async function loadLiveXMLList(tournamentId) {
     }
 }
 
+
 function renderLiveXMLList(liveXMLInfo) {
     const container = document.getElementById('liveXMLList');
-	const tournament_id = liveXMLInfo.tournament_id || document.getElementById('xmlTournamentSelect').value;
+    const tournament_id = liveXMLInfo.tournament_id || document.getElementById('xmlTournamentSelect').value;
     
     if (!liveXMLInfo.live_xml_types || liveXMLInfo.live_xml_types.length === 0) {
         container.innerHTML = `
@@ -636,47 +625,49 @@ function renderLiveXMLList(liveXMLInfo) {
         </div>
         
         ${liveXMLInfo.live_xml_types.map(xmlType => `
-			<div class="live-xml-card mb-3 p-3 border rounded">
-				<div class="d-flex justify-content-between align-items-start mb-2">
-					<div class="flex-grow-1">
-						<h6 class="mb-1">
-							<i class="fas fa-${getXMLTypeIcon(xmlType.type)} me-2"></i>
-							${xmlType.name}
-						</h6>
-						<small class="text-muted">${xmlType.description}</small>
-						<div class="mt-1">
-							<span class="badge bg-info">${xmlType.update_frequency}</span>
-						</div>
-					</div>
-					<div class="d-flex flex-column gap-1">
-						<button class="btn btn-sm btn-success" onclick="testLiveXML('${xmlType.live_url}')" title="Тест">
-							<i class="fas fa-play"></i>
-						</button>
+            <div class="live-xml-card mb-3 p-3 border rounded">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">
+                            <i class="fas fa-${getXMLTypeIcon(xmlType.type)} me-2"></i>
+                            ${xmlType.name}
+                        </h6>
+                        <small class="text-muted">${xmlType.description}</small>
+                        <div class="mt-1">
+                            <span class="badge bg-info">${xmlType.update_frequency}</span>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-column gap-1">
+                        <button class="btn btn-sm btn-success" onclick="testLiveXML('${xmlType.live_url}')" title="Тест">
+                            <i class="fas fa-play"></i>
+                        </button>
 
-						<button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('${baseUrl}${xmlType.live_url}')" title="Копировать">
-							<i class="fas fa-copy"></i>
-						</button>
-						<button class="btn btn-sm btn-outline-info" onclick="openInNewTab('${xmlType.live_url}')" title="Открыть">
-							<i class="fas fa-external-link-alt"></i>
-						</button>
-					</div>
-				</div>
-				
-				<div class="mt-2">
-					<div class="input-group input-group-sm">
-						<span class="input-group-text bg-success text-white">
-							<i class="fas fa-broadcast-tower"></i>
-						</span>
-						<input type="text" class="form-control font-monospace" 
-							   value="${baseUrl}${xmlType.live_url}" 
-							   readonly onclick="this.select()">
-					</div>
-					<small class="text-muted">
-						<i class="fas fa-info-circle me-1"></i>
-						Используйте эту ссылку в vMix для получения актуальных данных
-					</small>
-				</div>
-			</div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('${baseUrl}${xmlType.live_url}')" title="Копировать">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="openInNewTab('${xmlType.live_url}')" title="Открыть">
+                            <i class="fas fa-external-link-alt"></i>
+                        </button>
+
+                        ${xmlType.type === 'tournament_table' && xmlType.draw_type === 'elimination' ? `
+                            <button class="btn btn-sm btn-warning" onclick="openEliminationHTML('${tournament_id}', '${xmlType.class_id}', ${xmlType.draw_index}, '${xmlType.stage_name}')" title="HTML Турнирная сетка">
+                                <i class="fas fa-tv"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <div class="mt-2">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-success text-white">
+                            <i class="fas fa-broadcast-tower"></i>
+                        </span>
+                        <input type="text" class="form-control font-monospace" 
+                               value="${baseUrl}${xmlType.live_url}" 
+                               readonly onclick="this.select()">
+                    </div>
+                </div>
+            </div>
         `).join('')}
         
         <div class="alert alert-info mt-3">
@@ -686,25 +677,58 @@ function renderLiveXMLList(liveXMLInfo) {
                 <li>В vMix добавьте Data Source → Web</li>
                 <li>Вставьте ссылку в поле URL</li>
                 <li>Настройте интервал обновления (рекомендуется 5-30 секунд)</li>
+                <li>Для HTML турнирных сеток используйте кнопку <i class="fas fa-tv"></i> - откроется Live версия в формате UHD 3840x2160</li>
             </ol>
         </div>
     `;
 }
 
+
+
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
-function openCourtHTML(tournamentId, courtId) {
-    // Открываем Live HTML scoreboard в новом окне
-    const liveUrl = `/api/html-live/${tournamentId}/${courtId}`;
-    window.open(liveUrl, '_blank', 'width=390,height=90,resizable=no,scrollbars=no,menubar=no,toolbar=no');
+// generateScheduleHTML с календариком
+function generateScheduleHTML() {
+    const tournamentId = document.getElementById('xmlTournamentSelect').value;
+    if (!tournamentId) {
+        showAlert('Выберите турнир', 'warning');
+        return;
+    }
+    
+    console.log('generateScheduleHTML вызвана для турнира:', tournamentId);
+    
+    // Показываем календарик для выбора даты
+    showDatePickerModal('Выберите дату для статического расписания', function(selectedDate) {
+        console.log('Выбрана дата:', selectedDate);
+        generateScheduleHTMLFile(tournamentId, selectedDate);
+    });
 }
 
-function generateCourtHTML(tournamentId, courtId) {
-    // Генерируем статический HTML файл
+function openScheduleHTML() {
+    const tournamentId = document.getElementById('xmlTournamentSelect').value;
+    if (!tournamentId) {
+        showAlert('Выберите турнир', 'warning');
+        return;
+    }
+
+    const liveUrl = `/api/html-live/schedule/${tournamentId}`;
+    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+}
+
+function generateScheduleHTMLFile(tournamentId, date = null) {
+    console.log('generateScheduleHTMLFile вызвана:', tournamentId, date);
     showLoading(true);
     
-    fetch(`/api/html/${tournamentId}/${courtId}`)
+    let url = `/api/html/schedule/${tournamentId}`;
+    if (date) {
+        url += `?date=${encodeURIComponent(date)}`;
+    }
+    
+    console.log('Отправляем запрос на:', url);
+    
+    fetch(url)
         .then(response => {
+            console.log('Получен ответ:', response.status, response.ok);
             if (response.ok) {
                 return response.json();
             } else {
@@ -712,20 +736,135 @@ function generateCourtHTML(tournamentId, courtId) {
             }
         })
         .then(fileInfo => {
-            showAlert(`HTML Scoreboard создан: ${fileInfo.filename}`, 'success');
+            console.log('Файл создан:', fileInfo);
+            showAlert(`HTML расписание создано: ${fileInfo.filename}`, 'success');
             
-            // Предлагаем открыть файл
-            const openFile = confirm('Открыть созданный HTML файл?');
-            if (openFile) {
-                window.open(fileInfo.url, '_blank', 'width=390,height=90,resizable=no,scrollbars=no,menubar=no,toolbar=no');
-            }
+            // Автоматически открываем файл
+            console.log('Открываем файл по URL:', fileInfo.url);
+            window.open(fileInfo.url, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
         })
         .catch(error => {
-            showAlert(`Ошибка создания HTML: ${error.message}`, 'danger');
+            console.error('Ошибка создания расписания:', error);
+            showAlert(`Ошибка создания HTML расписания: ${error.message}`, 'danger');
         })
         .finally(() => {
             showLoading(false);
         });
+}
+
+function showScheduleHTMLDialog(tournamentId) {
+    // Показываем диалог с опциями для HTML расписания
+    const today = new Date().toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit', 
+        year: 'numeric'
+    });
+    
+    const userDate = prompt(
+        `Введите дату для расписания (DD.MM.YYYY) или оставьте пустым для сегодняшней даты (${today}):`,
+        ''
+    );
+    
+    if (userDate === null) return; // Пользователь отменил
+    
+    const targetDate = userDate.trim() || today;
+    
+    // Проверяем формат даты
+    const dateRegex = /^\d{2}\.\d{2}\.\d{4}$/;
+    if (!dateRegex.test(targetDate)) {
+        showAlert('Неверный формат даты. Используйте DD.MM.YYYY', 'warning');
+        return;
+    }
+    
+    // Показываем опции
+    const action = confirm('Нажмите OK для создания статического файла или Отмена для открытия Live версии');
+    
+    if (action) {
+        generateScheduleHTML(tournamentId, targetDate);
+    } else {
+        openScheduleHTML(tournamentId, targetDate);
+    }
+}
+
+// Показывает модальное окно с календариком
+function showDatePickerModal(title, callback) {
+    // Создаем модальное окно с календариком
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD формат для input[type="date"]
+    
+    const modalHtml = `
+        <div id="datePickerModal" class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${title}</h5>
+                        <button type="button" class="btn-close" onclick="closeDatePickerModal()"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="datePicker" class="form-label">Выберите дату:</label>
+                            <input type="date" id="datePicker" class="form-control" value="${todayStr}">
+                        </div>
+                        <div class="text-muted small">
+                            <i class="fas fa-info-circle me-1"></i>
+                            По умолчанию выбрана сегодняшняя дата: ${today.toLocaleDateString('ru-RU')}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeDatePickerModal()">
+                            <i class="fas fa-times me-1"></i>Отмена
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="confirmDatePicker()">
+                            <i class="fas fa-check me-1"></i>Подтвердить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    window.currentDatePickerCallback = callback;
+    setTimeout(() => {
+        document.getElementById('datePicker').focus();
+    }, 100);
+
+    document.getElementById('datePicker').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            confirmDatePicker();
+        }
+    });
+}
+
+function closeDatePickerModal() {
+    const modal = document.getElementById('datePickerModal');
+    if (modal) {
+        modal.remove();
+    }
+    window.currentDatePickerCallback = null;
+}
+
+function confirmDatePicker() {
+    const datePicker = document.getElementById('datePicker');
+    if (!datePicker) return;
+    
+    const selectedDate = datePicker.value; // YYYY-MM-DD
+    if (!selectedDate) {
+        showAlert('Выберите дату', 'warning');
+        return;
+    }
+
+    const [year, month, day] = selectedDate.split('-');
+    const formattedDate = `${day}.${month}.${year}`;
+    closeDatePickerModal();
+    if (window.currentDatePickerCallback) {
+        window.currentDatePickerCallback(formattedDate);
+    }
+}
+
+
+function openCourtHTML(tournamentId, courtId) {
+    const liveUrl = `/api/html-live/${tournamentId}/${courtId}`;
+    window.open(liveUrl, '_blank', 'width=390,height=90,resizable=no,scrollbars=no,menubar=no,toolbar=no');
 }
 
 function getXMLTypeIcon(type) {
@@ -787,10 +926,16 @@ function updateXMLTypes() {
     const generateAllBtn = document.getElementById('generateAllBtn');
     const testAllBtn = document.getElementById('testAllBtn');
     
+    // Получаем кнопки HTML расписания
+    const generateScheduleBtn = document.getElementById('generateScheduleBtn');
+    const openLiveScheduleBtn = document.getElementById('openLiveScheduleBtn');
+    
     if (!tournamentId) {
         if (showLiveXMLBtn) showLiveXMLBtn.disabled = true;
         if (generateAllBtn) generateAllBtn.disabled = true;
         if (testAllBtn) testAllBtn.disabled = true;
+        if (generateScheduleBtn) generateScheduleBtn.disabled = true;
+        if (openLiveScheduleBtn) openLiveScheduleBtn.disabled = true;
         
         document.getElementById('liveXMLList').innerHTML = `
             <div class="text-center text-muted py-5">
@@ -805,6 +950,8 @@ function updateXMLTypes() {
     if (showLiveXMLBtn) showLiveXMLBtn.disabled = false;
     if (generateAllBtn) generateAllBtn.disabled = false;
     if (testAllBtn) testAllBtn.disabled = false;
+    if (generateScheduleBtn) generateScheduleBtn.disabled = false;
+    if (openLiveScheduleBtn) openLiveScheduleBtn.disabled = false;
     
     loadLiveXMLList(tournamentId);
 }
@@ -859,7 +1006,6 @@ function formatPlayerNames(players) {
 
 
 function getCourtStatus(court) {
-    // Проверяем статус корта из API
     const eventState = court.event_state?.toLowerCase();
     
     if (eventState === 'finished') {
@@ -884,8 +1030,6 @@ async function refreshSingleCourt(courtId) {
     try {
         const response = await fetch(`/api/tournament/${currentTournamentId}/courts`);
         const allCourts = await response.json();
-        
-        // Обновляем только данные конкретного корта
         const courtIndex = courts.findIndex(c => c.court_id == courtId);
         const updatedCourt = allCourts.find(c => c.court_id == courtId);
         
@@ -946,7 +1090,6 @@ function formatDateTime(dateTimeString) {
     }
 }
 
-// Остальные функции для совместимости (заглушки)
 function loadSettings() {
     const saved = localStorage.getItem('vmixSettings');
     if (saved) {
@@ -972,8 +1115,6 @@ function loadSettings() {
     }
 }
 
-
-    // Реализация автообновления
 function startAutoRefresh() {
     if (autoRefreshTimer) {
         clearInterval(autoRefreshTimer);
@@ -999,7 +1140,6 @@ async function saveSettings() {
 }
 
 async function saveSettingsWithAuth() {
-    // Сохраняет настройки с аутентификацией
     const settings = {
         refreshInterval: parseInt(document.getElementById('refreshIntervalInput').value),
         autoRefresh: document.getElementById('autoRefreshEnabled').checked,
@@ -1050,16 +1190,15 @@ async function saveSettingsWithAuth() {
     }
 }
 
-    // Реализация обновления системной информации
 function updateSystemInfo() {
     if (document.getElementById('totalTournaments')) {
         document.getElementById('totalTournaments').textContent = tournaments.length;
     }
     if (document.getElementById('totalCourts')) {
-        document.getElementById('totalCourts').textContent = courts.length;
+        document.getElementById('totalCourts').textContent = Array.isArray(courts) ? courts.length : 0;
     }
     if (document.getElementById('totalXMLFiles')) {
-        document.getElementById('totalXMLFiles').textContent = xmlFiles.length;
+        document.getElementById('totalXMLFiles').textContent = Array.isArray(xmlFiles) ? xmlFiles.length : 0;
     }
     if (document.getElementById('lastUpdate')) {
         document.getElementById('lastUpdate').textContent = formatTime(new Date());
@@ -1084,7 +1223,6 @@ async function deleteTournament(id) {
 }
 
 async function deleteTournamentWithAuth(id) {
-    // Удаляет турнир с аутентификацией
     showLoading(true);
     
     try {
@@ -1157,7 +1295,6 @@ async function generateCourtXML(courtId) {
     showLoading(true);
     
     try {
-        // Используем правильный endpoint для генерации XML корта
         const response = await fetch(`/api/xml/${currentTournamentId}/court_${courtId}`, {
             method: 'GET',
             headers: {
@@ -1299,8 +1436,6 @@ function updateRefreshInterval() {
         if (document.getElementById('refreshInterval')) {
             document.getElementById('refreshInterval').textContent = newInterval;
         }
-        
-        // Перезапуск автообновления с новым интервалом
         if (document.getElementById('autoRefreshEnabled') && document.getElementById('autoRefreshEnabled').checked) {
             if (autoRefreshTimer) {
                 clearInterval(autoRefreshTimer);
@@ -1309,3 +1444,11 @@ function updateRefreshInterval() {
         }
     }
 }
+
+function openEliminationHTML(tournamentId, classId, drawIndex, stageName) {
+    const liveUrl = `/api/html-live/elimination/${tournamentId}/${classId}/${drawIndex}`;
+    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+}
+
+
+

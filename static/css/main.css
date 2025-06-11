@@ -8,6 +8,8 @@
   --info-color: #59C4D8;
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
+  --bs-secondary-color: #515556;
+  --bs-success-text-emphasis: #515556;
   --bg-tertiary: #e2e8f0;
   --text-primary: #03414C;
   --text-secondary: #27565F;
@@ -23,6 +25,10 @@
 [data-theme="dark"] {
   --bg-primary: #1f2937;
   --bg-secondary: #111827;
+  --bs-secondary-color: #58c2d7;
+  --bs-success-bg-subtle: #656d65;
+  --bs-success-border-subtle: #6a8565;
+  --bs-alert-border-color: #1b664a;
   --bg-tertiary: #374151;
   --text-primary: #f9fafb;
   --text-secondary: #d1d5db;
@@ -318,6 +324,18 @@ body {
   color: #d1d5db;
 }
 
+[data-theme="dark"] .form-text {
+  color: #7c949d;
+} 
+
+[data-theme="dark"] .card-body {
+  color: #7c949d;
+}
+
+[data-theme="dark"] .text-center {
+  color: #7c949d;
+}
+
 .theme-toggle {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
@@ -395,6 +413,137 @@ body {
 .live-xml-card .input-group-text {
   animation: pulse 2s infinite;
 }
+
+/* Модальное окно календарика */
+#datePickerModal {
+    z-index: 10000;
+}
+
+#datePickerModal .modal-content {
+    border-radius: 12px;
+    box-shadow: var(--shadow-xl);
+    border: none;
+}
+
+#datePickerModal .modal-header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 12px 12px 0 0;
+}
+
+#datePickerModal .modal-title {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+#datePickerModal .modal-body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+#datePickerModal .modal-footer {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    border-radius: 0 0 12px 12px;
+}
+
+/* Стили для input[type="date"] */
+#datePicker {
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    padding: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+#datePicker:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(17, 122, 141, 0.25);
+    outline: none;
+}
+
+/* Стили для кнопок быстрого выбора */
+.btn-outline-primary.btn-sm {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transition: all 0.2s ease;
+}
+
+.btn-outline-primary.btn-sm:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(17, 122, 141, 0.3);
+}
+
+/* Тёмная тема для календарика */
+[data-theme="dark"] #datePickerModal .modal-content {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] #datePicker {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] #datePicker::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
+/* Анимация появления модального окна */
+#datePickerModal.show {
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+#datePickerModal .modal-dialog {
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Стили для разделителя */
+#datePickerModal hr {
+    border-color: var(--border-color);
+    opacity: 0.5;
+}
+
+/* Hover эффекты для модального окна */
+#datePickerModal .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Фокус на календарике */
+#datePicker:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
 
 @keyframes pulse {
   0% { opacity: 1; }
