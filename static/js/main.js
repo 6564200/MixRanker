@@ -649,11 +649,17 @@ function renderLiveXMLList(liveXMLInfo) {
                             <i class="fas fa-external-link-alt"></i>
                         </button>
 
-                        ${xmlType.type === 'tournament_table' && xmlType.draw_type === 'elimination' ? `
-                            <button class="btn btn-sm btn-warning" onclick="openEliminationHTML('${tournament_id}', '${xmlType.class_id}', ${xmlType.draw_index}, '${xmlType.stage_name}')" title="HTML Турнирная сетка">
-                                <i class="fas fa-tv"></i>
-                            </button>
-                        ` : ''}
+						${xmlType.type === 'tournament_table' && xmlType.draw_type === 'elimination' ? `
+							<button class="btn btn-sm btn-warning" onclick="openEliminationHTML('${tournament_id}', '${xmlType.class_id}', ${xmlType.draw_index}, '${xmlType.stage_name}')" title="HTML Турнирная сетка">
+								<i class="fas fa-tv"></i>
+							</button>
+						` : ''}
+						${xmlType.type === 'tournament_table' && xmlType.draw_type === 'round_robin' ? `
+							<button class="btn btn-sm btn-warning" onclick="openRoundRobinHTML('${tournament_id}', '${xmlType.class_id}', ${xmlType.draw_index}, '${xmlType.group_name}')" title="HTML Групповая таблица">
+								<i class="fas fa-tv"></i>
+							</button>
+						` : ''}
+						
                     </div>
                 </div>
                 
@@ -703,6 +709,13 @@ function generateScheduleHTML() {
         generateScheduleHTMLFile(tournamentId, selectedDate);
     });
 }
+
+
+function openRoundRobinHTML(tournamentId, classId, drawIndex, groupName) {
+    const liveUrl = `/api/html-live/round-robin/${tournamentId}/${classId}/${drawIndex}`;
+    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+}
+
 
 function openScheduleHTML() {
     const tournamentId = document.getElementById('xmlTournamentSelect').value;
