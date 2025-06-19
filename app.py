@@ -1361,6 +1361,81 @@ def get_live_court_html(tournament_id, court_id):
 
 
 
+@app.route('/api/html-live/round-robin/<tournament_id>/<class_id>/<int:draw_index>')
+def get_live_round_robin_html(tournament_id, class_id, draw_index):
+    """Получение актуального HTML групповой таблицы с обновлением данных из rankedin"""
+    try:
+        # Получение данных турнира
+        tournament_data = get_tournament_data_from_db(tournament_id)
+        if not tournament_data:
+            return "<html><body><h1>Турнир не найден</h1></body></html>", 404
+
+        logger.info(f"Обновление round robin данных для класса {class_id} из rankedin.com")
+
+        # Получаем полный свежий набор всех данных класса
+        try:
+            fresh_all_draws = api.get_all_draws_for_class(str(class_id))
+            fresh_round_robin_data = fresh_all_draws.get("round_robin", [])
+            fresh_elimination_data = fresh_all_draws.get("elimination", [])
+            
+            if tournament_data.get("draw_data", {}).get(str(class_id)):
+                # Обновляем ВСЕ данные класса, не только round_robin
+                tournament_data["draw_data"][str(class_id)]["round_robin"] = fresh_round_robin_data
+                tournament_data["draw_data"][str(class_id)]["elimination"] = fresh_elimination_data
+                
+                logger.info(f"Обновлены данные класса {class_id}: {len(fresh_round_robin_data)} round_robin, {len(fresh_elimination_data)} elimination")
+
+                try:
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+                    
+                    cursor.execute('''
+                        UPDATE tournaments 
+                        SET draw_data = ?, updated_at = CURRENT_TIMESTAMP 
+                        WHERE id = ?
+                    ''', (json.dumps(tournament_data["draw_data"]), tournament_id))
+                    
+                    conn.commit()
+                    conn.close()
+                    logger.debug(f"Сохранены обновленные данные класса {class_id} в БД")
+                except Exception as e:
+                    logger.error(f"Ошибка сохранения в БД: {e}")
+            else:
+                logger.warning(f"Класс {class_id} не найден в структуре турнира")
+                
+        except Exception as e:
+            logger.error(f"Ошибка получения свежих данных для класса {class_id}: {e}")
+            fresh_round_robin_data = []
+
+        if not fresh_round_robin_data:
+            logger.warning(f"Не удалось получить свежие round robin данные для класса {class_id}")
+        
+        # Получение информации о типе
+        xml_types = api.get_xml_data_types(tournament_data)
+        xml_type_info = None
+        
+        for xml_type in xml_types:
+            if (xml_type.get("type") == "tournament_table" and 
+                xml_type.get("draw_type") == "round_robin" and
+                xml_type.get("class_id") == class_id and
+                xml_type.get("draw_index") == draw_index):
+                xml_type_info = xml_type
+                break
+        
+        if not xml_type_info:
+            return "<html><body><h1>Тип групповой таблицы не найден</h1></body></html>", 404
+        
+        # Генерация HTML с обновленными данными
+        html_content = xml_manager.generator.generate_round_robin_html(tournament_data, xml_type_info)
+
+        return Response(html_content, mimetype='text/html; charset=utf-8')
+        
+    except Exception as e:
+        logger.error(f"Ошибка получения live HTML round robin для турнира {tournament_id}: {e}")
+        return f"<html><body><h1>Ошибка: {str(e)}</h1></body></html>", 500
+
+
+
 # === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
 def get_tournament_data_from_db(tournament_id: str) -> dict:
