@@ -304,9 +304,7 @@ class RankedinAPI:
             return None
 
     def get_classes_and_draws_fallback(self, tournament_id: str, classes: List[Dict]) -> List[Dict]:
-        """
-        Fallback функция для создания структуры классов и сеток на основе данных GetTournamentClassesAsync
-        """
+        """ Fallback функция для создания структуры классов и сеток на основе данных GetTournamentClassesAsync """
         logger.debug(f"Используем fallback для получения данных классов турнира {tournament_id}")
         
         classes_with_draws = []
@@ -322,8 +320,7 @@ class RankedinAPI:
                 "Name": class_info.get("Name", f"Класс {class_id}"),
                 "TournamentDraws": []
             }
-            
-            # Пробуем найти доступные сетки для этого класса
+
             found_draws = []
             
             # Проверяем разные комбинации stage и strength
@@ -357,12 +354,9 @@ class RankedinAPI:
         logger.debug(f"Fallback: создано {len(classes_with_draws)} классов с сетками")
         return classes_with_draws
 
-    # ЗАПРОС №9: Групповые этапы (Round Robin) - УМНАЯ ВЕРСИЯ
+    # ЗАПРОС №9: Групповые этапы (Round Robin)
     def get_round_robin_draws(self, tournament_class_id: str, draw_strength: int = 0, draw_stage: int = 0) -> Optional[List[Dict]]:
-        """
-        Получение данных для указанного stage и strength
-        Умная фильтрация: сначала по BaseType, потом по содержимому
-        """
+        """ Получение данных для указанного stage и strength  """
         url = f"{self.api_base}/tournament/GetDrawsForStageAndStrengthAsync"
         params = f"?tournamentClassId={tournament_class_id}&drawStrength={draw_strength}&drawStage={draw_stage}&isReadonly=true&language=ru"
         
@@ -390,23 +384,20 @@ class RankedinAPI:
             
             logger.debug(f"Класс {tournament_class_id}: {round_robin_count} с RoundRobin, {elimination_count} с Elimination")
             
-            # Умная фильтрация для stage=0 (ожидаем групповые данные)
+            # фильтрация для stage=0 (ожидаем групповые данные)
             if draw_stage == 0:
-                # Сначала пробуем фильтровать по BaseType = "RoundRobin"
                 filtered_by_basetype = [item for item in result if isinstance(item, dict) and item.get("BaseType") == "RoundRobin"]
                 
                 if filtered_by_basetype:
                     logger.debug(f"Найдено {len(filtered_by_basetype)} элементов с BaseType=RoundRobin")
                     return filtered_by_basetype
                 
-                # Если нет элементов с BaseType=RoundRobin, фильтруем по содержимому
                 filtered_by_content = [item for item in result if isinstance(item, dict) and item.get("RoundRobin") is not None]
                 
                 if filtered_by_content:
                     logger.debug(f"Найдено {len(filtered_by_content)} элементов с полем RoundRobin")
                     return filtered_by_content
                 
-                # Если нет ни того, ни другого, возвращаем все
                 logger.warning(f"Не найдено RoundRobin данных, возвращаем все {len(result)} элементов")
                 return result
         
@@ -414,10 +405,7 @@ class RankedinAPI:
 
     # ЗАПРОС №10: Игры на выбывание (Elimination)
     def get_elimination_draws(self, tournament_class_id: str, draw_strength: int = 0, draw_stage: int = 1) -> Optional[List[Dict]]:
-        """
-        Получение данных игр на выбывание
-        Умная фильтрация: сначала по BaseType, потом по содержимому
-        """
+        """ Получение данных игр на выбывание """
         url = f"{self.api_base}/tournament/GetDrawsForStageAndStrengthAsync"
         params = f"?tournamentClassId={tournament_class_id}&drawStrength={draw_strength}&drawStage={draw_stage}&isReadonly=true&language=ru"
         
@@ -427,7 +415,6 @@ class RankedinAPI:
         if result:
             logger.debug(f"Получено {len(result)} элементов данных на выбывание для класса {tournament_class_id}")
             
-            # ожидаем данные на выбывание
             if draw_stage == 1:
                 # Сначала пробуем фильтровать по BaseType = "Elimination"
                 filtered_by_basetype = [item for item in result if isinstance(item, dict) and item.get("BaseType") == "Elimination"]
@@ -443,13 +430,11 @@ class RankedinAPI:
                     logger.debug(f"Найдено {len(filtered_by_content)} элементов с полем Elimination")
                     return filtered_by_content
                 
-                # Если нет ни того, ни другого, возвращаем все
                 logger.warning(f"Не найдено Elimination данных, возвращаем все {len(result)} элементов")
                 return result
         
         return result
 
-    # Универсальная функция для получения всех данных:
     def get_all_draws_for_class(self, tournament_class_id: str) -> Dict[str, List[Dict]]:
         """Получение всех данных турнирных сеток для класса с умной классификацией"""
         all_draws = {
@@ -858,4 +843,3 @@ class RankedinAPI:
             import traceback
             logger.error(f"Ошибка в get_xml_data_types: {e}. Traceback: {traceback.format_exc()}")
             return xml_types  # Возвращаем пустой список вместо None
-            

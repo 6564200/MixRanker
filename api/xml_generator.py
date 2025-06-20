@@ -78,7 +78,7 @@ class XMLGenerator:
         return sports.get(sport_id, "Unknown Sport")
 
     def _get_country_name(self, country_id: Optional[int]) -> str:
-        """Возвращает название страны по ID (упрощенная версия)"""
+        """Возвращает название страны по ID """
         if not country_id:
             return ""
         
@@ -96,7 +96,7 @@ class XMLGenerator:
         return countries.get(country_id, f"Country_{country_id}")
 
     def _add_round_robin_data(self, root: ET.Element, class_data: Dict, draw_index: int):
-        """Добавляет данные группового этапа в новом формате"""
+        """Добавляет данные группового этапа """
         try:
             # Проверяем входные данные
             if not class_data or not isinstance(class_data, dict):
@@ -306,8 +306,7 @@ class XMLGenerator:
                         ET.SubElement(matches, f"{match_prefix}_court").text = str(match.get("court", ""))
                         ET.SubElement(matches, f"{match_prefix}_date").text = str(match.get("date", ""))
                         ET.SubElement(matches, f"{match_prefix}_is_played").text = str(match.get("is_played", False))
-                        #ET.SubElement(matches, f"{match_prefix}_challenge_id").text = str(match.get("challenge_id", False))
-                        
+                      
                         # Счет матча
                         match_results = match.get("match_results", {})
                         if isinstance(match_results, dict) and match_results.get("HasScore") and match_results.get("Score"):
@@ -349,7 +348,6 @@ class XMLGenerator:
                 if isinstance(standings_data, list):
                     try:
                         for standing in standings_data:
-                            print(standing)
                             if not isinstance(standing, dict):
                                 continue
                                 
@@ -573,7 +571,6 @@ class XMLGenerator:
         
         return html_content
 
-# В xml_generator.py заменить метод _add_elimination_data на улучшенную версию:
     def _add_elimination_data(self, root: ET.Element, class_data: Dict, draw_index: int):
         """Добавляет данные игр на выбывание в плоском формате с обработкой Bye и Walkover"""
         elimination_data = class_data.get("elimination", [])
@@ -856,7 +853,7 @@ class XMLGenerator:
         for i, set_data in enumerate(score_data["DetailedScoring"]):
             first_score = set_data.get("FirstParticipantScore", 0)
             second_score = set_data.get("SecondParticipantScore", 0)
-            sets_summary.append(f"Set {i+1}: {first_score}-{second_score}")
+            sets_summary.append(f"({first_score}-{second_score})")
         
         return " ".join(sets_summary)
 
@@ -1191,11 +1188,9 @@ class XMLGenerator:
 
     def generate_schedule_html(self, tournament_data: Dict, target_date: str = None) -> str:
         """Генерирует HTML для расписания матчей с временной шкалой и позиционированием"""
-        
         # Метаинформация о турнире
         metadata = tournament_data.get("metadata", {})
         tournament_name = metadata.get("name", "Неизвестный турнир")
-        
         # Получаем расписание
         court_usage = tournament_data.get("court_usage")
         
@@ -1374,7 +1369,6 @@ class XMLGenerator:
                         </div>
                     </body>
                     </html>'''
-        
         return html_content
 
     def _generate_empty_schedule_html(self, tournament_name: str, message: str) -> str:
@@ -1410,7 +1404,6 @@ class XMLGenerator:
             return ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"]
         
         from datetime import datetime as dt, timedelta
-        
         # Находим минимальное и максимальное время
         times = []
         for match in matches:
@@ -1484,7 +1477,6 @@ class XMLGenerator:
                 minutes_per_slot = (second_time - first_time).total_seconds() / 60
             except:
                 minutes_per_slot = 30
-        
         # Пиксели на минуту
         pixels_per_minute = slot_height / minutes_per_slot
         position = int(time_diff_minutes * pixels_per_minute)
@@ -1497,7 +1489,6 @@ class XMLGenerator:
         
         if challenger_result and challenged_result:
             return "finished"
-        
         # Проверяем время матча для определения активности
         from datetime import datetime as dt
         try:
@@ -1515,7 +1506,6 @@ class XMLGenerator:
                     return "finished"
         except:
             pass
-        
         return "future"
     
     def _get_status_class(self, status: str) -> str:
@@ -1530,10 +1520,8 @@ class XMLGenerator:
         """Возвращает CSS класс для группы на основе хеша названия"""
         if not group_name:
             return "match-group-1"
-        
         # Создаем хеш от названия группы для стабильного распределения цветов
         hash_value = sum(ord(c) for c in group_name.upper())
-        
         # Используем остаток от деления на 7 для получения номера цвета (1-7)
         color_number = (hash_value % 7) + 1
         
@@ -1541,7 +1529,6 @@ class XMLGenerator:
 
     def generate_and_save_schedule_html(self, tournament_data: Dict, target_date: str = None) -> Dict:
         """Генерирует и сохраняет HTML файл расписания"""
-        
         logger.info(f"Начинаем генерацию HTML расписания для турнира {tournament_data.get('tournament_id')}, дата: {target_date}")
         
         # Генерация HTML
@@ -1634,7 +1621,6 @@ class XMLGenerator:
 
     def generate_elimination_html(self, tournament_data: Dict, xml_type_info: Dict) -> str:
         """Генерирует HTML для турнирной сетки на выбывание (elimination)"""
-        
         # Получаем данные elimination
         class_id = xml_type_info.get("class_id")
         draw_index = xml_type_info.get("draw_index", 0)
@@ -1679,13 +1665,10 @@ class XMLGenerator:
             <h1>{tournament_name}</h1>
             <h2>{class_name} - {stage_name}</h2>
         </div>
-        
         <div class="bracket-grid" style="grid-template-columns: repeat({len(rounds_data)}, 1fr);">'''
         
         # Генерируем колонки для каждого раунда
         for round_index, round_info in enumerate(rounds_data):
-
-            
             if round_index == 0:
                 # Первый раунд - команды
                 html_content += f'''
@@ -1837,8 +1820,9 @@ class XMLGenerator:
                 html += f'''
                 <div class="match-result {status_class}">
                     <div class="winner-team">{short_team}</div>
-                    <div class="match-score">{score_summary}</div>
                     <div class="sets-info">{sets_summary}</div>
+                    <div class="match-score">{score_summary}</div>
+                    
                 </div>'''
                 
             elif is_played and not has_score:
@@ -1860,13 +1844,14 @@ class XMLGenerator:
                     html += f'''
                     <div class="match-result {status_class}">
                         <div class="winner-team">{short_team}</div>
-                        <div class="match-score walkover-score">{score_text}</div>
                         <div class="sets-info walkover-info">{sets_text}</div>
+                        <div class="match-score walkover-score">{score_text}</div>
+                        
                     </div>'''
                 else:
                     html += f'''
                     <div class="match-result {status_class}">
-                        <div class="winner-team">TBD</div>
+                        <div class="winner-team"> </div>
                         <div class="match-score walkover-score">W.O.</div>
                         <div class="sets-info walkover-info">Walkover</div>
                     </div>'''
@@ -1885,23 +1870,24 @@ class XMLGenerator:
                     html += f'''
                     <div class="match-result {status_class}">
                         <div class="winner-team">{short_team}</div>
-                        <div class="match-score bye-score">●</div>
+                        
                         <div class="sets-info bye-info">Bye</div>
+                        <div class="match-score bye-score">●</div>
                     </div>'''
                 else:
                     # Обычный несыгранный матч
                     html += f'''
                     <div class="match-result pending">
-                        <div class="winner-team">TBD</div>
-                        <div class="match-score">-</div>
+                        <div class="winner-team"> </div>
+                        <div class="match-score"> </div>
                         <div class="sets-info"></div>
                     </div>'''
             else:
                 # Неопределенное состояние
                 html += f'''
                 <div class="match-result pending">
-                    <div class="winner-team">TBD</div>
-                    <div class="match-score">-</div>
+                    <div class="winner-team"> </div>
+                    <div class="match-score"> </div>
                     <div class="sets-info"></div>
                 </div>'''
         
@@ -2022,13 +2008,13 @@ class XMLGenerator:
                                 <div class="team-number">{i + 1}</div>
                             </td>
                             <td class="team-name-cell">
-                                <div class="team-name">{participant.get("short_name", "TBD")}</div>
+                                <div class="team-name">{participant.get("short_name", " ")}</div>
                             </td>'''
             
             # Ячейки результатов матчей
             for j in range(len(participants)):
                 if i == j:
-                    # Диагональная ячейка (сама с собой)
+                    # Диагональная ячейка
                     html_content += '<td class="diagonal-cell"></td>'
                 else:
                     match_result = matches_matrix.get(f"{i}_{j}", {})
@@ -2059,7 +2045,7 @@ class XMLGenerator:
         </div>
     </body>
     </html>'''
-        
+
         return html_content
 
     def _extract_rr_participants(self, group_data: Dict) -> List[Dict]:
@@ -2086,7 +2072,7 @@ class XMLGenerator:
                                 team_names.append(player["Name"])
                                 if player.get("Id"):
                                     player_ids.append(str(player["Id"]))
-                        
+
                         if team_names:
                             full_name = "/".join(team_names)
                             short_name = self._create_short_name(full_name) if full_name != "Bye" else "Bye"
@@ -2099,7 +2085,7 @@ class XMLGenerator:
                                 "is_bye": full_name.upper() == "BYE",
                                 "player_ids": player_ids  # Массив ID игроков
                             })
-        
+
         # Берем только первую половину
         if len(participants) > 0:
             half_count = len(participants) // 2
@@ -2107,8 +2093,6 @@ class XMLGenerator:
                 participants = participants[:half_count]
         
         return participants
-
-
 
     def _extract_rr_matches_matrix(self, group_data: Dict, num_participants: int) -> Dict:
         """Извлекает матчи в формате матрицы"""
@@ -2205,7 +2189,7 @@ class XMLGenerator:
                 if participant_player_ids & standing_player_ids:  # Если есть общие элементы
                     return standing.get("standing", 0)
         
-        # Fallback - по index (старый способ)
+        # Fallback - по index 
         participant_index = participant.get("index", 0)
         for standing in standings:
             if int(standing.get("participant_id", -1)) == participant_index:
@@ -2232,7 +2216,7 @@ class XMLGenerator:
                 if participant_player_ids & standing_player_ids:  # Если есть общие элементы
                     return standing.get("match_points", 0)
         
-        # Fallback - по index (старый способ)
+        # Fallback - по index 
         participant_index = participant.get("index", 0)
         for standing in standings:
             if int(standing.get("participant_id", -1)) == participant_index:
@@ -2272,12 +2256,6 @@ class XMLGenerator:
         </div>
     </body>
     </html>'''
-
-
-
-
-
-
 
 class XMLFileManager:
     """Менеджер XML файлов"""
@@ -2394,7 +2372,7 @@ class XMLFileManager:
             draw_type = xml_type_info.get("draw_type", "")
             draw_index = xml_type_info.get("draw_index", 0)
             
-            # Создаем понятное имя файла
+            # Создаем имя файла
             if draw_type == "round_robin":
                 group_name = xml_type_info.get("group_name", f"group_{draw_index}")
                 safe_group = "".join(c for c in group_name if c.isalnum() or c in "._-").replace(" ", "_")
