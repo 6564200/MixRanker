@@ -11,19 +11,11 @@
     --col-number-width: 30px;
     --col-name-width: 140px;
     --col-match-width: 160px;
-    --col-points-width: 100px;
-    --col-place-width: 100px;
+    --col-points-width: 60px;
+    --col-place-width: 60px;
     --border-spacing: 4px;
     
-    /* Расчет ширины таблицы (номер + название + 8 матчей + очки + места + отступы) */
-    --table-width: calc(
-        var(--col-number-width) + 
-        var(--col-name-width) + 
-        (var(--col-match-width) * 8) + 
-        var(--col-points-width) + 
-        var(--col-place-width) + 
-        (var(--border-spacing) * 12)
-    );
+    --table-width: 2000px;
     
     /* Цвета текста */
     --text-primary: #FFFFFF;
@@ -33,42 +25,45 @@
     --text-muted: #666;
     
     /* Цвета заголовков */
-    --header-primary-start: #1976d2;
-    --header-primary-end: #1565c0;
-    --header-secondary-start: #8bc34a;
-    --header-secondary-end: #689f38;
+    --header-primary-start: #0069AE;
+    --header-primary-end: #1A5182;
+    --header-secondary-start: #95C12B;
+    --header-secondary-end: #95C11B;
     
     /* Цвета ячеек */
     --cell-number-bg: #2c3e50;
-    --cell-even-bg: rgba(240, 240, 240, 0.5);
-    --cell-odd-bg: rgba(255, 255, 255, 0.8);
-    --cell-hover-bg: rgba(33, 150, 243, 0.1);
-    --cell-diagonal-start: #AAe0e0;
-    --cell-diagonal-end: #bdbdbd;
-    --cell-played-bg: rgba(76, 175, 80, 0.1);
-    --cell-played-text: #2e7d32;
-    --cell-bye-bg: rgba(158, 158, 158, 0.3);
-    --cell-empty-bg: rgba(250, 250, 250, 0.5);
-    --cell-points-bg: rgba(139, 195, 74, 0.2);
-    --cell-place-bg: rgba(139, 195, 74, 0.3);
+    --cell-even-bg: rgba(240, 240, 240, 1);
+    --cell-odd-bg: rgba(255, 255, 250, 1);
+    --cell-hover-bg: rgba(255, 255, 240, 1);
+    --cell-diagonal-start: #95C12B;
+    --cell-diagonal-end: #8FB92A;
+    --cell-played-bg: rgba(76, 175, 80, 1);
+    --cell-played-text: #254171;
+    --cell-bye-bg: rgba(158, 158, 158, 1);
+    --cell-empty-bg: rgba(250, 250, 250, 1);
+    --cell-points-bg: rgba(139, 195, 74, 1);
+    --cell-place-bg: rgba(139, 195, 74, 1);
     
     /* Цвета призовых мест */
-    --winner-bg-start: rgba(255, 215, 0, 0.3);
-    --winner-bg-end: rgba(255, 193, 7, 0.2);
-    --winner-text: #ff8f00;
-    --winner-cell-bg: rgba(255, 215, 0, 0.4);
-    --second-bg-start: rgba(192, 192, 192, 0.3);
-    --second-bg-end: rgba(158, 158, 158, 0.2);
-    --second-text: #616161;
-    --third-bg-start: rgba(205, 127, 50, 0.3);
-    --third-bg-end: rgba(141, 110, 99, 0.2);
-    --third-text: #8d6e63;
+    --winner-bg-start: #FDFDFD;
+    --winner-bg-end: #F4EFE4;
+    --winner-text: #AA7128;
+    --winner-cell-bg: #F3ECEC;
+	
+    --second-bg-start: #EDEAEA;
+    --second-bg-end: #E4E0E0;
+    --second-text: #42454E;
+	
+    --third-bg-start: #F5E8D8;
+    --third-bg-end: #EBDECD;
+    --third-text: #554128;
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+	
 }
 
 body {
@@ -136,13 +131,13 @@ body {
 .round-robin-table thead tr {
     background: transparent;
     height: calc(var(--row-height) + 10px);
+	
 }
 
 .round-robin-table thead th {
     color: var(--text-primary);
     text-align: center;
-    font-size: 24px;
-    /* text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); */
+    font-size: 35px;
     padding: 10px 8px;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -151,6 +146,7 @@ body {
     position: relative;
     height: calc(var(--row-height) + 10px);
     vertical-align: middle;
+	/* border: 2px solid rgba(255, 255, 255, 1); */
 }
 
 .round-robin-table thead th > * {
@@ -161,6 +157,7 @@ body {
 
 .team-number-header {
     width: var(--col-number-width);
+	background: #1A5182 !important;
 	
 }
 
@@ -182,11 +179,13 @@ body {
 .points-header {
     background: linear-gradient(135deg, var(--header-secondary-start), var(--header-secondary-end)) !important;
     width: var(--col-points-width);
+	color: #254171 !important; 
 }
 
 .place-header {
     background: linear-gradient(135deg, var(--header-secondary-start), var(--header-secondary-end)) !important;
     width: var(--col-place-width);
+	color: #254171 !important;
 }
 
 /* Строки таблицы */
@@ -195,15 +194,15 @@ body {
     height: var(--row-height);
 }
 
-.team-row:nth-child(even) td:not(.team-number-cell) {
+.team-row:nth-child(even) td:not(.team-number-cell):not(.diagonal-cell) {
     background: var(--cell-even-bg);
 }
 
-.team-row:nth-child(odd) td:not(.team-number-cell) {
+.team-row:nth-child(odd) td:not(.team-number-cell):not(.diagonal-cell) {
     background: var(--cell-odd-bg);
 }
 
-.team-row:hover td:not(.team-number-cell) {
+.team-row:hover td:not(.team-number-cell):not(.diagonal-cell) {
     background: var(--cell-hover-bg);
 }
 
@@ -254,7 +253,7 @@ body {
 }
 
 .team-name-cell .team-name {
-    font-size: 32px;
+    font-size: 35px;
     color: var(--text-dark);
     font-weight: bold;
     text-align: left;
@@ -312,7 +311,7 @@ body {
 .points-cell {
     text-align: center;
     padding: 8px;
-    font-size: 24px;
+    font-size: 40px;
     font-weight: bold;
     background: var(--cell-points-bg);
     color: var(--cell-played-text);
@@ -322,20 +321,15 @@ body {
 .place-cell {
     text-align: center;
     padding: 8px;
-    font-size: 24px;
+    font-size: 40px;
     font-weight: bold;
     background: var(--cell-place-bg);
     color: var(--cell-played-text);
     width: var(--col-place-width);
 }
 
-.points-cell > *,
-.place-cell > * {
-    transform: skewX(15deg);
-}
-
 /* Выделение призовых мест */
-.team-row.winner td:not(.team-number-cell) {
+.team-row.winner td:not(.team-number-cell):not(.diagonal-cell) {
     background: linear-gradient(135deg, var(--winner-bg-start), var(--winner-bg-end)) !important;
 }
 
@@ -349,7 +343,7 @@ body {
     color: var(--winner-text) !important;
 }
 
-.team-row.second td:not(.team-number-cell) {
+.team-row.second td:not(.team-number-cell):not(.diagonal-cell) {
     background: linear-gradient(135deg, var(--second-bg-start), var(--second-bg-end)) !important;
 }
 
@@ -357,7 +351,7 @@ body {
     color: var(--second-text) !important;
 }
 
-.team-row.third td:not(.team-number-cell) {
+.team-row.third td:not(.team-number-cell):not(.diagonal-cell) {
     background: linear-gradient(135deg, var(--third-bg-start), var(--third-bg-end)) !important;
 }
 

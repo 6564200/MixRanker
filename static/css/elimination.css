@@ -93,7 +93,6 @@ body {
     font-size: 36px;
     color: #2c3e50;
     text-align: center;
-    transform: skew(-15deg);
     position: relative;
     
     margin-bottom: 20px;
@@ -135,14 +134,12 @@ body {
     display: flex;
     align-items: center;
     background: #F8F9FA;
-    border-radius: 0;
-    border: none;
     padding: 0;
     min-height: 70px;
     transform: skew(-15deg);
     transition: all 0.3s ease;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    border: 2px solid rgba(0, 0, 0, 0.1);
+    
     overflow: hidden;
 }
 
@@ -167,7 +164,7 @@ body {
     font-size: 32px;
     font-weight: bold;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-    
+
     flex-shrink: 0;
 }
 
@@ -232,6 +229,7 @@ body {
     font-weight: bold;
     text-align: left;
     line-height: 1.2;
+	transform: skew(15deg);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -242,7 +240,7 @@ body {
     color: #2C3E50;
     text-shadow: none;
     font-weight: bold;
-    
+    transform: skew(15deg);
     min-width: 50px;
     text-align: right;
     flex-shrink: 0;
@@ -250,32 +248,33 @@ body {
 
 .sets-info {
     display: block; 
-    font-size: 30px;
+    font-size: 35px;
     color: #666;
     text-align: right;
+	transform: skew(15deg);
     min-width: 120px;
     flex-shrink: 0;
-    line-height: 1.1;
-    margin-top: 2px;
+    
+    margin-top: 0px;
 }
 
-/* Специальные типы матчей */
+							/* Специальные типы матчей */
 .match-result.played {
-    background: #E8F5E8;
+    background: #F8F9FA;
 }
 
 .match-result.played .winner-team,
 .match-result.played .match-score {
-    color: #2E7D32;
+    color: #254171;
 }
 
 .match-result.walkover {
-    background: linear-gradient(135deg, #e5e5e5, #adadad);
+    background: linear-gradient(135deg, #EBEFE4, #EBEFE4);
 }
 
 .match-result.walkover .winner-team,
 .match-result.walkover .match-score {
-    color: #2E7D32;
+    color: #254171;
 
 }
 
@@ -284,8 +283,8 @@ body {
 }
 
 .match-result.bye .winner-team,
-.match-result.bye .match-score {
-    color: #2E7D32;
+.match-result.bye .match-score { 
+    color: #254171;
 
 }
 
@@ -302,7 +301,7 @@ body {
 /* Финальный столбец - золотой */
 .round-column:last-child .match-result {
     background: linear-gradient(135deg, #FFD700, #FFA500);
-    border-color: #FFD700;
+    border-color: rgba(255, 255, 255, 0);
     box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
 }
 
