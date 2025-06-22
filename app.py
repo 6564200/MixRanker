@@ -117,7 +117,7 @@ def init_database():
     try:
         conn = sqlite3.connect(DATABASE_PATH, timeout=30.0)
         cursor = conn.cursor()
-        
+
         # Настройки SQLite для конкурентного доступа
         cursor.execute("PRAGMA journal_mode = WAL")       # Write-Ahead Logging
         cursor.execute("PRAGMA synchronous = NORMAL")
@@ -125,7 +125,7 @@ def init_database():
         cursor.execute("PRAGMA temp_store = MEMORY")      # Временные данные в памяти
         cursor.execute("PRAGMA cache_size = -64000")      # 64MB кэш
         cursor.execute("PRAGMA foreign_keys = ON")        # Включаем внешние ключи
-        
+
         cursor.executescript('''
             CREATE TABLE IF NOT EXISTS tournaments (
                 id TEXT PRIMARY KEY,
@@ -207,19 +207,19 @@ def init_database():
         conn.commit()
         conn.close()
         logger.info("База данных инициализирована с оптимальными настройками")
-        
+
         # Проверяем настройки WAL
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
         cursor.execute("PRAGMA journal_mode")
         journal_mode = cursor.fetchone()[0]
         conn.close()
-        
+
         if journal_mode.upper() == 'WAL':
             logger.info("WAL режим успешно активирован")
         else:
             logger.warning(f"WAL режим не активирован, текущий режим: {journal_mode}")
-            
+
     except Exception as e:
         logger.error(f"Ошибка инициализации базы данных: {e}")
         raise
@@ -255,7 +255,7 @@ def check_user_credentials(username, password):
             conn.commit()
             conn.close()
             return True
-        
+
         conn.close()
         return False
     except Exception as e:
@@ -288,7 +288,7 @@ def login():
             })
         else:
             return jsonify({'error': 'Неверные учетные данные'}), 401
-            
+
     except Exception as e:
         logger.error(f"Ошибка авторизации: {e}")
         return jsonify({'error': 'Ошибка сервера'}), 500
@@ -309,7 +309,6 @@ def auth_status():
         })
     else:
         return jsonify({'authenticated': False})
-
 
 # === ОСНОВНЫЕ РОУТЫ ===
 @app.route('/')
@@ -417,11 +416,11 @@ def get_live_elimination_html(tournament_id, class_id, draw_index):
 
         #   Используем данные из БД вместо API запросов
         logger.info(f"Генерация HTML elimination для класса {class_id} из данных БД")
-        
+
         # Получение информации о типе
         xml_types = api.get_xml_data_types(tournament_data)
         xml_type_info = None
-        
+
         for xml_type in xml_types:
             if (xml_type.get("type") == "tournament_table" and 
                 xml_type.get("draw_type") == "elimination" and
@@ -429,46 +428,40 @@ def get_live_elimination_html(tournament_id, class_id, draw_index):
                 xml_type.get("draw_index") == draw_index):
                 xml_type_info = xml_type
                 break
-        
+
         if not xml_type_info:
             return "<html><body><h1>Тип турнирной сетки не найден</h1></body></html>", 404
-        
+
         #   Генерация HTML из данных БД
         html_content = xml_manager.generator.generate_elimination_html(tournament_data, xml_type_info)
 
         return Response(html_content, mimetype='text/html; charset=utf-8')
-        
+
     except Exception as e:
         logger.error(f"Ошибка получения live HTML elimination для турнира {tournament_id}: {e}")
         return f"<html><body><h1>Ошибка: {str(e)}</h1></body></html>", 500
 
-      
-        
-
 # === API РОУТЫ ===
-
 @app.route('/api/tournament/<tournament_id>', methods=['POST'])
 @require_auth
 def load_tournament(tournament_id):
     """Загрузка турнира с расписанием"""
     try:
-        logger.info(f"Начало загрузки турнира {tournament_id}")
-        
         # 1. Получение полных данных турнира (включая расписание)
         tournament_data = api.get_full_tournament_data(tournament_id)
-        
+
         if not tournament_data.get("metadata"):
             return jsonify({
                 "success": False,
                 "error": "Не удалось получить данные турнира. Проверьте ID турнира."
             }), 400
-        
+
         metadata = tournament_data.get("metadata", {})
-        
+
         # 2. Сохранение в БД (включая расписание)
         def save_tournament_transaction(conn):
             cursor = conn.cursor()
-            
+
             # Основные данные турнира
             cursor.execute('''
                 INSERT OR REPLACE INTO tournaments 
@@ -484,7 +477,7 @@ def load_tournament(tournament_id):
                 json.dumps(tournament_data.get("draw_data", {})),
                 "active"
             ))
-            
+
             # Сохраняем расписание
             cursor.execute('''
                 INSERT OR REPLACE INTO tournament_schedule 
@@ -495,17 +488,17 @@ def load_tournament(tournament_id):
                 json.dumps(tournament_data.get("court_planner", {})),
                 json.dumps(tournament_data.get("court_usage", {}))
             ))
-            
+
             return True
-        
+
         execute_db_transaction_with_retry(save_tournament_transaction)
         
         logger.info(f"Турнир {tournament_id} успешно загружен с расписанием")
-        
+
         # Проверяем что расписание загружено
         schedule_loaded = bool(tournament_data.get("court_usage"))
         matches_count = len(tournament_data.get("court_usage", [])) if isinstance(tournament_data.get("court_usage"), list) else 0
-        
+
         return jsonify({
             "success": True,
             "tournament_id": tournament_id,
@@ -518,14 +511,13 @@ def load_tournament(tournament_id):
             "matches_count": matches_count,
             "message": f"Турнир успешно загружен{' с расписанием' if schedule_loaded else ''}"
         })
-        
+
     except Exception as e:
         logger.error(f"Ошибка загрузки турнира {tournament_id}: {e}")
         return jsonify({
             "success": False,
             "error": f"Ошибка загрузки турнира: {str(e)}"
         }), 500
-
 
 @app.route('/api/tournament/<tournament_id>/schedule/reload', methods=['POST'])
 def reload_tournament_schedule(tournament_id):
@@ -668,7 +660,6 @@ def get_tournament_courts(tournament_id):
     except Exception as e:
         logger.error(f"Ошибка получения кортов для турнира {tournament_id}: {e}")
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/api/tournament/<tournament_id>/xml-types')
 def get_xml_types(tournament_id):
@@ -1201,9 +1192,7 @@ def generate_schedule_html(tournament_id):
         if not tournament_data:
             logger.error(f"Турнир {tournament_id} не найден")
             return jsonify({"error": "Турнир не найден"}), 404
-        
-        logger.info(f"Данные турнира загружены: {tournament_data.get('metadata', {}).get('name', 'Unknown')}")
-        
+
         #   правильный вызов метода
         file_info = xml_manager.generate_and_save_schedule_html(tournament_data, target_date)
         logger.info(f"HTML файл создан: {file_info}")
@@ -1397,8 +1386,6 @@ def get_tournament_data_from_db(tournament_id: str) -> dict:
             tournament_data["court_planner"] = court_planner_data
             tournament_data["court_usage"] = court_usage_data
 
-            logger.info(f"Загружены данные расписания для турнира {tournament_id}:")
-            logger.info(f"  court_planner: {type(court_planner_data)} ({len(court_planner_data) if isinstance(court_planner_data, (list, dict)) else 'not list/dict'})")
             logger.info(f"  court_usage: {type(court_usage_data)} ({len(court_usage_data) if isinstance(court_usage_data, (list, dict)) else 'not list/dict'})")
         else:
             logger.warning(f"Нет данных расписания для турнира {tournament_id} в таблице tournament_schedule")
@@ -1525,8 +1512,7 @@ class AutoRefreshService:
 
     def _refresh_loop(self):
         """Цикл автоматического обновления с разными интервалами"""
-        logger.info(f"AutoRefresh loop started (cycle_interval={self.cycle_interval}s)")
-        logger.info(f"AutoRefresh cycle {self.cycle_counter} started")
+
         while self.running:
             try:
                 with app.app_context():
@@ -1986,20 +1972,14 @@ def create_app():
     
     try:
         auto_refresh = AutoRefreshService()
-        logger.info("AutoRefreshService создан")
-        
         auto_refresh.start()
-        logger.info(f"AutoRefresh запущен: running={auto_refresh.running}")
-        
         app.auto_refresh = auto_refresh
-        logger.info("AutoRefresh присвоен к app")
         
     except Exception as e:
         logger.error(f"Ошибка запуска AutoRefresh: {e}")
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
-    
-    logger.info("vMixRanker v2.5 инициализирован")
+
     return app
 
 if __name__ == '__main__':
