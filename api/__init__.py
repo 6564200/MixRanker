@@ -6,7 +6,7 @@ API модуль для vMixRanker v2.5
 """
 
 from .rankedin_api import RankedinAPI
-from .xml_generator import XMLGenerator, XMLFileManager, generate_scoreboard_xml, generate_bracket_xml
+from .xml_generator import XMLGenerator, XMLFileManager
 
 __version__ = '2.5.0'
 __author__ = 'vMixRanker Team'
@@ -15,6 +15,4 @@ __all__ = [
     'RankedinAPI',
     'XMLGenerator', 
     'XMLFileManager',
-    'generate_scoreboard_xml',
-    'generate_bracket_xml'
 ]
