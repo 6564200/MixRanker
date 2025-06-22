@@ -15,16 +15,16 @@ logger = logging.getLogger(__name__)
 
 class XMLGenerator:
     """Генератор XML файлов для vMix"""
-    
+
     def __init__(self):
         self.encoding = 'utf-8'
-    
+
     def _prettify_xml(self, elem: ET.Element) -> str:
         """Форматирует XML для читаемости"""
         rough_string = ET.tostring(elem, encoding='unicode')
         reparsed = minidom.parseString(rough_string)
         return reparsed.toprettyxml(indent="  ")
-    
+
     def generate_tournament_table_xml(self, tournament_data: Dict, xml_type_info: Dict) -> str:
         """
         Генерирует XML для турнирной таблицы
@@ -41,27 +41,27 @@ class XMLGenerator:
         ET.SubElement(tournament, "country").text = self._get_country_name(metadata.get("country"))
         if metadata.get("featureImage"):
             ET.SubElement(tournament, "banner").text = metadata["featureImage"]
-        
+
         # Информация о классе
         class_id = xml_type_info.get("class_id")
         draw_type = xml_type_info.get("draw_type")
         draw_index = xml_type_info.get("draw_index", 0)
-        
+
         class_data = tournament_data.get("draw_data", {}).get(str(class_id), {})
         class_info_elem = ET.SubElement(root, "class")
         ET.SubElement(class_info_elem, "id").text = str(class_id)
         ET.SubElement(class_info_elem, "name").text = class_data.get("class_info", {}).get("Name", f"Категория {class_id}")
         ET.SubElement(class_info_elem, "type").text = draw_type
-        
+
         # Данные турнирной таблицы
         if draw_type == "round_robin":
             self._add_round_robin_data(root, class_data, draw_index)
         elif draw_type == "elimination":
             self._add_elimination_data(root, class_data, draw_index)
-        
+
         # Время генерации (обновляется каждый раз)
         ET.SubElement(root, "generated").text = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        
+
         return self._prettify_xml(root)
 
     def _get_sport_name(self, sport_id: int) -> str:
@@ -103,47 +103,47 @@ class XMLGenerator:
                 logger.error("class_data отсутствует или имеет неверный формат")
                 self._add_error_xml(root, "Отсутствуют данные класса")
                 return
-                
+
             round_robin_data = class_data.get("round_robin", [])
             if not round_robin_data or not isinstance(round_robin_data, list):
                 logger.warning("Нет данных round_robin или неверный формат")
                 self._add_error_xml(root, "Отсутствуют данные групповых турниров")
                 return
-                
+
             if draw_index >= len(round_robin_data):
                 logger.warning(f"Индекс {draw_index} превышает количество групповых данных ({len(round_robin_data)})")
                 self._add_error_xml(root, f"Индекс группы {draw_index} вне диапазона")
                 return
-                
+
             rr_data = round_robin_data[draw_index]
             if not rr_data or not isinstance(rr_data, dict):
                 logger.warning(f"Данные группы {draw_index} отсутствуют или имеют неверный формат")
                 self._add_error_xml(root, f"Неверные данные группы {draw_index}")
                 return
-                
+
             if "RoundRobin" not in rr_data:
                 logger.warning("Нет данных RoundRobin в групповых данных")
                 self._add_error_xml(root, "Отсутствует структура RoundRobin")
                 return
-                
+
             group_data = rr_data["RoundRobin"]
             if not group_data or not isinstance(group_data, dict):
                 logger.warning("Данные RoundRobin отсутствуют или имеют неверный формат")
                 self._add_error_xml(root, "Неверная структура RoundRobin")
                 return
-            
+
             # Создаем DataTab вместо group
             data_tab = ET.SubElement(root, "DataTab")
             matches = ET.SubElement(data_tab, "matches")
-            
+
             # Базовая информация о группе
             group_name = group_data.get("Name", "Группа")
             ET.SubElement(matches, "classes").text = str(group_name)
             ET.SubElement(matches, "type").text = "Групповой турнир"
-            
+
             # Собираем участников из Pool данных
             participants_list = []
-            
+
             try:
                 # Извлекаем участников из Pool структуры
                 pool_data = group_data.get("Pool", [])
@@ -151,27 +151,27 @@ class XMLGenerator:
                     logger.warning("Нет данных Pool или неверный формат")
                     ET.SubElement(matches, "error").text = "Отсутствуют данные участников"
                     return
-                    
+
                 for row_index, row in enumerate(pool_data):
                     if not isinstance(row, list):
                         continue
-                        
+
                     for cell_index, cell in enumerate(row):
                         if not isinstance(cell, dict):
                             continue
-                            
+
                         if cell.get("CellType") == "ParticipantCell" and cell.get("ParticipantCell"):
                             participant_cell = cell["ParticipantCell"]
                             if not isinstance(participant_cell, dict):
                                 continue
-                                
+
                             if participant_cell.get("Players") and isinstance(participant_cell["Players"], list):
                                 participant_info = {
                                     "index": participant_cell.get("Index", 0),
                                     "seed": participant_cell.get("Seed", ""),
                                     "players": []
                                 }
-                                
+
                                 # Игроки в паре
                                 for player in participant_cell["Players"]:
                                     if isinstance(player, dict):
@@ -183,10 +183,10 @@ class XMLGenerator:
                                             "rating_begin": player.get("RatingBegin", 0) or 0,
                                             "rating_end": player.get("RatingEnd", 0) or 0
                                         })
-                                
+
                                 if participant_info["players"]:  # Добавляем только если есть игроки
                                     participants_list.append(participant_info)
-                
+
                 # Добавляем информацию об участниках в плоском формате
                 for i, participant in enumerate(participants_list, 1):
                     try:
@@ -201,7 +201,7 @@ class XMLGenerator:
                                 if player1_name:
                                     ET.SubElement(matches, f"id{i}PlayerName1").text = str(player1_name)
                                     #ET.SubElement(matches, f"id{i}Player1_Id").text = str(player1.get("id", ""))
-                        
+
                         # Второй игрок
                         if len(participant["players"]) > 1:
                             player2 = participant["players"][1]
@@ -210,15 +210,15 @@ class XMLGenerator:
                                 if player2_name:
                                     ET.SubElement(matches, f"id{i}PlayerName2").text = str(player2_name)
                                     #ET.SubElement(matches, f"id{i}Player2_Id").text = str(player2.get("id", ""))
-                        
+
                         # Названия команд
                         if len(participant["players"]) >= 2:
                             name1 = participant["players"][0].get("name", "") if isinstance(participant["players"][0], dict) else ""
                             name2 = participant["players"][1].get("name", "") if isinstance(participant["players"][1], dict) else ""
-                            
+
                             if name1 and name2:
                                 team_name = f"{name1}/{name2}"
-                                
+
                                 # Создаем короткое название
                                 try:
                                     parts1 = name1.split()
@@ -229,10 +229,10 @@ class XMLGenerator:
                                         short_team_name = f"{name1}/{name2}"
                                 except (IndexError, AttributeError):
                                     short_team_name = f"{name1}/{name2}"
-                                
+
                                 ET.SubElement(matches, f"id{i}Team_name").text = team_name
                                 ET.SubElement(matches, f"id{i}ShortTeam_name").text = short_team_name
-                                
+
                         elif len(participant["players"]) == 1:
                             name1 = participant["players"][0].get("name", "") if isinstance(participant["players"][0], dict) else ""
                             if name1:
@@ -244,25 +244,25 @@ class XMLGenerator:
                                         short_name = name1
                                 except (IndexError, AttributeError):
                                     short_name = name1
-                                    
+
                                 ET.SubElement(matches, f"id{i}Team_name").text = name1
                                 ET.SubElement(matches, f"id{i}ShortTeam_name").text = short_name
-                                
+
                     except Exception as e:
                         logger.error(f"Ошибка обработки участника {i}: {e}")
                         continue
-                
+
                 # Обрабатываем матчи из Pool структуры
                 matches_data = []
                 try:
                     for row_index, row in enumerate(pool_data):
                         if not isinstance(row, list):
                             continue
-                            
+
                         for cell_index, cell in enumerate(row):
                             if not isinstance(cell, dict):
                                 continue
-                                
+
                             if cell.get("CellType") == "MatchCell" and cell.get("MatchCell"):
                                 match_cell = cell["MatchCell"]
                                 if not isinstance(match_cell, dict):
@@ -271,11 +271,11 @@ class XMLGenerator:
                                 match_results = match_cell.get("MatchResults", {})
                                 if not isinstance(match_results, dict):
                                     match_results = {}
-                                
+
                                 # Определяем участников матча по позиции в таблице
                                 participant1_index = row_index
                                 participant2_index = cell_index
-                                
+
                                 if participant1_index != participant2_index:  # Избегаем матчей сами с собой
                                     match_info = {
                                         "participant1": participant1_index,
@@ -288,12 +288,11 @@ class XMLGenerator:
                                         "is_played": bool(match_results.get("IsPlayed", False)),
                                         "match_results": match_results
                                     }
-                                    
                                     matches_data.append(match_info)
-                                    
+
                 except Exception as e:
                     logger.error(f"Ошибка обработки матчей: {e}")
-                
+
                 # Добавляем информацию о матчах в плоском формате
                 for match in matches_data:
                     try:
@@ -306,7 +305,7 @@ class XMLGenerator:
                         ET.SubElement(matches, f"{match_prefix}_court").text = str(match.get("court", ""))
                         ET.SubElement(matches, f"{match_prefix}_date").text = str(match.get("date", ""))
                         ET.SubElement(matches, f"{match_prefix}_is_played").text = str(match.get("is_played", False))
-                      
+
                         # Счет матча
                         match_results = match.get("match_results", {})
                         if isinstance(match_results, dict) and match_results.get("HasScore") and match_results.get("Score"):
@@ -314,12 +313,12 @@ class XMLGenerator:
                             if isinstance(score_data, dict):
                                 first_score = int(score_data.get("FirstParticipantScore", 0))
                                 second_score = int(score_data.get("SecondParticipantScore", 0))
-                                
+
                                 ET.SubElement(matches, f"{match_prefix}_first_second_score").text = f"{first_score}-{second_score}"
-                                    
+
                                 winner = "first" if score_data.get("IsFirstParticipantWinner") else "second"
                                 ET.SubElement(matches, f"{match_prefix}_winner").text = winner
-                                
+
                                 # Детальный счет по сетам
                                 detailed_scoring = score_data.get("DetailedScoring", [])
                                 if isinstance(detailed_scoring, list):
@@ -328,7 +327,7 @@ class XMLGenerator:
                                             set_first = int(set_data.get("FirstParticipantScore", 0))
                                             set_second = int(set_data.get("SecondParticipantScore", 0))
                                             set_winner = "first" if set_data.get("IsFirstParticipantWinner") else "second"
-                                            
+
                                             ET.SubElement(matches, f"{match_prefix}_set{set_index}_first_second_score").text = f"{set_first}-{set_second}"
                                             ET.SubElement(matches, f"{match_prefix}_set{set_index}_winner").text = set_winner
                         else:
@@ -338,11 +337,11 @@ class XMLGenerator:
                             else:
                                 ET.SubElement(matches, f"{match_prefix}_first_second_score").text = "-"
                             ET.SubElement(matches, f"{match_prefix}_winner").text = ""
-                            
+
                     except Exception as e:
                         logger.error(f"Ошибка обработки матча {match.get('match_id', 'unknown')}: {e}")
                         continue
-                
+
                 # Добавляем турнирную таблицу (standings) в плоском формате
                 standings_data = group_data.get("Standings", [])
                 if isinstance(standings_data, list):
@@ -350,14 +349,14 @@ class XMLGenerator:
                         for standing in standings_data:
                             if not isinstance(standing, dict):
                                 continue
-                                
+
                             position = int(standing.get("Standing", 0))
                             if position <= 0:
                                 continue
-                            
+
                             # Находим соответствующего участника по ID
                             participant_id = str(standing.get("ParticipantId", ""))
-                            
+
                             # Имена игроков из standings
                             team_names = []
                             if standing.get("DoublesPlayer1Model") and isinstance(standing["DoublesPlayer1Model"], dict):
@@ -368,9 +367,9 @@ class XMLGenerator:
                                 name2 = standing["DoublesPlayer2Model"].get("Name", "")
                                 if name2:
                                     team_names.append(name2)
-                            
+
                             team_name = " / ".join(team_names)
-                            
+
                             # Статистика позиции
                             prefix = f"P{position}"
                             ET.SubElement(matches, f"{prefix}_participant_id").text = participant_id
@@ -385,96 +384,83 @@ class XMLGenerator:
                             ET.SubElement(matches, f"{prefix}_points_conceded").text = str(standing.get("ConcededPoints", 0))
                             ET.SubElement(matches, f"{prefix}_points_difference").text = str(standing.get("PointsDifference", 0))
                             ET.SubElement(matches, f"{prefix}_played").text = str(standing.get("Played", 0))
-                            
+
                     except Exception as e:
                         logger.error(f"Ошибка обработки турнирной таблицы: {e}")
-                
+
             except Exception as e:
                 logger.error(f"Ошибка извлечения участников: {e}")
                 self._add_error_xml(root, f"Ошибка обработки участников: {str(e)}")
-                
+
         except Exception as e:
             logger.error(f"Критическая ошибка в _add_round_robin_data: {e}")
             import traceback
             logger.error(f"Traceback: {traceback.format_exc()}")
             self._add_error_xml(root, f"Критическая ошибка: {str(e)}")
 
-
-
-    def _to_roman(self, num: int) -> str:
-        """Конвертирует число в римские цифры (1-20)"""
-        roman_numbers = {
-            1: "I", 2: "II", 3: "III", 4: "IV", 5: "V",
-            6: "VI", 7: "VII", 8: "VIII", 9: "IX", 10: "X",
-            11: "XI", 12: "XII", 13: "XIII", 14: "XIV", 15: "XV",
-            16: "XVI", 17: "XVII", 18: "XVIII", 19: "XIX", 20: "XX"
-        }
-        return roman_numbers.get(num, str(num))
-
     def generate_court_scoreboard_html(self, court_data: Dict, tournament_data: Dict = None) -> str:
         """Генерирует HTML страницу scoreboard для корта"""
-        
+
         # Получаем данные команд (текущий матч)
         team1_players = court_data.get("current_first_participant", court_data.get("first_participant", []))
         team2_players = court_data.get("current_second_participant", court_data.get("second_participant", []))
-        
+
         # Получаем данные следующего матча
         next_team1_players = court_data.get("next_first_participant", [])
         next_team2_players = court_data.get("next_second_participant", [])
-        
+
         # Формируем названия команд (через "/")
         team1_name = ""
         if team1_players:
             team1_initials = [p.get("initialLastName", "") for p in team1_players if p.get("initialLastName")]
             team1_name = " / ".join(team1_initials).upper()
-        
+
         team2_name = ""
         if team2_players:
             team2_initials = [p.get("initialLastName", "") for p in team2_players if p.get("initialLastName")]
             team2_name = " / ".join(team2_initials).upper()
-        
+
         # Формируем названия следующих команд
         next_team1_name = ""
         if next_team1_players:
             next_team1_initials = [p.get("initialLastName", "") for p in next_team1_players if p.get("initialLastName")]
             next_team1_name = " / ".join(next_team1_initials).upper()
-        
+
         next_team2_name = ""
         if next_team2_players:
             next_team2_initials = [p.get("initialLastName", "") for p in next_team2_players if p.get("initialLastName")]
             next_team2_name = " / ".join(next_team2_initials).upper()
-        
+
         # Получаем счет
         team1_score = court_data.get("current_first_participant_score", court_data.get("first_participant_score", 0))
         team2_score = court_data.get("current_second_participant_score", court_data.get("second_participant_score", 0))
-        
+
         # Получаем детальный счет по сетам
         detailed_result = court_data.get("current_detailed_result", court_data.get("detailed_result", []))
-        
+
         # Название корта и класса
         court_name = court_data.get("court_name", "Court")
         class_name = court_data.get("current_class_name", court_data.get("class_name", ""))
         next_class_name = court_data.get("next_class_name", "")
-        
-        
+
         # Определяем состояние корта
         has_current_match = bool(team1_name and team2_name)
         has_next_match = bool(next_team1_name and next_team2_name)
-        
+
         # Вычисляем количество сетов
         if has_current_match:
             max_sets = max(len(detailed_result), 2)
         else:
             max_sets = 2  # Для следующего матча показываем пустые сеты
-        
+
         sets_width = max_sets * 34
-        
+
         # Название турнира
         tournament_name = ""
         if tournament_data and tournament_data.get("metadata"):
             full_name = tournament_data["metadata"].get("name", "")
             tournament_name = full_name[:10] if full_name else ""
-        
+
         html_content = f'''<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -582,17 +568,17 @@ class XMLGenerator:
                 
                 # Создаем плоский формат вместо иерархического
                 participants = ET.SubElement(root, "participants")
-                
+
                 # Определяем места
                 places_start = bracket_data.get("PlacesStartPos", 1)
                 places_end = bracket_data.get("PlacesEndPos", 1)
                 places_text = f"{places_start}-{places_end}" if places_start != places_end else str(places_start)
                 ET.SubElement(participants, "places").text = places_text
-                
+
                 # Добавляем информацию о классе
                 class_name = class_data.get("class_info", {}).get("Name", f"Категория {draw_index}")
                 ET.SubElement(participants, "class_name").text = class_name
-                
+
                 # 1. Обрабатываем участников первого раунда (round_0)
                 if bracket_data.get("FirstRoundParticipantCells"):
                     for i, participant_data in enumerate(bracket_data["FirstRoundParticipantCells"], 1):
@@ -609,7 +595,7 @@ class XMLGenerator:
                         
                         ET.SubElement(participants, f"round_0_team_{i}_name").text = team_name
                         ET.SubElement(participants, f"round_0_team_{i}_ShortName").text = short_name
-                
+
                 # 2. Обрабатываем матчи по раундам
                 if bracket_data.get("DrawData"):
                     # Группируем матчи по номеру раунда из данных
@@ -623,19 +609,19 @@ class XMLGenerator:
                                 if round_number not in matches_by_round:
                                     matches_by_round[round_number] = []
                                 matches_by_round[round_number].append(match_data)
-                    
+
                     # Обрабатываем матчи сгруппированные по раундам
                     for round_number in sorted(matches_by_round.keys()):
                         round_matches = matches_by_round[round_number]
-                        
+
                         match_counter = 1
                         for match_data in round_matches:
                             match_view_model = match_data.get("MatchViewModel", {})
                             prefix = f"round_{round_number}_{match_counter}"
-                                
+
                             # Корт
                             ET.SubElement(participants, f"{prefix}_court").text = match_data.get("CourtName", "")
-                                
+
                             # Статус матча
                             is_played = match_view_model.get("IsPlayed", False)
                             has_score = match_view_model.get("HasScore", False)
@@ -645,7 +631,7 @@ class XMLGenerator:
                             ET.SubElement(participants, f"{prefix}_is_played").text = str(is_played)
                             ET.SubElement(participants, f"{prefix}_has_score").text = str(has_score)
                             ET.SubElement(participants, f"{prefix}_cancellation_status").text = str(cancellation_status)
-                            
+
                             # ОБРАБОТКА РАЗЛИЧНЫХ СЦЕНАРИЕВ
                             if is_played and has_score:
                                 # 1. Обычный сыгранный матч со счетом
@@ -654,21 +640,21 @@ class XMLGenerator:
                                     ET.SubElement(participants, f"{prefix}_team").text = winning_team
                                     short_name = self._create_short_name(winning_team)
                                     ET.SubElement(participants, f"{prefix}_Shortteam").text = short_name
-                                    
+
                                     # Имена игроков победившей команды
                                     first_player_name, second_player_name = self._get_winner_player_names(match_data, winner_id)
                                     ET.SubElement(participants, f"{prefix}_player1_name").text = first_player_name
                                     ET.SubElement(participants, f"{prefix}_player2_name").text = second_player_name
-                                
+
                                 # Счет
                                 score_data = match_view_model.get("Score", {})
                                 score_summary = self._format_score_summary(score_data)
                                 sets_summary = self._format_sets_summary(score_data)
-                                
+
                                 ET.SubElement(participants, f"{prefix}_score").text = score_summary
                                 ET.SubElement(participants, f"{prefix}_sets_summary").text = sets_summary
                                 ET.SubElement(participants, f"{prefix}_match_type").text = "normal"
-                                
+
                             elif is_played and not has_score:
                                 # 2. Walkover (W.O.) - сыгран но нет счета
                                 if winner_id:
@@ -676,12 +662,12 @@ class XMLGenerator:
                                     ET.SubElement(participants, f"{prefix}_team").text = winning_team
                                     short_name = self._create_short_name(winning_team)
                                     ET.SubElement(participants, f"{prefix}_Shortteam").text = short_name
-                                    
+
                                     # Имена игроков победившей команды
                                     first_player_name, second_player_name = self._get_winner_player_names(match_data, winner_id)
                                     ET.SubElement(participants, f"{prefix}_player1_name").text = first_player_name
                                     ET.SubElement(participants, f"{prefix}_player2_name").text = second_player_name
-                                    
+
                                     # Указываем что это walkover
                                     if "W.O." in cancellation_status.upper() or "WALKOVER" in cancellation_status.upper():
                                         ET.SubElement(participants, f"{prefix}_score").text = "W.O."
@@ -697,11 +683,11 @@ class XMLGenerator:
                                     ET.SubElement(participants, f"{prefix}_score").text = "W.O."
                                     ET.SubElement(participants, f"{prefix}_sets_summary").text = ""
                                     ET.SubElement(participants, f"{prefix}_match_type").text = "walkover"
-                                    
+
                             elif not is_played and not has_score:
                                 # 3. Матч не сыгран - проверяем на Bye
                                 bye_winner = self._check_bye_advancement(match_data)
-                                
+
                                 if bye_winner:
                                     # Один из участников Bye - автоматически проходит другой
                                     ET.SubElement(participants, f"{prefix}_team").text = bye_winner["team_name"]
@@ -719,7 +705,7 @@ class XMLGenerator:
                                     ET.SubElement(participants, f"{prefix}_score").text = ""
                                     ET.SubElement(participants, f"{prefix}_sets_summary").text = ""
                                     ET.SubElement(participants, f"{prefix}_match_type").text = "pending"
-                            
+
                             else:
                                 # 4. Другие случаи - пустые поля
                                 ET.SubElement(participants, f"{prefix}_team").text = ""
@@ -727,7 +713,7 @@ class XMLGenerator:
                                 ET.SubElement(participants, f"{prefix}_score").text = ""
                                 ET.SubElement(participants, f"{prefix}_sets_summary").text = ""
                                 ET.SubElement(participants, f"{prefix}_match_type").text = "unknown"
-                            
+
                             match_counter += 1
 
     def _check_bye_advancement(self, match_data: Dict) -> Optional[Dict]:
@@ -1092,22 +1078,22 @@ class XMLGenerator:
                 courts_matches[court_id].append(match)
             
             logger.info(f"Найдено матчей по кортам: {[(k, len(v)) for k, v in courts_matches.items()]}")
-            
+
             # Генерируем XML для каждого корта
             for court_id, matches in courts_matches.items():
                 court_elem = ET.SubElement(schedule, "court")
                 ET.SubElement(court_elem, "id").text = court_id
                 ET.SubElement(court_elem, "name").text = f"Корт {court_id}"
-                
+
                 # Сортируем матчи по времени
                 sorted_matches = sorted(matches, key=lambda x: x.get("MatchDate", ""))
-                
+
                 matches_elem = ET.SubElement(court_elem, "matches")
                 ET.SubElement(matches_elem, "count").text = str(len(sorted_matches))
-                
+
                 for i, match in enumerate(sorted_matches, 1):
                     match_elem = ET.SubElement(matches_elem, f"match_{i}")
-                    
+
                     # Основная информация о матче
                     ET.SubElement(match_elem, "id").text = str(match.get("TournamentMatchId", ""))
                     ET.SubElement(match_elem, "challenge_id").text = str(match.get("ChallengeId", ""))
@@ -1116,24 +1102,24 @@ class XMLGenerator:
                     ET.SubElement(match_elem, "pool_name").text = match.get("PoolName", "")
                     ET.SubElement(match_elem, "round").text = str(match.get("Round", 1))
                     ET.SubElement(match_elem, "match_order").text = str(match.get("MatchOrder", 0))
-                    
+
                     # Участники
                     ET.SubElement(match_elem, "challenger_name").text = match.get("ChallengerName", "")
                     ET.SubElement(match_elem, "challenged_name").text = match.get("ChallengedName", "")
                     ET.SubElement(match_elem, "challenger_individual").text = match.get("ChallengerIndividualName", "")
                     ET.SubElement(match_elem, "challenged_individual").text = match.get("ChallengedIndividualName", "")
-                    
+
                     # Результаты
                     ET.SubElement(match_elem, "challenger_result").text = str(match.get("ChallengerResult", ""))
                     ET.SubElement(match_elem, "challenged_result").text = str(match.get("ChallengedResult", ""))
-                    
+
                     # Статус матча
                     ET.SubElement(match_elem, "is_team_match").text = str(match.get("IsPartOfTeamMatch", False))
                     ET.SubElement(match_elem, "is_final").text = str(match.get("IsFinal", False))
                     ET.SubElement(match_elem, "is_semifinal").text = str(match.get("IsSemiFinal", False))
                     ET.SubElement(match_elem, "is_quarterfinal").text = str(match.get("IsQuarterFinal", False))
                     ET.SubElement(match_elem, "consolation").text = str(match.get("Consolation", 0))
-                    
+
                     # Время начала 
                     match_date = match.get("MatchDate", "")
                     if match_date:
@@ -1145,7 +1131,7 @@ class XMLGenerator:
                         except:
                             ET.SubElement(match_elem, "start_time").text = ""
                             ET.SubElement(match_elem, "date_formatted").text = ""
-        
+
         else:
             logger.warning(f"court_usage отсутствует или имеет неверный тип: {type(court_usage)}")
             # Fallback - используем базовую информацию о кортах
@@ -1154,25 +1140,25 @@ class XMLGenerator:
                 for court in courts:
                     if not isinstance(court, dict):
                         continue
-                        
+
                     court_elem = ET.SubElement(schedule, "court")
                     court_id = court.get("Item1", "")
                     court_name = court.get("Item2", f"Корт {court_id}")
                     
                     ET.SubElement(court_elem, "id").text = str(court_id)
                     ET.SubElement(court_elem, "name").text = court_name
-                    
+
                     # Заглушка для матчей
                     matches_elem = ET.SubElement(court_elem, "matches")
                     ET.SubElement(matches_elem, "count").text = "0"
                     ET.SubElement(matches_elem, "note").text = "Данные расписания не загружены"
-        
+
         # Дополнительная информация
         info_elem = ET.SubElement(root, "info")
         total_matches = len(court_usage) if court_usage and isinstance(court_usage, list) else 0
         ET.SubElement(info_elem, "total_matches").text = str(total_matches)
         ET.SubElement(info_elem, "total_courts").text = str(len(tournament_data.get("courts", [])))
-        
+
         # Время генерации
         ET.SubElement(root, "generated").text = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         ET.SubElement(root, "type").text = "schedule"
@@ -1193,7 +1179,7 @@ class XMLGenerator:
         tournament_name = metadata.get("name", "Неизвестный турнир")
         # Получаем расписание
         court_usage = tournament_data.get("court_usage")
-        
+
         if not court_usage or not isinstance(court_usage, list):
             return self._generate_empty_schedule_html(tournament_name, "Данные расписания не загружены")
 
@@ -1205,7 +1191,7 @@ class XMLGenerator:
                 court_id = str(court["Item1"])
                 court_name = court["Item2"]
                 court_names_map[court_id] = court_name
-        
+
         # Фильтруем матчи по дате (если не указана, берем текущую)
         from datetime import datetime as dt
         if not target_date:
@@ -1249,7 +1235,6 @@ class XMLGenerator:
         
         if not courts_matches:
             return self._generate_empty_schedule_html(tournament_name, f"Нет матчей на {target_date}")
-
 
         # Сортируем матчи в каждом корте по времени и присваиваем номера для каждого корта отдельно
         for court_name in courts_matches:
@@ -1421,13 +1406,13 @@ class XMLGenerator:
         
         # Определяем оптимальный интервал в зависимости от диапазона
         if total_hours <= 2:
-            interval_minutes = 15  # 15 минут для коротких турниров
+            interval_minutes = 15  # для коротких турниров
         elif total_hours <= 4:
-            interval_minutes = 20  # 20 минут для средних турниров
+            interval_minutes = 20  # для средних турниров
         elif total_hours <= 8:
-            interval_minutes = 30  # 30 минут для длинных турниров
+            interval_minutes = 30  # для длинных турниров
         else:
-            interval_minutes = 60  # 1 час для очень длинных турниров
+            interval_minutes = 60  # для очень длинных турниров
         
         # Создаем слоты с динамическим интервалом
         time_slots = []
@@ -1529,11 +1514,9 @@ class XMLGenerator:
 
     def generate_and_save_schedule_html(self, tournament_data: Dict, target_date: str = None) -> Dict:
         """Генерирует и сохраняет HTML файл расписания"""
-        logger.info(f"Начинаем генерацию HTML расписания для турнира {tournament_data.get('tournament_id')}, дата: {target_date}")
         
         # Генерация HTML
         html_content = self.generator.generate_schedule_html(tournament_data, target_date)
-        logger.info(f"HTML контент сгенерирован, длина: {len(html_content)} символов")
         
         # Определяем дату для имени файла
         from datetime import datetime as dt
@@ -1545,12 +1528,9 @@ class XMLGenerator:
         filename = f"{tournament_data.get('tournament_id', 'unknown')}_schedule_{safe_date}.html"
         filepath = f"{self.output_dir}/{filename}"
         
-        logger.info(f"Сохраняем файл: {filepath}")
-        
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(html_content)
-            logger.info(f"Файл успешно сохранен: {filepath}")
         except Exception as e:
             logger.error(f"Ошибка сохранения файла {filepath}: {e}")
             raise
@@ -1559,7 +1539,6 @@ class XMLGenerator:
         import os
         if os.path.exists(filepath):
             file_stats = os.stat(filepath)
-            logger.info(f"Размер созданного файла: {file_stats.st_size} байт")
         else:
             logger.error(f"Файл не найден после создания: {filepath}")
             raise FileNotFoundError(f"Файл не создался: {filepath}")
@@ -1574,8 +1553,7 @@ class XMLGenerator:
             "type": "html_schedule",
             "target_date": target_date
         }
-        
-        logger.info(f"Возвращаем информацию о файле: {file_info}")
+
         return file_info
 
     def generate_all_courts_xml(self, courts_data: List[Dict], tournament_data: Dict = None) -> str:
@@ -2303,59 +2281,7 @@ class XMLFileManager:
             "created": datetime.now().isoformat(),
             "type": xml_type
         }
-    
-    def generate_and_save_schedule_html(self, tournament_data: Dict, target_date: str = None) -> Dict:
-        """Генерирует и сохраняет HTML файл расписания"""
-        
-        logger.info(f"Начинаем генерацию HTML расписания для турнира {tournament_data.get('tournament_id')}, дата: {target_date}")
-        
-        # Генерация HTML
-        html_content = self.generator.generate_schedule_html(tournament_data, target_date)
-        logger.info(f"HTML контент сгенерирован, длина: {len(html_content)} символов")
-        
-        # Определяем дату для имени файла
-        from datetime import datetime as dt
-        if not target_date:
-            target_date = dt.now().strftime("%d.%m.%Y")
-        
-        # Сохранение файла
-        safe_date = target_date.replace(".", "_")
-        filename = f"{tournament_data.get('tournament_id', 'unknown')}_schedule_{safe_date}.html"
-        filepath = f"{self.output_dir}/{filename}"
-        
-        logger.info(f"Сохраняем файл: {filepath}")
-        
-        try:
-            with open(filepath, 'w', encoding='utf-8') as f:
-                f.write(html_content)
-            logger.info(f"Файл успешно сохранен: {filepath}")
-        except Exception as e:
-            logger.error(f"Ошибка сохранения файла {filepath}: {e}")
-            raise
-        
-        # Информация о файле
-        import os
-        if os.path.exists(filepath):
-            file_stats = os.stat(filepath)
-            logger.info(f"Размер созданного файла: {file_stats.st_size} байт")
-        else:
-            logger.error(f"Файл не найден после создания: {filepath}")
-            raise FileNotFoundError(f"Файл не создался: {filepath}")
-        
-        file_info = {
-            "id": f"schedule_html_{safe_date}",
-            "name": f"Расписание матчей HTML - {target_date}",
-            "filename": filename,
-            "url": f"/html/{filename}",
-            "size": self._format_file_size(file_stats.st_size),
-            "created": datetime.now().isoformat(),
-            "type": "html_schedule",
-            "target_date": target_date
-        }
-        
-        logger.info(f"Возвращаем информацию о файле: {file_info}")
-        return file_info    
-    
+
     def _get_filename(self, xml_type_info: Dict, tournament_data: Dict) -> str:
         """Генерирует имя файла"""
         tournament_id = tournament_data.get("tournament_id", "unknown")
@@ -2458,12 +2384,6 @@ class XMLFileManager:
             logger.info(f"Удалено {removed_count} старых XML файлов")
         
         return removed_count
-
-# Функции для обратной совместимости
-def generate_scoreboard_xml(tournament_data: Dict, courts_data: List[Dict]) -> str:
-    """Обертка для старого кода"""
-    generator = XMLGenerator()
-    return generator.generate_all_courts_xml(courts_data, tournament_data)
 
 def generate_bracket_xml(tournament_data: Dict) -> str:
     """Обертка для старого кода"""
