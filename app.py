@@ -1336,7 +1336,7 @@ def get_live_round_robin_html(tournament_id, class_id, draw_index):
         html_content = xml_manager.generator.generate_round_robin_html(tournament_data, xml_type_info)
 
         return Response(html_content, mimetype='text/html; charset=utf-8')
-        
+
     except Exception as e:
         logger.error(f"Ошибка получения live HTML round robin для турнира {tournament_id}: {e}")
         return f"<html><body><h1>Ошибка: {str(e)}</h1></body></html>", 500
@@ -1348,28 +1348,28 @@ def get_tournament_data_from_db(tournament_id: str) -> dict:
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute('''
             SELECT metadata, classes, courts, dates, draw_data 
             FROM tournaments WHERE id = ?
         ''', (tournament_id,))
-        
+
         tournament_row = cursor.fetchone()
-        
+
         if not tournament_row:
             logger.warning(f"Турнир {tournament_id} не найден в базе данных")
             conn.close()
             return None
-        
+
         # Получаем данные расписания
         cursor.execute('''
             SELECT court_planner, court_usage 
             FROM tournament_schedule WHERE tournament_id = ?
         ''', (tournament_id,))
-        
+
         schedule_row = cursor.fetchone()
         conn.close()
-        
+
         # парсинг JSON данных
         def safe_json_loads(json_str, default=None):
             if not json_str:
@@ -1379,7 +1379,7 @@ def get_tournament_data_from_db(tournament_id: str) -> dict:
             except (json.JSONDecodeError, TypeError) as e:
                 logger.error(f"Ошибка парсинга JSON: {e}")
                 return default if default is not None else {}
-        
+
         tournament_data = {
             "tournament_id": tournament_id,
             "metadata": safe_json_loads(tournament_row[0], {}),
@@ -1388,25 +1388,25 @@ def get_tournament_data_from_db(tournament_id: str) -> dict:
             "dates": safe_json_loads(tournament_row[3], []),
             "draw_data": safe_json_loads(tournament_row[4], {})
         }
-        
+
         # Добавляем данные расписания если есть
         if schedule_row:
             court_planner_data = safe_json_loads(schedule_row[0])
             court_usage_data = safe_json_loads(schedule_row[1])
-            
+
             tournament_data["court_planner"] = court_planner_data
             tournament_data["court_usage"] = court_usage_data
-            
+
             logger.info(f"Загружены данные расписания для турнира {tournament_id}:")
             logger.info(f"  court_planner: {type(court_planner_data)} ({len(court_planner_data) if isinstance(court_planner_data, (list, dict)) else 'not list/dict'})")
             logger.info(f"  court_usage: {type(court_usage_data)} ({len(court_usage_data) if isinstance(court_usage_data, (list, dict)) else 'not list/dict'})")
         else:
             logger.warning(f"Нет данных расписания для турнира {tournament_id} в таблице tournament_schedule")
-        
+
         logger.debug(f"Загружены данные турнира {tournament_id}: metadata={bool(tournament_data['metadata'])}, classes={len(tournament_data['classes'])}, draw_data={len(tournament_data['draw_data'])}, court_usage={bool(tournament_data.get('court_usage'))}")
-        
+
         return tournament_data
-        
+
     except Exception as e:
         logger.error(f"Ошибка получения данных турнира {tournament_id}: {e}")
         import traceback
@@ -1418,7 +1418,7 @@ def save_xml_file_info(tournament_id: str, file_info: dict):
     try:
         def save_xml_transaction(conn):
             cursor = conn.cursor()
-            
+
             cursor.execute('''
                 INSERT INTO xml_files 
                 (tournament_id, xml_type, filename, name, url, size, created_at)
@@ -1432,9 +1432,9 @@ def save_xml_file_info(tournament_id: str, file_info: dict):
                 file_info.get("size", "")
             ))
             return True
-        
+
         execute_db_transaction_with_retry(save_xml_transaction)
-        
+
     except Exception as e:
         logger.error(f"Ошибка сохранения информации о XML файле: {e}")
 
@@ -1494,18 +1494,18 @@ class AutoRefreshService:
     def __init__(self):
         if hasattr(self, '_initialized') and self._initialized:
             return
-            
+
         self.running = False
         self.thread = None
         self.base_interval = 30  # Базовый интервал в секундах
         self.cycle_interval = 15  # Интервал цикла (base_interval/2)
-        
+
         # Счетчики для разных типов обновлений
         self.cycle_counter = 0
         self.courts_update_frequency = 1   # Каждый цикл (15 сек)
         self.tables_update_frequency = 2   # Каждые 2 цикла (30 сек) 
         self.schedule_update_frequency = 4 # Каждые 4 цикла (60 сек)
-    
+
     def start(self):
         """Запуск автоматического обновления"""
         if not self.running:
@@ -1515,7 +1515,7 @@ class AutoRefreshService:
             logger.info(f"AutoRefresh ЗАПУЩЕН: корты={self.cycle_interval}с, таблицы={self.base_interval}с, расписание={self.base_interval*2}с")
         else:
             logger.warning("AutoRefresh уже запущен")
-    
+
     def stop(self):
         """Остановка автоматического обновления"""
         self.running = False
@@ -1526,25 +1526,25 @@ class AutoRefreshService:
     def _refresh_loop(self):
         """Цикл автоматического обновления с разными интервалами"""
         logger.info(f"AutoRefresh loop started (cycle_interval={self.cycle_interval}s)")
-        
+        logger.info(f"AutoRefresh cycle {self.cycle_counter} started")
         while self.running:
             try:
                 with app.app_context():
                     self.cycle_counter += 1
-                    
+
                     # Получение настроек
                     auto_refresh, base_interval, tournament_ids = self._get_settings_and_tournaments()
-                    
+
                     if not auto_refresh:
                         logger.debug(f"AutoRefresh отключен в настройках (цикл {self.cycle_counter})")
                         time.sleep(self.cycle_interval)
                         continue
-                    
+
                     if not tournament_ids:
                         logger.debug(f"Нет активных турниров для обновления (цикл {self.cycle_counter})")
                         time.sleep(self.cycle_interval)
                         continue
-                    
+
                     # Обновляем базовый интервал если изменился
                     if base_interval != self.base_interval:
                         old_base = self.base_interval
@@ -1553,7 +1553,7 @@ class AutoRefreshService:
                         self.tables_update_frequency = max(base_interval // self.cycle_interval, 1)
                         self.schedule_update_frequency = max((base_interval * 2) // self.cycle_interval, 1)
                         logger.info(f"Интервалы обновлены: {old_base}s→{self.base_interval}s, цикл={self.cycle_interval}s")
-                    
+
                     # Логирование начала цикла
                     actions = []
                     if self.cycle_counter % self.courts_update_frequency == 0:
@@ -1562,10 +1562,10 @@ class AutoRefreshService:
                         actions.append("ТАБЛИЦЫ")
                     if self.cycle_counter % self.schedule_update_frequency == 0:
                         actions.append("РАСПИСАНИЕ")
-                    
+
                     if actions:
                         logger.info(f"Цикл {self.cycle_counter}: обновляем {', '.join(actions)} для {len(tournament_ids)} турниров")
-                    
+
                     # КОРТЫ: обновляются каждый цикл (самые частые)
                     if self.cycle_counter % self.courts_update_frequency == 0:
                         start_time = time.time()
@@ -1575,7 +1575,7 @@ class AutoRefreshService:
                             logger.info(f"КОРТЫ: обновлено {updated_courts} за {elapsed:.1f}с")
                         else:
                             logger.debug(f"КОРТЫ: нет обновлений за {elapsed:.1f}с")
-                    
+
                     # ТУРНИРНЫЕ ТАБЛИЦЫ: обновляются каждые 2 цикла 
                     if self.cycle_counter % self.tables_update_frequency == 0:
                         start_time = time.time()
@@ -1585,7 +1585,7 @@ class AutoRefreshService:
                             logger.info(f"ТАБЛИЦЫ: обновлено {updated_tables} за {elapsed:.1f}с")
                         else:
                             logger.debug(f"ТАБЛИЦЫ: нет обновлений за {elapsed:.1f}с")
-                    
+
                     # РАСПИСАНИЯ: обновляются каждые 4 цикла
                     if self.cycle_counter % self.schedule_update_frequency == 0:
                         start_time = time.time()
@@ -1595,12 +1595,12 @@ class AutoRefreshService:
                             logger.info(f"РАСПИСАНИЕ: обновлено {updated_schedules} за {elapsed:.1f}с")
                         else:
                             logger.debug(f"РАСПИСАНИЕ: нет обновлений за {elapsed:.1f}с")
-                    
+
             except Exception as e:
                 logger.error(f"AutoRefresh ошибка (цикл {self.cycle_counter}): {e}")
                 import traceback
                 logger.error(f"Traceback: {traceback.format_exc()}")
-            
+
             # Ждем до следующего цикла
             time.sleep(self.cycle_interval)
 
@@ -1608,34 +1608,34 @@ class AutoRefreshService:
         """Получает настройки и список турниров одной транзакцией"""
         def get_data_transaction(conn):
             cursor = conn.cursor()
-            
+
             # Настройки
             cursor.execute('SELECT value FROM settings WHERE key = ?', ('auto_refresh',))
             auto_refresh_row = cursor.fetchone()
-            
+
             cursor.execute('SELECT value FROM settings WHERE key = ?', ('refresh_interval',))
             interval_row = cursor.fetchone()
-            
+
             auto_refresh = True
             if auto_refresh_row:
                 try:
                     auto_refresh = json.loads(auto_refresh_row[0])
                 except:
                     auto_refresh = True
-            
+
             interval = 30
             if interval_row:
                 try:
                     interval = json.loads(interval_row[0])
                 except:
                     interval = 30
-            
+
             # Турниры
             cursor.execute('SELECT id FROM tournaments WHERE status = ?', ('active',))
             tournament_ids = [row[0] for row in cursor.fetchall()]
-            
+
             return auto_refresh, interval, tournament_ids
-        
+
         try:
             return execute_db_transaction_with_retry(get_data_transaction)
         except Exception as e:
@@ -1645,7 +1645,7 @@ class AutoRefreshService:
     def _update_courts_data(self, tournament_ids):
         """Обновляет данные кортов для всех турниров"""
         updated_courts = 0
-        
+
         for tournament_id in tournament_ids:
             try:
                 # Получаем court_ids из БД
@@ -1653,21 +1653,21 @@ class AutoRefreshService:
                     cursor = conn.cursor()
                     cursor.execute('SELECT courts FROM tournaments WHERE id = ?', (tournament_id,))
                     tournament_row = cursor.fetchone()
-                    
+
                     if tournament_row and tournament_row[0]:
                         courts_info = json.loads(tournament_row[0])
                         return [str(court.get("Item1")) for court in courts_info if court.get("Item1")]
                     return []
-                
+
                 court_ids = execute_db_transaction_with_retry(get_court_ids_transaction)
-                
+
                 if not court_ids:
                     logger.debug(f"Нет кортов для турнира {tournament_id}")
                     continue
-                
+
                 # API запрос для получения данных кортов
                 courts_data = api.get_all_courts_data(court_ids)
-                
+
                 # Сохранение в БД
                 if courts_data:
                     def save_courts_transaction(conn):
@@ -1692,20 +1692,20 @@ class AutoRefreshService:
                                 local_updated += 1
                         updated_courts += local_updated
                         return True
-                    
+
                     execute_db_transaction_with_retry(save_courts_transaction)
                     logger.debug(f"Турнир {tournament_id}: обновлено {len([c for c in courts_data if 'error' not in c])} кортов")
-                    
+
             except Exception as e:
                 logger.error(f"Ошибка обновления кортов турнира {tournament_id}: {e}")
                 continue
-        
+
         return updated_courts
 
     def _update_tournament_tables(self, tournament_ids):
         """Обновляет турнирные таблицы (draw_data) для всех турниров"""
         updated_tables = 0
-        
+
         for tournament_id in tournament_ids:
             try:
                 # Получаем draw_data из БД
@@ -1713,48 +1713,48 @@ class AutoRefreshService:
                     cursor = conn.cursor()
                     cursor.execute('SELECT draw_data FROM tournaments WHERE id = ?', (tournament_id,))
                     draw_data_row = cursor.fetchone()
-                    
+
                     if draw_data_row and draw_data_row[0]:
                         return json.loads(draw_data_row[0])
                     return {}
-                
+
                 draw_data = execute_db_transaction_with_retry(get_draw_data_transaction)
-                
+
                 if not draw_data:
                     logger.debug(f"Нет draw_data для турнира {tournament_id}")
                     continue
-                
+
                 # API запросы для обновления данных классов
                 updated_draw_data = {}
                 has_changes = False
-                
+
                 for class_id, class_data in draw_data.items():
                     try:
                         # Получаем свежие данные из API
                         fresh_all_draws = api.get_all_draws_for_class(class_id)
-                        
+
                         old_rr_count = len(class_data.get("round_robin", []))
                         old_elim_count = len(class_data.get("elimination", []))
                         new_rr_count = len(fresh_all_draws.get("round_robin", []))
                         new_elim_count = len(fresh_all_draws.get("elimination", []))
-                        
+
                         updated_draw_data[class_id] = {
                             "class_info": class_data.get("class_info", {}),
                             "round_robin": fresh_all_draws.get("round_robin", []),
                             "elimination": fresh_all_draws.get("elimination", [])
                         }
-                        
+
                         # Проверяем изменения
                         if old_rr_count != new_rr_count or old_elim_count != new_elim_count:
                             has_changes = True
                             updated_tables += 1
                             logger.debug(f"Класс {class_id}: RR {old_rr_count}→{new_rr_count}, Elim {old_elim_count}→{new_elim_count}")
-                            
+
                     except Exception as e:
                         logger.error(f"Ошибка обновления данных класса {class_id}: {e}")
                         updated_draw_data[class_id] = class_data.copy()
                         continue
-                
+
                 # Сохраняем только если есть изменения
                 if has_changes and updated_draw_data:
                     def save_draw_data_transaction(conn):
@@ -1765,20 +1765,20 @@ class AutoRefreshService:
                             WHERE id = ?
                         ''', (json.dumps(updated_draw_data), tournament_id))
                         return True
-                    
+
                     execute_db_transaction_with_retry(save_draw_data_transaction)
                     logger.debug(f"Турнир {tournament_id}: сохранены изменения в draw_data")
-                        
+
             except Exception as e:
                 logger.error(f"Ошибка обновления турнирных таблиц турнира {tournament_id}: {e}")
                 continue
-        
+
         return updated_tables
 
     def _update_tournament_schedules(self, tournament_ids):
         """Обновляет расписания турниров"""
         updated_schedules = 0
-        
+
         for tournament_id in tournament_ids:
             try:
                 # Получаем даты из БД
@@ -1789,17 +1789,17 @@ class AutoRefreshService:
                     if result and result[0]:
                         return json.loads(result[0])
                     return []
-                
+
                 dates = execute_db_transaction_with_retry(get_dates_transaction)
-                
+
                 if not dates:
                     logger.debug(f"Нет дат для турнира {tournament_id}")
                     continue
-                
+
                 # API запросы для получения расписания 
                 court_planner = api.get_court_planner(tournament_id, dates)
                 court_usage = api.get_court_usage(tournament_id, dates)
-                
+
                 # Проверяем, есть ли изменения
                 if court_planner is not None or court_usage is not None:
                     # Быстрое сохранение
@@ -1815,15 +1815,15 @@ class AutoRefreshService:
                             json.dumps(court_usage or {})
                         ))
                         return True
-                    
+
                     execute_db_transaction_with_retry(save_schedule_transaction)
                     updated_schedules += 1
                     logger.debug(f"Турнир {tournament_id}: расписание обновлено")
-                    
+
             except Exception as e:
                 logger.error(f"Ошибка обновления расписания турнира {tournament_id}: {e}")
                 continue
-        
+
         return updated_schedules
 
 def get_court_data_from_db(tournament_id: str, court_id: str) -> Optional[Dict]:
@@ -1831,7 +1831,7 @@ def get_court_data_from_db(tournament_id: str, court_id: str) -> Optional[Dict]:
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute('''
             SELECT court_id, court_name, event_state, class_name,
                    first_participant_score, second_participant_score, 
@@ -1839,14 +1839,14 @@ def get_court_data_from_db(tournament_id: str, court_id: str) -> Optional[Dict]:
             FROM courts_data 
             WHERE tournament_id = ? AND court_id = ?
         ''', (tournament_id, court_id))
-        
+
         court_row = cursor.fetchone()
         conn.close()
-        
+
         if not court_row:
             logger.warning(f"Корт {court_id} не найден в БД для турнира {tournament_id}")
             return {"court_id": court_id, "error": "Корт не найден в БД"}
-        
+
         # Преобразуем данные из БД в формат court_data
         court_data = {
             "court_id": court_row[0],
@@ -1859,7 +1859,7 @@ def get_court_data_from_db(tournament_id: str, court_id: str) -> Optional[Dict]:
             "first_participant": json.loads(court_row[7]) if court_row[7] else [],
             "second_participant": json.loads(court_row[8]) if court_row[8] else [],
             "updated_at": court_row[9],
-            
+
             # Обратная совместимость - добавляем current_ поля
             "current_class_name": court_row[3],
             "current_first_participant_score": court_row[4],
@@ -1867,7 +1867,7 @@ def get_court_data_from_db(tournament_id: str, court_id: str) -> Optional[Dict]:
             "current_detailed_result": json.loads(court_row[6]) if court_row[6] else [],
             "current_first_participant": json.loads(court_row[7]) if court_row[7] else [],
             "current_second_participant": json.loads(court_row[8]) if court_row[8] else [],
-            
+
             # Заглушки для следующего матча 
             "next_class_name": "",
             "next_first_participant": [],
@@ -1875,10 +1875,10 @@ def get_court_data_from_db(tournament_id: str, court_id: str) -> Optional[Dict]:
             "next_start_time": "",
             "next_scheduled_time": ""
         }
-        
+
         logger.debug(f"Получены данные корта {court_id} из БД: {court_data.get('court_name')}")
         return court_data
-        
+
     except Exception as e:
         logger.error(f"Ошибка получения данных корта {court_id} из БД: {e}")
         return {"court_id": court_id, "error": str(e)}
@@ -1890,16 +1890,15 @@ def debug_tournament(tournament_id):
     """Отладочная информация о структуре турнира"""
     try:
         class_id = request.args.get('class_id')
-        
         debug_info = api.debug_tournament_structure(tournament_id, class_id)
-        
+
         return jsonify({
             "success": True,
             "tournament_id": tournament_id,
             "debug_info": debug_info,
             "generated_at": datetime.now().isoformat()
         })
-        
+
     except Exception as e:
         logger.error(f"Ошибка отладки турнира {tournament_id}: {e}")
         return jsonify({
@@ -1916,14 +1915,14 @@ def get_raw_tournament_data(tournament_id, class_id):
 
         url = f"{api.api_base}/tournament/GetDrawsForStageAndStrengthAsync"
         params = f"?tournamentClassId={class_id}&drawStrength={strength}&drawStage={stage}&isReadonly=true&language=ru"
-        
+
         result = api._make_request(url + params)
-        
+
         analysis = {
             "total_items": len(result) if result and isinstance(result, list) else 0,
             "items_analysis": []
         }
-        
+
         if result and isinstance(result, list):
             for i, item in enumerate(result):
                 if isinstance(item, dict):
@@ -1934,7 +1933,7 @@ def get_raw_tournament_data(tournament_id, class_id):
                         "has_Elimination": item.get("Elimination") is not None,
                         "RatingId": item.get("RatingId", "")
                     }
-                    
+
                     if item.get("Elimination"):
                         elim_info = item["Elimination"]
                         item_analysis["elimination_info"] = {
@@ -1945,7 +1944,7 @@ def get_raw_tournament_data(tournament_id, class_id):
                         }
                     
                     analysis["items_analysis"].append(item_analysis)
-        
+
         return jsonify({
             "success": True,
             "tournament_id": tournament_id,
@@ -1957,15 +1956,13 @@ def get_raw_tournament_data(tournament_id, class_id):
             "raw_data": result,
             "generated_at": datetime.now().isoformat()
         })
-        
+
     except Exception as e:
         logger.error(f"Ошибка получения сырых данных: {e}")
         return jsonify({
             "success": False,
             "error": str(e)
         }), 500
-
-
 
 @app.errorhandler(404)
 def not_found_error(error):
@@ -1984,22 +1981,31 @@ def handle_exception(e):
 # === ИНИЦИАЛИЗАЦИЯ И ЗАПУСК ===
 
 def create_app():
-    """Создание и настройка приложения"""
     init_database()
     app.start_time = time.time()
     
-    auto_refresh = AutoRefreshService()
-    auto_refresh.start()
-    app.auto_refresh = auto_refresh
+    try:
+        auto_refresh = AutoRefreshService()
+        logger.info("AutoRefreshService создан")
+        
+        auto_refresh.start()
+        logger.info(f"AutoRefresh запущен: running={auto_refresh.running}")
+        
+        app.auto_refresh = auto_refresh
+        logger.info("AutoRefresh присвоен к app")
+        
+    except Exception as e:
+        logger.error(f"Ошибка запуска AutoRefresh: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
     
-    logger.info("AutoRefresh инициализирован")    
     logger.info("vMixRanker v2.5 инициализирован")
     return app
 
 if __name__ == '__main__':
     # Создание приложения
     app = create_app()
-    
+
     print("vMixRanker v2.5 - Система интеграции турниров с vMix")
     print("=" * 60)
     print("Основные endpoints:")
@@ -2011,24 +2017,17 @@ if __name__ == '__main__':
     print("-" * 60)
     print("Логи сохраняются в logs/vmix_ranker.log")
     print("-" * 60)
-    
+    logger.info(f"AutoRefresh running status: {auto_refresh.running}")
+
     try:
         #   Отключаем debug или используем use_reloader=False
         app.run(
             debug=False,  # Отключаем debug режим
+            use_reloader=False,
             host='0.0.0.0',
             port=5000,
             threaded=True
         )
-        
-        # ИЛИ альтернативно с debug но без reloader:
-        # app.run(
-        #     debug=True,
-        #     use_reloader=False,  # Отключаем reloader
-        #     host='0.0.0.0',
-        #     port=5000,
-        #     threaded=True
-        # )
         
     except KeyboardInterrupt:
         print("\nПолучен сигнал остановки")
