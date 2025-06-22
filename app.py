@@ -1386,7 +1386,6 @@ def get_tournament_data_from_db(tournament_id: str) -> dict:
             tournament_data["court_planner"] = court_planner_data
             tournament_data["court_usage"] = court_usage_data
 
-            logger.info(f"  court_usage: {type(court_usage_data)} ({len(court_usage_data) if isinstance(court_usage_data, (list, dict)) else 'not list/dict'})")
         else:
             logger.warning(f"Нет данных расписания для турнира {tournament_id} в таблице tournament_schedule")
 
@@ -1689,7 +1688,7 @@ class AutoRefreshService:
         return updated_courts
 
     def _update_tournament_tables(self, tournament_ids):
-        """Обновляет турнирные таблицы (draw_data) для всех турниров"""
+        """Обновляет турнирные таблицы (draw_data) для всех турниров - просто получает и сохраняет свежие данные"""
         updated_tables = 0
 
         for tournament_id in tournament_ids:
@@ -1710,39 +1709,34 @@ class AutoRefreshService:
                     logger.debug(f"Нет draw_data для турнира {tournament_id}")
                     continue
 
-                # API запросы для обновления данных классов
+                # Получаем свежие данные для каждого класса
                 updated_draw_data = {}
-                has_changes = False
 
                 for class_id, class_data in draw_data.items():
                     try:
-                        # Получаем свежие данные из API
+                        logger.debug(f"Обновление данных для класса {class_id}")
+                        
+                        # Получаем все свежие данные из API
                         fresh_all_draws = api.get_all_draws_for_class(class_id)
 
-                        old_rr_count = len(class_data.get("round_robin", []))
-                        old_elim_count = len(class_data.get("elimination", []))
-                        new_rr_count = len(fresh_all_draws.get("round_robin", []))
-                        new_elim_count = len(fresh_all_draws.get("elimination", []))
-
+                        # Просто сохраняем новые данные
                         updated_draw_data[class_id] = {
                             "class_info": class_data.get("class_info", {}),
                             "round_robin": fresh_all_draws.get("round_robin", []),
                             "elimination": fresh_all_draws.get("elimination", [])
                         }
-
-                        # Проверяем изменения
-                        if old_rr_count != new_rr_count or old_elim_count != new_elim_count:
-                            has_changes = True
-                            updated_tables += 1
-                            logger.debug(f"Класс {class_id}: RR {old_rr_count}→{new_rr_count}, Elim {old_elim_count}→{new_elim_count}")
+                        
+                        updated_tables += 1
+                        logger.debug(f"Класс {class_id}: данные обновлены (RR={len(fresh_all_draws.get('round_robin', []))}, Elim={len(fresh_all_draws.get('elimination', []))})")
 
                     except Exception as e:
                         logger.error(f"Ошибка обновления данных класса {class_id}: {e}")
+                        # В случае ошибки сохраняем старые данные
                         updated_draw_data[class_id] = class_data.copy()
                         continue
 
-                # Сохраняем только если есть изменения
-                if has_changes and updated_draw_data:
+                # Всегда сохраняем обновленные данные
+                if updated_draw_data:
                     def save_draw_data_transaction(conn):
                         cursor = conn.cursor()
                         cursor.execute('''
@@ -1753,7 +1747,7 @@ class AutoRefreshService:
                         return True
 
                     execute_db_transaction_with_retry(save_draw_data_transaction)
-                    logger.debug(f"Турнир {tournament_id}: сохранены изменения в draw_data")
+                    logger.debug(f"Турнир {tournament_id}: данные турнирных таблиц сохранены")
 
             except Exception as e:
                 logger.error(f"Ошибка обновления турнирных таблиц турнира {tournament_id}: {e}")
@@ -1997,7 +1991,6 @@ if __name__ == '__main__':
     print("-" * 60)
     print("Логи сохраняются в logs/vmix_ranker.log")
     print("-" * 60)
-    logger.info(f"AutoRefresh running status: {auto_refresh.running}")
 
     try:
         #   Отключаем debug или используем use_reloader=False
