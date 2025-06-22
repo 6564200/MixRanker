@@ -263,12 +263,29 @@ def check_user_credentials(username, password):
         return False
 
 # Роуты для аутентификации
-
 @app.route('/api/auth/login', methods=['POST'])
 def login():
-    """Авторизация пользователя"""
+    """Авторизация пользователя с улучшенной обработкой Content-Type"""
     try:
-        data = request.get_json()
+        # Проверяем Content-Type и получаем данные
+        if request.content_type and 'application/json' in request.content_type:
+            # JSON данные
+            data = request.get_json()
+            if not data:
+                return jsonify({'error': 'Пустой JSON'}), 400
+        elif request.form:
+            # Form данные (fallback)
+            data = {
+                'username': request.form.get('username', ''),
+                'password': request.form.get('password', '')
+            }
+        else:
+            # Попытка получить JSON даже если Content-Type неправильный
+            try:
+                data = request.get_json(force=True)
+            except:
+                return jsonify({'error': 'Неверный формат данных. Ожидается JSON.'}), 400
+        
         username = data.get('username', '').strip()
         password = data.get('password', '').strip()
         
@@ -281,17 +298,22 @@ def login():
             session.permanent = True
             app.permanent_session_lifetime = timedelta(hours=24)
             
+            logger.info(f"Успешная авторизация пользователя: {username}")
+            
             return jsonify({
                 'success': True, 
                 'message': 'Успешная авторизация',
                 'username': username
             })
         else:
+            logger.warning(f"Неудачная попытка авторизации: {username}")
             return jsonify({'error': 'Неверные учетные данные'}), 401
 
     except Exception as e:
         logger.error(f"Ошибка авторизации: {e}")
-        return jsonify({'error': 'Ошибка сервера'}), 500
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': 'Ошибка сервера при авторизации'}), 500
 
 @app.route('/api/auth/logout', methods=['POST'])
 def logout():
