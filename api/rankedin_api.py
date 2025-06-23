@@ -24,26 +24,45 @@ class RankedinAPI:
             'Content-Type': 'application/json'
         })
 
-    def _make_request(self, url: str, method: str = 'GET', data: Dict = None) -> Optional[Dict]:
-        """Выполняет HTTP запрос с обработкой ошибок"""
-        try:
-            if method.upper() == 'POST':
-                response = self.session.post(url, json=data, timeout=self.timeout)
-            else:
-                response = self.session.get(url, timeout=self.timeout)
+    def _make_request(self, url: str, method: str = 'GET', data: Dict = None, max_retries: int = 3) -> Optional[Dict]:
+        """Выполняет HTTP запрос с обработкой ошибок и retry"""
+        
+        for attempt in range(max_retries):
+            try:
+                if method.upper() == 'POST':
+                    response = self.session.post(url, json=data, timeout=self.timeout)
+                else:
+                    response = self.session.get(url, timeout=self.timeout)
 
-            response.raise_for_status()
-            return response.json()
+                response.raise_for_status()
+                return response.json()
 
-        except requests.exceptions.Timeout:
-            logger.error(f"Timeout при запросе к {url}")
-            return None
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Ошибка запроса к {url}: {e}")
-            return None
-        except json.JSONDecodeError as e:
-            logger.error(f"Ошибка декодирования JSON от {url}: {e}")
-            return None
+            except requests.exceptions.Timeout:
+                if attempt == max_retries - 1:
+                    logger.error(f"Timeout при запросе к {url} после {max_retries} попыток")
+                    return None
+                logger.warning(f"Timeout при запросе к {url}, попытка {attempt + 1}/{max_retries}")
+                time.sleep(1 * (attempt + 1))  # Экспоненциальная задержка
+                
+            except requests.exceptions.ConnectionError:
+                if attempt == max_retries - 1:
+                    logger.error(f"Нет соединения с {url} после {max_retries} попыток")
+                    return None
+                logger.warning(f"Нет соединения с {url}, попытка {attempt + 1}/{max_retries}")
+                time.sleep(2 * (attempt + 1))
+                
+            except requests.exceptions.RequestException as e:
+                if attempt == max_retries - 1:
+                    logger.error(f"Ошибка запроса к {url}: {e}")
+                    return None
+                logger.warning(f"Ошибка запроса к {url}: {e}, попытка {attempt + 1}/{max_retries}")
+                time.sleep(1 * (attempt + 1))
+                
+            except json.JSONDecodeError as e:
+                logger.error(f"Ошибка декодирования JSON от {url}: {e}")
+                return None
+
+        return None
 
     # ЗАПРОС №1: Метаданные турнира
     def get_tournament_metadata(self, tournament_id: str) -> Optional[Dict]:
@@ -167,7 +186,7 @@ class RankedinAPI:
         return result or {"court_id": court_id, "error": "Ошибка получения данных"}
 
     def _process_court_data(self, data: Dict, court_id: str) -> Dict:
-        """Обрабатывает данные корта в единый формат с поддержкой различных структур JSON"""
+        """Обрабатывает данные корта в единый формат  """
         if not data:
             return {"court_id": court_id, "error": "Пустые данные"}
 
@@ -180,40 +199,75 @@ class RankedinAPI:
             "sport": details.get("sport", ""),
         }
 
-        # ТЕКУЩИЙ/АКТИВНЫЙ МАТЧ (liveMatch имеет приоритет, потом previousMatch)
-        current_match = data.get("liveMatch") or data.get("previousMatch", {})
-        if current_match:
-            result.update(self._extract_match_data(current_match, "current"))
-        else:
-            # Если нет текущего матча, инициализируем пустые значения
-            result.update({
-                "current_class_name": "",
-                "current_first_participant_score": 0,
-                "current_second_participant_score": 0,
-                "current_detailed_result": [],
-                "current_first_participant": [],
-                "current_second_participant": [],
-                "current_match_state": "free",
-                "current_match_id": None,
-                "current_is_winner_first": None
-            })
+        # Определяем состояние корта и что отображать
+        live_match = data.get("liveMatch")
+        previous_match = data.get("previousMatch")
+        next_match = data.get("nextMatch")
 
-        # СЛЕДУЮЩИЙ МАТЧ (nextMatch)
-        next_match = data.get("nextMatch", {})
-        if next_match:
-            result.update(self._extract_match_data(next_match, "next"))
+        if live_match:
+            # СОСТОЯНИЕ 3: На корте идёт матч в реальном времени
+            base_match = live_match.get("base", {}) or live_match
+            result.update(self._extract_match_data(base_match, "current"))
+            
+            # Извлекаем live счет из state
+            live_state = live_match.get("state", {})
+            if live_state.get("score"):
+                score_data = live_state["score"]
+                result["current_first_participant_score"] = score_data.get("firstParticipantScore", 0)
+                result["current_second_participant_score"] = score_data.get("secondParticipantScore", 0)
+                # Для live матчей детальный счет 
+                result["current_detailed_result"] = self._parse_detailed_result(score_data.get("detailedResult", []))
+                result["current_match_state"] = "live"
+                result["current_duration_seconds"] = live_state.get("totalDurationInSeconds", 0)
+            else:
+                # Live match без state - показываем что идет, но без счета
+                result["current_first_participant_score"] = 0
+                result["current_second_participant_score"] = 0
+                result["current_detailed_result"] = []
+                result["current_match_state"] = "playing_no_score"
+            
+            # Следующий матч
+            if next_match:
+                result.update(self._extract_match_data(next_match, "next"))
+            else:
+                result.update(self._get_empty_next_match())
+                
+        elif next_match and not previous_match:
+            # СОСТОЯНИЕ 2: Корт свободен, но ожидается следующая игра
+            result.update(self._extract_match_data(next_match, "current"))
+            result["current_first_participant_score"] = 0
+            result["current_second_participant_score"] = 0
+            result["current_detailed_result"] = []
+            result["current_match_state"] = "scheduled"
+            result.update(self._get_empty_next_match())
+            
+        elif next_match and previous_match:
+            # СОСТОЯНИЕ 4: Идет следующая игра, но счет не транслируется
+            result.update(self._extract_match_data(next_match, "current"))
+            result["current_first_participant_score"] = 0
+            result["current_second_participant_score"] = 0
+            result["current_detailed_result"] = []
+            result["current_match_state"] = "playing_no_score"
+            result.update(self._get_empty_next_match())
+            
+        elif previous_match and not next_match:
+            # СОСТОЯНИЕ 5: Отображаем результаты предыдущего матча
+            result.update(self._extract_match_data(previous_match, "current"))
+            if "score" in previous_match:
+                score_data = previous_match["score"]
+                result["current_first_participant_score"] = score_data.get("firstParticipantScore", 0)
+                result["current_second_participant_score"] = score_data.get("secondParticipantScore", 0)
+                result["current_detailed_result"] = self._parse_detailed_result(score_data.get("detailedResult", []))
+                result["current_match_state"] = "finished"
+                result["current_is_winner_first"] = previous_match.get("isFirstParticipantWinner")
+            result.update(self._get_empty_next_match())
+            
         else:
-            result.update({
-                "next_class_name": "",
-                "next_first_participant": [],
-                "next_second_participant": [],
-                "next_scheduled_time": "",
-                "next_start_time": "",
-                "next_match_state": "none",
-                "next_match_id": None
-            })
+            # СОСТОЯНИЕ 1: Корт полностью свободен
+            result.update(self._get_empty_current_match())
+            result.update(self._get_empty_next_match())
 
-        # Обратная совместимость со старым форматом
+        # Обратная совместимость
         result.update({
             "class_name": result.get("current_class_name", ""),
             "first_participant_score": result.get("current_first_participant_score", 0),
@@ -224,6 +278,33 @@ class RankedinAPI:
         })
 
         return result
+
+    def _get_empty_current_match(self) -> Dict:
+        """Возвращает пустые поля для текущего матча"""
+        return {
+            "current_class_name": "",
+            "current_first_participant_score": 0,
+            "current_second_participant_score": 0,
+            "current_detailed_result": [],
+            "current_first_participant": [],
+            "current_second_participant": [],
+            "current_match_state": "free",
+            "current_match_id": None,
+            "current_is_winner_first": None
+        }
+
+    def _get_empty_next_match(self) -> Dict:
+        """Возвращает пустые поля для следующего матча"""
+        return {
+            "next_class_name": "",
+            "next_first_participant": [],
+            "next_second_participant": [],
+            "next_scheduled_time": "",
+            "next_start_time": "",
+            "next_match_state": "none",
+            "next_match_id": None
+        }
+
 
     def _extract_match_data(self, match_data: Dict, prefix: str) -> Dict:
         """Извлекает данные матча с указанным префиксом"""

@@ -398,18 +398,61 @@ class XMLGenerator:
             logger.error(f"Traceback: {traceback.format_exc()}")
             self._add_error_xml(root, f"Критическая ошибка: {str(e)}")
 
+
     def generate_court_scoreboard_html(self, court_data: Dict, tournament_data: Dict = None) -> str:
-        """Генерирует HTML страницу scoreboard для корта"""
+        """Генерирует HTML страницу scoreboard для корта с правильной логикой состояний"""
 
-        # Получаем данные команд (текущий матч)
-        team1_players = court_data.get("current_first_participant", court_data.get("first_participant", []))
-        team2_players = court_data.get("current_second_participant", court_data.get("second_participant", []))
+        # Определяем состояние корта
+        match_state = court_data.get("current_match_state", "free")
+        
+        # Проверяем наличие участников 
+        current_participants = court_data.get("current_first_participant") or court_data.get("first_participant", [])
+        next_participants = court_data.get("next_first_participant", [])
+        
+        # Определяем что показывать
+        if current_participants and len(current_participants) > 0:
+            # Есть текущий матч - показываем его
+            team1_players = court_data.get("current_first_participant", court_data.get("first_participant", []))
+            team2_players = court_data.get("current_second_participant", court_data.get("second_participant", []))
+            team1_score = court_data.get("current_first_participant_score", court_data.get("first_participant_score", 0))
+            team2_score = court_data.get("current_second_participant_score", court_data.get("second_participant_score", 0))
+            detailed_result = court_data.get("current_detailed_result", court_data.get("detailed_result", []))
+            class_name = court_data.get("current_class_name", court_data.get("class_name", ""))
+            show_current_match = True
+            
+            # Определяем тип отображения счета
+            if match_state == "live":
+                show_score = True
+            elif match_state == "finished":
+                show_score = True
+            elif match_state in ["scheduled", "playing_no_score"]:
+                show_score = False  # Показываем участников но без счета
+            else:
+                show_score = True  # По умолчанию показываем
+            
+        elif next_participants and len(next_participants) > 0:
+            # Нет текущего матча, но есть следующий
+            team1_players = court_data.get("next_first_participant", [])
+            team2_players = court_data.get("next_second_participant", [])
+            team1_score = 0
+            team2_score = 0
+            detailed_result = []
+            class_name = court_data.get("next_class_name", "")
+            show_current_match = True
+            show_score = False  # Следующий матч всегда без счета
+            
+        else:
+            # Корт полностью свободен
+            team1_players = []
+            team2_players = []
+            team1_score = 0
+            team2_score = 0
+            detailed_result = []
+            class_name = ""
+            show_current_match = False
+            show_score = False
 
-        # Получаем данные следующего матча
-        next_team1_players = court_data.get("next_first_participant", [])
-        next_team2_players = court_data.get("next_second_participant", [])
-
-        # Формируем названия команд (через "/")
+        # Формируем названия команд
         team1_name = ""
         if team1_players:
             team1_initials = [p.get("initialLastName", "") for p in team1_players if p.get("initialLastName")]
@@ -420,39 +463,23 @@ class XMLGenerator:
             team2_initials = [p.get("initialLastName", "") for p in team2_players if p.get("initialLastName")]
             team2_name = " / ".join(team2_initials).upper()
 
-        # Формируем названия следующих команд
-        next_team1_name = ""
-        if next_team1_players:
-            next_team1_initials = [p.get("initialLastName", "") for p in next_team1_players if p.get("initialLastName")]
-            next_team1_name = " / ".join(next_team1_initials).upper()
-
-        next_team2_name = ""
-        if next_team2_players:
-            next_team2_initials = [p.get("initialLastName", "") for p in next_team2_players if p.get("initialLastName")]
-            next_team2_name = " / ".join(next_team2_initials).upper()
-
-        # Получаем счет
-        team1_score = court_data.get("current_first_participant_score", court_data.get("first_participant_score", 0))
-        team2_score = court_data.get("current_second_participant_score", court_data.get("second_participant_score", 0))
-
-        # Получаем детальный счет по сетам
-        detailed_result = court_data.get("current_detailed_result", court_data.get("detailed_result", []))
-
-        # Название корта и класса
+        # Название корта
         court_name = court_data.get("court_name", "Court")
-        class_name = court_data.get("current_class_name", court_data.get("class_name", ""))
-        next_class_name = court_data.get("next_class_name", "")
 
-        # Определяем состояние корта
-        has_current_match = bool(team1_name and team2_name)
-        has_next_match = bool(next_team1_name and next_team2_name)
+        # Определяем CSS класс для состояния
+        state_class = ""
+        if match_state == "live":
+            state_class = " live-match"
+        elif match_state == "finished":
+            state_class = " finished-match"
+        elif match_state in ["scheduled", "playing_no_score"]:
+            state_class = " next-match"
 
-        # Вычисляем количество сетов
-        if has_current_match:
-            max_sets = max(len(detailed_result), 2)
+        # Вычисляем количество сетов для определения ширины
+        if show_current_match and detailed_result and len(detailed_result) > 0:
+            max_sets = max(len(detailed_result), 1)
         else:
-            max_sets = 2  # Для следующего матча показываем пустые сеты
-
+            max_sets = 1  # Минимум 1 слот для сетов
         sets_width = max_sets * 34
 
         # Название турнира
@@ -473,63 +500,62 @@ class XMLGenerator:
                 width: {sets_width}px;
             }}
         </style>
-            <script>
-                setInterval(function() {{
-                    location.reload();
-                }}, 9000);
-            </script>
+        <script>
+            setInterval(function() {{
+                location.reload();
+            }}, 9000);
+        </script>
     </head>
     <body>
         <div class="scoreboard">'''
         
-        if has_current_match:
-            # Показываем текущий матч
+        if show_current_match:
+            # Показываем матч (текущий, следующий или без счета)
             html_content += f'''
-            <div class="team-row team1">
+            <div class="team-row team1{state_class}">
                 <div class="team-name">{team1_name}</div>
                 <div class="sets">'''
             
             # Сеты для команды 1
-            for i in range(min(max_sets, len(detailed_result))):
-                set_score = detailed_result[i].get("firstParticipantScore", 0)
-                html_content += f'<div class="set">{set_score}</div>'
-            
-            for i in range(len(detailed_result), max_sets):
-                html_content += '<div class="set">-</div>'
+            if detailed_result and len(detailed_result) > 0:
+                # Показываем сеты если есть детальные результаты (live или finished)
+                for i in range(min(max_sets, len(detailed_result))):
+                    set_score = detailed_result[i].get("firstParticipantScore", 0)
+                    html_content += f'<div class="set">{set_score}</div>'
+                
+                for i in range(len(detailed_result), max_sets):
+                    html_content += '<div class="set">-</div>'
+            else:
+                # Для матчей без детального счета показываем пустые сеты
+                for i in range(max_sets):
+                    html_content += '<div class="set">-</div>'
             
             html_content += f'''
                 </div>
-                <div class="score">{team1_score}</div>
+                <div class="score">{team1_score if show_score else "-"}</div>
             </div>
             
-            <div class="team-row team2">
+            <div class="team-row team2{state_class}">
                 <div class="team-name">{team2_name}</div>
                 <div class="sets">'''
             
             # Сеты для команды 2
-            for i in range(min(max_sets, len(detailed_result))):
-                set_score = detailed_result[i].get("secondParticipantScore", 0)
-                html_content += f'<div class="set">{set_score}</div>'
-            
-            for i in range(len(detailed_result), max_sets):
-                html_content += '<div class="set">-</div>'
+            if detailed_result and len(detailed_result) > 0:
+                # Показываем сеты если есть детальные результаты (live или finished)
+                for i in range(min(max_sets, len(detailed_result))):
+                    set_score = detailed_result[i].get("secondParticipantScore", 0)
+                    html_content += f'<div class="set">{set_score}</div>'
+                
+                for i in range(len(detailed_result), max_sets):
+                    html_content += '<div class="set">-</div>'
+            else:
+                # Для матчей без детального счета показываем пустые сеты
+                for i in range(max_sets):
+                    html_content += '<div class="set">-</div>'
             
             html_content += f'''
                 </div>
-                <div class="score">{team2_score}</div>
-            </div>'''
-            
-        elif has_next_match:
-            # Корт свободен, но есть следующий матч - показываем его без счета
-            html_content += f'''
-            <div class="team-row team1 next-match">
-                <div class="team-name">{next_team1_name}</div>
-                <div class="score">-</div>
-            </div>
-            
-            <div class="team-row team2 next-match">
-                <div class="team-name">{next_team2_name}</div>
-                <div class="score">-</div>
+                <div class="score">{team2_score if show_score else "-"}</div>
             </div>'''
             
         else:
@@ -539,23 +565,18 @@ class XMLGenerator:
                 <div class="team-name">NO ACTIVE MATCH</div>
             </div>'''
         
-        # Определяем какой класс показывать в info-bar
-        display_class = ""
-        if has_current_match and class_name:
-            display_class = class_name
-        elif has_next_match and next_class_name:
-            display_class = next_class_name
-
         html_content += '''
             </div>
             <div class="info-bar">
-                <div class="tournament-name">''' + tournament_name + (' - ' + display_class if display_class else '') + '''</div>
+                <div class="tournament-name">''' + tournament_name + (' - ' + class_name if class_name else '') + '''</div>
                 <div class="court-name">''' + court_name + '''</div>
             </div>
         </body>
         </html>'''
         
         return html_content
+
+
 
     def _add_elimination_data(self, root: ET.Element, class_data: Dict, draw_index: int):
         """Добавляет данные игр на выбывание в плоском формате с обработкой Bye и Walkover"""
@@ -2116,9 +2137,10 @@ class XMLGenerator:
                                     sets_parts.append(f"{set_first}-{set_second}")
                                 match_info["sets"] = " ".join(sets_parts)
                         else:
-                            if match_results.get('CancellationStatus') == 'Won W.O.':
+                            
+                            if 'Won' in match_results.get('CancellationStatus'):
                                 match_info["score"] = 'Won'
-                            elif match_results.get('CancellationStatus') == 'Lost W.O.':
+                            elif 'Lost' in match_results.get('CancellationStatus'):
                                 match_info["score"] = 'Lost'
                         matches_matrix[match_key] = match_info
         
