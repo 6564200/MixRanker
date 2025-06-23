@@ -1943,10 +1943,12 @@ class XMLGenerator:
         tournament_name = metadata.get("name", "Турнир")
         class_name = xml_type_info.get("class_name", "Категория")
         group_name = xml_type_info.get("group_name", "Группа")
-        
+
         # Получаем участников и матчи
         participants = self._extract_rr_participants(group_data)
+        
         matches_matrix = self._extract_rr_matches_matrix(group_data, len(participants))
+
         standings = self._extract_rr_standings(group_data)
         
         html_content = f'''<!DOCTYPE html>
@@ -2101,7 +2103,7 @@ class XMLGenerator:
         for row_index, row in enumerate(pool_data):
             if not isinstance(row, list):
                 continue
-                
+    
             for cell_index, cell in enumerate(row):
                 if not isinstance(cell, dict):
                     continue
@@ -2137,10 +2139,10 @@ class XMLGenerator:
                                     sets_parts.append(f"{set_first}-{set_second}")
                                 match_info["sets"] = " ".join(sets_parts)
                         else:
-                            
-                            if 'Won' in match_results.get('CancellationStatus'):
+                            cancellation_status = match_results.get('CancellationStatus') or '' # вернет пустую если None
+                            if 'Won' in cancellation_status:
                                 match_info["score"] = 'Won'
-                            elif 'Lost' in match_results.get('CancellationStatus'):
+                            elif 'Lost' in cancellation_status:
                                 match_info["score"] = 'Lost'
                         matches_matrix[match_key] = match_info
         
