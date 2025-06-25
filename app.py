@@ -992,9 +992,9 @@ def manage_settings():
             
             # Настройки по умолчанию
             default_settings = {
-                "refresh_interval": 30,
-                "auto_refresh": True,
-                "debug_mode": False,
+                "refreshInterval": 30,
+                "autoRefresh": True,
+                "debugMode": False,
                 "theme": "light",
                 "xml_cleanup_hours": 24,
                 "schedule_update_interval": 10
