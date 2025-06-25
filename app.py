@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_file, render_template, Response, session
 from functools import wraps
 from typing import Dict, List, Any, Optional
+from config import get_config
 
 # Путь для импортов
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -53,8 +54,6 @@ except ImportError as e:
 
 # Создание Flask приложения
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'vmix-ranker-v2-secret-key'
-app.config['SESSION_TYPE'] = 'filesystem'
 
 # Глобальные объекты
 api = RankedinAPI()
@@ -1331,7 +1330,8 @@ def get_live_round_robin_html(tournament_id, class_id, draw_index):
         # Получение информации о типе
         xml_types = api.get_xml_data_types(tournament_data)
         xml_type_info = None
-        
+
+        #print(xml_types)
         for xml_type in xml_types:
             if (xml_type.get("type") == "tournament_table" and 
                 xml_type.get("draw_type") == "round_robin" and
@@ -1983,6 +1983,10 @@ def handle_exception(e):
 # === ИНИЦИАЛИЗАЦИЯ И ЗАПУСК ===
 
 def create_app():
+    
+    app_config = get_config()
+    app.config.from_object(app_config)
+    app_config.init_app(app)
     init_database()
     app.start_time = time.time()
     
@@ -2015,12 +2019,11 @@ if __name__ == '__main__':
     print("-" * 60)
 
     try:
-        #   Отключаем debug или используем use_reloader=False
         app.run(
-            debug=False,  # Отключаем debug режим
+            debug=app.config['DEBUG'],
             use_reloader=False,
-            host='0.0.0.0',
-            port=5000,
+            host=app.config['HOST'],
+            port=app.config['PORT'],
             threaded=True
         )
         
