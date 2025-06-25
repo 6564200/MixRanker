@@ -1020,7 +1020,7 @@ def manage_settings():
             
         try:
             settings = request.get_json()
-            print(settings)
+
             conn = get_db_connection()
             cursor = conn.cursor()
             
@@ -1331,7 +1331,6 @@ def get_live_round_robin_html(tournament_id, class_id, draw_index):
         xml_types = api.get_xml_data_types(tournament_data)
         xml_type_info = None
 
-        #print(xml_types)
         for xml_type in xml_types:
             if (xml_type.get("type") == "tournament_table" and 
                 xml_type.get("draw_type") == "round_robin" and
