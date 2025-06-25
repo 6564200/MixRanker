@@ -1020,7 +1020,7 @@ def manage_settings():
             
         try:
             settings = request.get_json()
-            
+            print(settings)
             conn = get_db_connection()
             cursor = conn.cursor()
             
@@ -1617,10 +1617,10 @@ class AutoRefreshService:
             cursor = conn.cursor()
 
             # Настройки
-            cursor.execute('SELECT value FROM settings WHERE key = ?', ('auto_refresh',))
+            cursor.execute('SELECT value FROM settings WHERE key = ?', ('autoRefresh',))
             auto_refresh_row = cursor.fetchone()
 
-            cursor.execute('SELECT value FROM settings WHERE key = ?', ('refresh_interval',))
+            cursor.execute('SELECT value FROM settings WHERE key = ?', ('refreshInterval',))
             interval_row = cursor.fetchone()
 
             auto_refresh = True
