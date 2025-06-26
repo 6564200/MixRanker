@@ -10,6 +10,7 @@ from xml.dom import minidom
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 import logging
+from markupsafe import escape
 
 logger = logging.getLogger(__name__)
 
@@ -1943,12 +1944,12 @@ class XMLGenerator:
         tournament_name = metadata.get("name", "Турнир")
         class_name = xml_type_info.get("class_name", "Категория")
         group_name = xml_type_info.get("group_name", "Группа")
-
+        
         # Получаем участников и матчи
         participants = self._extract_rr_participants(group_data)
         
         matches_matrix = self._extract_rr_matches_matrix(group_data, len(participants))
-
+        
         standings = self._extract_rr_standings(group_data)
         
         html_content = f'''<!DOCTYPE html>
@@ -2152,15 +2153,28 @@ class XMLGenerator:
         """Извлекает турнирную таблицу"""
         standings_data = group_data.get("Standings", [])
         standings = []
-        
+        fake_id_counter = 1000
         for standing in standings_data:
             if isinstance(standing, dict):
                 # Собираем ID игроков из standings
+                
                 player_ids = []
-                if standing.get('DoublesPlayer1Model', {}).get('Id'):
-                    player_ids.append(str(standing['DoublesPlayer1Model']['Id']))
-                if standing.get('DoublesPlayer2Model', {}).get('Id'):
-                    player_ids.append(str(standing['DoublesPlayer2Model']['Id']))
+                # Обработка первого игрока
+                player1 = standing.get('DoublesPlayer1Model')
+                if isinstance(player1, dict) and player1.get('Id'):
+                    player_ids.append(str(player1['Id']))
+                else:
+                    player_ids.append(str(fake_id_counter))
+                    fake_id_counter += 1
+
+                # Обработка второго игрока
+                player2 = standing.get('DoublesPlayer2Model')
+                if isinstance(player2, dict) and player2.get('Id'):
+                    player_ids.append(str(player2['Id']))
+                else:
+                    player_ids.append(str(fake_id_counter))
+                    fake_id_counter += 1
+                    
                 
                 standings.append({
                     "participant_id": str(standing.get("ParticipantId", "")),
