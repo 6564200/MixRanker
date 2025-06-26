@@ -1103,6 +1103,58 @@ function formatDateTime(dateTimeString) {
     }
 }
 
+async function loadSettings() {
+    try {
+        const response = await fetch('/api/settings');
+        if (!response.ok) throw new Error('Ошибка загрузки настроек с сервера');
+        
+        const settings = await response.json();
+
+        localStorage.setItem('vmixSettings', JSON.stringify(settings));
+
+        refreshInterval = (settings.refreshInterval || 30) * 1000;
+
+        if (document.getElementById('refreshIntervalInput')) {
+            document.getElementById('refreshIntervalInput').value = settings.refreshInterval || 30;
+        }
+        if (document.getElementById('autoRefreshEnabled')) {
+            document.getElementById('autoRefreshEnabled').checked = settings.autoRefresh !== false;
+        }
+        if (document.getElementById('debugMode')) {
+            document.getElementById('debugMode').checked = settings.debugMode || false;
+        }
+        if (document.getElementById('themeSelect')) {
+            document.getElementById('themeSelect').value = settings.theme || 'light';
+        }
+
+        if (document.getElementById('refreshInterval')) {
+            document.getElementById('refreshInterval').textContent = settings.refreshInterval;
+        }
+
+    } catch (error) {
+        console.error('Ошибка загрузки настроек:', error);
+        // fallback — из localStorage
+        const saved = localStorage.getItem('vmixSettings');
+        if (saved) {
+            try {
+                const settings = JSON.parse(saved);
+                refreshInterval = (settings.refreshInterval || 30) * 1000;
+				if (document.getElementById('refreshIntervalInput')) {
+					document.getElementById('refreshIntervalInput').value = settings.refreshInterval || 30;
+				}
+				if (document.getElementById('autoRefreshEnabled')) {
+					document.getElementById('autoRefreshEnabled').checked = settings.autoRefresh !== false;
+				}
+				if (document.getElementById('debugMode')) {
+					document.getElementById('debugMode').checked = settings.debugMode || false;
+				}
+            } catch (error) {
+                console.error('Ошибка из localStorage:', error);
+            }
+        }
+    }
+}
+
 function loadSettings() {
     const saved = localStorage.getItem('vmixSettings');
     if (saved) {
