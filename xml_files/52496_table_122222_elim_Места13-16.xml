@@ -1,0 +1,55 @@
+<?xml version="1.0" ?>
+<templateData>
+  <tournament>
+    <id>52496</id>
+    <name>Кикимора-Лето Open Cup</name>
+    <sport>Tennis</sport>
+    <country>Russia</country>
+    <banner>https://cdn.rankedin.com/images/posters/tournaments/52496.png</banner>
+  </tournament>
+  <class>
+    <id>122222</id>
+    <name>Мужчины C</name>
+    <type>elimination</type>
+  </class>
+  <participants>
+    <places>13-16</places>
+    <class_name>Мужчины C</class_name>
+    <round_0_team_1_name>Pending</round_0_team_1_name>
+    <round_0_team_1_ShortName>Pending</round_0_team_1_ShortName>
+    <round_0_team_2_name>Pending</round_0_team_2_name>
+    <round_0_team_2_ShortName>Pending</round_0_team_2_ShortName>
+    <round_0_team_3_name>Pending</round_0_team_3_name>
+    <round_0_team_3_ShortName>Pending</round_0_team_3_ShortName>
+    <round_0_team_4_name>Pending</round_0_team_4_name>
+    <round_0_team_4_ShortName>Pending</round_0_team_4_ShortName>
+    <round_1_1_court>Корт №3</round_1_1_court>
+    <round_1_1_is_played>False</round_1_1_is_played>
+    <round_1_1_has_score>False</round_1_1_has_score>
+    <round_1_1_cancellation_status/>
+    <round_1_1_team/>
+    <round_1_1_player1_name/>
+    <round_1_1_score/>
+    <round_1_1_sets_summary/>
+    <round_1_1_match_type>pending</round_1_1_match_type>
+    <round_1_2_court>Корт №1</round_1_2_court>
+    <round_1_2_is_played>False</round_1_2_is_played>
+    <round_1_2_has_score>False</round_1_2_has_score>
+    <round_1_2_cancellation_status/>
+    <round_1_2_team/>
+    <round_1_2_player1_name/>
+    <round_1_2_score/>
+    <round_1_2_sets_summary/>
+    <round_1_2_match_type>pending</round_1_2_match_type>
+    <round_2_1_court>Корт №3</round_2_1_court>
+    <round_2_1_is_played>False</round_2_1_is_played>
+    <round_2_1_has_score>False</round_2_1_has_score>
+    <round_2_1_cancellation_status/>
+    <round_2_1_team/>
+    <round_2_1_player1_name/>
+    <round_2_1_score/>
+    <round_2_1_sets_summary/>
+    <round_2_1_match_type>pending</round_2_1_match_type>
+  </participants>
+  <generated>2025-06-29T10:22:03</generated>
+</templateData>

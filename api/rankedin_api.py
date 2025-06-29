@@ -513,7 +513,7 @@ class RankedinAPI:
             "round_robin": [],
             "elimination": []
         }
-        processed_items = set()
+        #processed_items = set()
         for stage in [0, 1, 2]:
             for strength in [0, 1, 2, 3]:
                 try:
@@ -529,38 +529,38 @@ class RankedinAPI:
                                 continue
 
                             # Создаем уникальный идентификатор для элемента
-                            rating_id = item.get('RatingId', '')
+                            #rating_id = item.get('RatingId', '')
                             consolation = item.get('Elimination', {}).get('Consolation', 0) if item.get('Elimination') else 0
                             base_type = item.get('BaseType', '')
 
                             # Уникальный ключ учитывает и содержимое
                             has_rr = bool(item.get("RoundRobin"))
                             has_elim = bool(item.get("Elimination"))
-                            item_key = f"{rating_id}_{consolation}_{base_type}_{has_rr}_{has_elim}_{stage}_{strength}"
+                            #item_key = f"{rating_id}_{consolation}_{base_type}_{has_rr}_{has_elim}_{stage}_{strength}"
 
-                            if item_key in processed_items:
-                                continue
+                            #if item_key in processed_items:
+                            #    continue
 
                             if base_type == "RoundRobin" and has_rr:
                                 all_draws["round_robin"].append(item)
-                                processed_items.add(item_key)
+                                #processed_items.add(item_key)
                                 logger.debug(f"Добавлен RoundRobin (идеальный): stage={stage}, strength={strength}")
 
                             elif base_type == "Elimination" and has_elim:
                                 all_draws["elimination"].append(item)
-                                processed_items.add(item_key)
+                                #processed_items.add(item_key)
                                 logger.debug(f"Добавлен Elimination (идеальный): consolation={consolation}")
 
                             elif has_rr and not has_elim:
                                 # Содержимое указывает на RoundRobin
                                 all_draws["round_robin"].append(item)
-                                processed_items.add(item_key)
+                                #processed_items.add(item_key)
                                 logger.debug(f"Добавлен RoundRobin (по содержимому, BaseType={base_type})")
 
                             elif has_elim and not has_rr:
                                 # Содержимое указывает на Elimination
                                 all_draws["elimination"].append(item)
-                                processed_items.add(item_key)
+                                #processed_items.add(item_key)
                                 logger.debug(f"Добавлен Elimination (по содержимому, BaseType={base_type})")
 
                             else:

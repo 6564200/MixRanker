@@ -1,0 +1,166 @@
+<?xml version="1.0" ?>
+<templateData>
+  <tournament>
+    <id>52496</id>
+    <name>Кикимора-Лето Open Cup</name>
+    <sport>Tennis</sport>
+    <country>Russia</country>
+    <banner>https://cdn.rankedin.com/images/posters/tournaments/52496.png</banner>
+  </tournament>
+  <class>
+    <id>122222</id>
+    <name>Мужчины C</name>
+    <type>round_robin</type>
+  </class>
+  <DataTab>
+    <matches>
+      <classes>17-20</classes>
+      <type>Групповой турнир</type>
+      <id1PlayerName1>Andrei Molchanov</id1PlayerName1>
+      <id1Team_name>Andrei Molchanov</id1Team_name>
+      <id1ShortTeam_name>A.Molchanov</id1ShortTeam_name>
+      <id2PlayerName1>Artyom Churin</id2PlayerName1>
+      <id2Team_name>Artyom Churin</id2Team_name>
+      <id2ShortTeam_name>A.Churin</id2ShortTeam_name>
+      <id3PlayerName1>Vladislav Filimonov</id3PlayerName1>
+      <id3Team_name>Vladislav Filimonov</id3Team_name>
+      <id3ShortTeam_name>V.Filimonov</id3ShortTeam_name>
+      <id4PlayerName1>Александр Шевалдин</id4PlayerName1>
+      <id4Team_name>Александр Шевалдин</id4Team_name>
+      <id4ShortTeam_name>А.Шевалдин</id4ShortTeam_name>
+      <id5PlayerName1>Andrei Molchanov</id5PlayerName1>
+      <id5Team_name>Andrei Molchanov</id5Team_name>
+      <id5ShortTeam_name>A.Molchanov</id5ShortTeam_name>
+      <id6PlayerName1>Artyom Churin</id6PlayerName1>
+      <id6Team_name>Artyom Churin</id6Team_name>
+      <id6ShortTeam_name>A.Churin</id6ShortTeam_name>
+      <id7PlayerName1>Vladislav Filimonov</id7PlayerName1>
+      <id7Team_name>Vladislav Filimonov</id7Team_name>
+      <id7ShortTeam_name>V.Filimonov</id7ShortTeam_name>
+      <id8PlayerName1>Александр Шевалдин</id8PlayerName1>
+      <id8Team_name>Александр Шевалдин</id8Team_name>
+      <id8ShortTeam_name>А.Шевалдин</id8ShortTeam_name>
+      <id1vs2Match_state>2</id1vs2Match_state>
+      <id1vs2Match_court>Корт №3</id1vs2Match_court>
+      <id1vs2Match_date>2025-06-29T13:12:00</id1vs2Match_date>
+      <id1vs2Match_is_played>False</id1vs2Match_is_played>
+      <id1vs2Match_first_second_score>-</id1vs2Match_first_second_score>
+      <id1vs2Match_winner/>
+      <id1vs3Match_state>2</id1vs3Match_state>
+      <id1vs3Match_court>Корт №1</id1vs3Match_court>
+      <id1vs3Match_date>2025-06-29T11:06:00</id1vs3Match_date>
+      <id1vs3Match_is_played>False</id1vs3Match_is_played>
+      <id1vs3Match_first_second_score>-</id1vs3Match_first_second_score>
+      <id1vs3Match_winner/>
+      <id1vs4Match_state>2</id1vs4Match_state>
+      <id1vs4Match_court>Корт №2</id1vs4Match_court>
+      <id1vs4Match_date>2025-06-29T09:54:00</id1vs4Match_date>
+      <id1vs4Match_is_played>False</id1vs4Match_is_played>
+      <id1vs4Match_first_second_score>-</id1vs4Match_first_second_score>
+      <id1vs4Match_winner/>
+      <id2vs1Match_state>2</id2vs1Match_state>
+      <id2vs1Match_court>Корт №3</id2vs1Match_court>
+      <id2vs1Match_date>2025-06-29T13:12:00</id2vs1Match_date>
+      <id2vs1Match_is_played>False</id2vs1Match_is_played>
+      <id2vs1Match_first_second_score>-</id2vs1Match_first_second_score>
+      <id2vs1Match_winner/>
+      <id2vs3Match_state>2</id2vs3Match_state>
+      <id2vs3Match_court>Корт №3</id2vs3Match_court>
+      <id2vs3Match_date>2025-06-29T10:12:00</id2vs3Match_date>
+      <id2vs3Match_is_played>False</id2vs3Match_is_played>
+      <id2vs3Match_first_second_score>-</id2vs3Match_first_second_score>
+      <id2vs3Match_winner/>
+      <id2vs4Match_state>2</id2vs4Match_state>
+      <id2vs4Match_court>Корт №2</id2vs4Match_court>
+      <id2vs4Match_date>2025-06-29T11:42:00</id2vs4Match_date>
+      <id2vs4Match_is_played>False</id2vs4Match_is_played>
+      <id2vs4Match_first_second_score>-</id2vs4Match_first_second_score>
+      <id2vs4Match_winner/>
+      <id3vs1Match_state>2</id3vs1Match_state>
+      <id3vs1Match_court>Корт №1</id3vs1Match_court>
+      <id3vs1Match_date>2025-06-29T11:06:00</id3vs1Match_date>
+      <id3vs1Match_is_played>False</id3vs1Match_is_played>
+      <id3vs1Match_first_second_score>-</id3vs1Match_first_second_score>
+      <id3vs1Match_winner/>
+      <id3vs2Match_state>2</id3vs2Match_state>
+      <id3vs2Match_court>Корт №3</id3vs2Match_court>
+      <id3vs2Match_date>2025-06-29T10:12:00</id3vs2Match_date>
+      <id3vs2Match_is_played>False</id3vs2Match_is_played>
+      <id3vs2Match_first_second_score>-</id3vs2Match_first_second_score>
+      <id3vs2Match_winner/>
+      <id3vs4Match_state>2</id3vs4Match_state>
+      <id3vs4Match_court>Корт №1</id3vs4Match_court>
+      <id3vs4Match_date>2025-06-29T13:30:00</id3vs4Match_date>
+      <id3vs4Match_is_played>False</id3vs4Match_is_played>
+      <id3vs4Match_first_second_score>-</id3vs4Match_first_second_score>
+      <id3vs4Match_winner/>
+      <id4vs1Match_state>2</id4vs1Match_state>
+      <id4vs1Match_court>Корт №2</id4vs1Match_court>
+      <id4vs1Match_date>2025-06-29T09:54:00</id4vs1Match_date>
+      <id4vs1Match_is_played>False</id4vs1Match_is_played>
+      <id4vs1Match_first_second_score>-</id4vs1Match_first_second_score>
+      <id4vs1Match_winner/>
+      <id4vs2Match_state>2</id4vs2Match_state>
+      <id4vs2Match_court>Корт №2</id4vs2Match_court>
+      <id4vs2Match_date>2025-06-29T11:42:00</id4vs2Match_date>
+      <id4vs2Match_is_played>False</id4vs2Match_is_played>
+      <id4vs2Match_first_second_score>-</id4vs2Match_first_second_score>
+      <id4vs2Match_winner/>
+      <id4vs3Match_state>2</id4vs3Match_state>
+      <id4vs3Match_court>Корт №1</id4vs3Match_court>
+      <id4vs3Match_date>2025-06-29T13:30:00</id4vs3Match_date>
+      <id4vs3Match_is_played>False</id4vs3Match_is_played>
+      <id4vs3Match_first_second_score>-</id4vs3Match_first_second_score>
+      <id4vs3Match_winner/>
+      <P1_participant_id>4784000</P1_participant_id>
+      <P1_team_name/>
+      <P1_match_points>0</P1_match_points>
+      <P1_wins>0</P1_wins>
+      <P1_losses>0</P1_losses>
+      <P1_draws>0</P1_draws>
+      <P1_games_won>0</P1_games_won>
+      <P1_games_lost>0</P1_games_lost>
+      <P1_points_scored>0</P1_points_scored>
+      <P1_points_conceded>0</P1_points_conceded>
+      <P1_points_difference>0</P1_points_difference>
+      <P1_played>0</P1_played>
+      <P2_participant_id>4784001</P2_participant_id>
+      <P2_team_name/>
+      <P2_match_points>0</P2_match_points>
+      <P2_wins>0</P2_wins>
+      <P2_losses>0</P2_losses>
+      <P2_draws>0</P2_draws>
+      <P2_games_won>0</P2_games_won>
+      <P2_games_lost>0</P2_games_lost>
+      <P2_points_scored>0</P2_points_scored>
+      <P2_points_conceded>0</P2_points_conceded>
+      <P2_points_difference>0</P2_points_difference>
+      <P2_played>0</P2_played>
+      <P3_participant_id>4784002</P3_participant_id>
+      <P3_team_name/>
+      <P3_match_points>0</P3_match_points>
+      <P3_wins>0</P3_wins>
+      <P3_losses>0</P3_losses>
+      <P3_draws>0</P3_draws>
+      <P3_games_won>0</P3_games_won>
+      <P3_games_lost>0</P3_games_lost>
+      <P3_points_scored>0</P3_points_scored>
+      <P3_points_conceded>0</P3_points_conceded>
+      <P3_points_difference>0</P3_points_difference>
+      <P3_played>0</P3_played>
+      <P4_participant_id>4784003</P4_participant_id>
+      <P4_team_name/>
+      <P4_match_points>0</P4_match_points>
+      <P4_wins>0</P4_wins>
+      <P4_losses>0</P4_losses>
+      <P4_draws>0</P4_draws>
+      <P4_games_won>0</P4_games_won>
+      <P4_games_lost>0</P4_games_lost>
+      <P4_points_scored>0</P4_points_scored>
+      <P4_points_conceded>0</P4_points_conceded>
+      <P4_points_difference>0</P4_points_difference>
+      <P4_played>0</P4_played>
+    </matches>
+  </DataTab>
+  <generated>2025-06-29T10:22:03</generated>
+</templateData>

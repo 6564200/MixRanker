@@ -86,13 +86,14 @@ body {
 }
 
 .court-header {
-    flex: 1;
+    position: relative;
     background: linear-gradient(135deg, #2C3E50 0%, #34495E 100%);
     text-align: center;
     padding: 15px 0;
     transform: skew(-15deg);
-    position: relative;
-	
+    width: calc(20% - 10px); /* Ширина 10% минус gap */
+    height: 100%;
+    flex: none; /* Отключаем flex-растяжение */
     border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -114,10 +115,10 @@ body {
 }
 
 .court-column {
-    flex: 1;
     position: relative;
-
+    width: calc(20% - 25px); /* Ширина 10% минус gap */
     height: 100%;
+    flex: none; /* Отключаем flex-растяжение */
 }
 
 .time-slot {
@@ -133,11 +134,11 @@ body {
 }
 
 .match-item {
-    position: absolute;
+    /*position: absolute;*/
     width: 100%;
 	height: 70px;
     height: 100px;
-    background: #F8F9FA;
+    background: #f8f9fa4f;
     border-radius: 0;
     border: none;
     transition: all 0.3s ease;
@@ -205,12 +206,12 @@ body {
 }
 
 .match-group-horizontal {
-    font-size: 22px;
+    font-size: 16px;
     text-align: left;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: #020202;
-    padding: 3px 6px;
+    padding: 6px 6px;
 	transform: rotate(-90deg);
     display: inline-block;
     font-weight: bold;
@@ -218,7 +219,7 @@ body {
 	width: 100px;
 
 
-	top: 32px;
+	top: 34px;
 	left: -36px;
 
 }
@@ -258,7 +259,7 @@ body {
 
 
 .match-active .match-teams-horizontal {
-    color: #D32F2F;
+    color: #616161;
 }
 
 .match-future .match-info {
@@ -294,7 +295,11 @@ body {
     }
 }
 
+.tilted-square {
+    width: 20px;
 
+    background-color: #e3e3e3;
+  }
 
 /* Статусы матчей - цвета фона полос */
 .match-finished .match-group-horizontal {
@@ -302,8 +307,7 @@ body {
 }
 
 .match-active .match-info {
-    background: linear-gradient(90deg, #FFFFFF 0%, #FFE4E1 100%);
-    animation: pulse-bg 2s infinite;
+    background: #F8F9FA;
 }
 
 .match-future .match-info {
@@ -356,12 +360,6 @@ body {
 
 .match-future .team {
     color: #E0E0E0;
-}
-
-@keyframes pulse {
-    0% {box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);}
-    70% {box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);}
-    100% {box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);}
 }
 
 .empty-message {

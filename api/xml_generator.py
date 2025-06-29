@@ -1287,16 +1287,14 @@ class XMLGenerator:
                             <div class="schedule-container">
                                 <div class="header">
                                     <h1 class="tournament-title">{tournament_name}</h1>
-                                    <h2 class="date-title">{target_date}</h2>
-                                </div>
-                                
+                                    <h2 class="date-title">{target_date}</h2></div>
                                 <div class="main-grid">
-                                    <div class="time-scale">'''
+                                    ''' #<div class="time-scale">
         
         # Генерируем временную шкалу
-        for time_slot in time_slots:
-            html_content += f'''
-                <div class="time-slot">{time_slot}</div>'''
+        #for time_slot in time_slots:
+        #    html_content += f'''
+        #        <div class="time-slot">{time_slot}</div>'''
         
         html_content += '''
             </div>
@@ -1354,16 +1352,18 @@ class XMLGenerator:
                 
                 html_content += f'''
                         <div class="match-item {status_class}" style="top: {position_top}px;">
+                            <div class="match-number">{episode_number}</div>
                             <div class="match-content">
-                                <div class="match-number">{episode_number}</div>
+                                
                                 <div class="match-info">
                                     <div class="match-group-horizontal {group_class}">{pool_name}</div>
-                                    <div class="match-teams-horizontal">{teams_text}
+                                    <div class="match-teams-horizontal">{teams_text}</div>
                                     
-                                    </div>
                                 </div>
                                 <div class="match-result-horizontal">{result_text}</div>
+                                <div class="tilted-square"></div>
                             </div>
+                            
                         </div>'''
             
             html_content += '''
@@ -1416,7 +1416,8 @@ class XMLGenerator:
         for match in matches:
             if match.get("datetime_obj"):
                 times.append(match["datetime_obj"])
-        
+
+        logger.info(f"time -------- {times}")
         if not times:
             return ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"]
         

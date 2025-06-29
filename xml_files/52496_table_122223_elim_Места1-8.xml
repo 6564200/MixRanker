@@ -1,0 +1,72 @@
+<?xml version="1.0" ?>
+<templateData>
+  <tournament>
+    <id>52496</id>
+    <name>Кикимора-Лето Open Cup</name>
+    <sport>Tennis</sport>
+    <country>Russia</country>
+    <banner>https://cdn.rankedin.com/images/posters/tournaments/52496.png</banner>
+  </tournament>
+  <class>
+    <id>122223</id>
+    <name>Женщины С</name>
+    <type>elimination</type>
+  </class>
+  <participants>
+    <places>1-8</places>
+    <class_name>Женщины С</class_name>
+    <round_0_team_1_name>А#1</round_0_team_1_name>
+    <round_0_team_1_ShortName>А#1</round_0_team_1_ShortName>
+    <round_0_team_2_name>Б#1</round_0_team_2_name>
+    <round_0_team_2_ShortName>Б#1</round_0_team_2_ShortName>
+    <round_0_team_3_name>А#2</round_0_team_3_name>
+    <round_0_team_3_ShortName>А#2</round_0_team_3_ShortName>
+    <round_0_team_4_name>Б#2</round_0_team_4_name>
+    <round_0_team_4_ShortName>Б#2</round_0_team_4_ShortName>
+    <round_0_team_5_name>А#3</round_0_team_5_name>
+    <round_0_team_5_ShortName>А#3</round_0_team_5_ShortName>
+    <round_0_team_6_name>Б#3</round_0_team_6_name>
+    <round_0_team_6_ShortName>Б#3</round_0_team_6_ShortName>
+    <round_0_team_7_name>А#4</round_0_team_7_name>
+    <round_0_team_7_ShortName>А#4</round_0_team_7_ShortName>
+    <round_0_team_8_name>Б#4</round_0_team_8_name>
+    <round_0_team_8_ShortName>Б#4</round_0_team_8_ShortName>
+    <round_1_1_court>Корт №2</round_1_1_court>
+    <round_1_1_is_played>False</round_1_1_is_played>
+    <round_1_1_has_score>False</round_1_1_has_score>
+    <round_1_1_cancellation_status/>
+    <round_1_1_team/>
+    <round_1_1_player1_name/>
+    <round_1_1_score/>
+    <round_1_1_sets_summary/>
+    <round_1_1_match_type>pending</round_1_1_match_type>
+    <round_1_2_court>Корт №3</round_1_2_court>
+    <round_1_2_is_played>False</round_1_2_is_played>
+    <round_1_2_has_score>False</round_1_2_has_score>
+    <round_1_2_cancellation_status/>
+    <round_1_2_team/>
+    <round_1_2_player1_name/>
+    <round_1_2_score/>
+    <round_1_2_sets_summary/>
+    <round_1_2_match_type>pending</round_1_2_match_type>
+    <round_1_3_court>Корт №1</round_1_3_court>
+    <round_1_3_is_played>False</round_1_3_is_played>
+    <round_1_3_has_score>False</round_1_3_has_score>
+    <round_1_3_cancellation_status/>
+    <round_1_3_team/>
+    <round_1_3_player1_name/>
+    <round_1_3_score/>
+    <round_1_3_sets_summary/>
+    <round_1_3_match_type>pending</round_1_3_match_type>
+    <round_1_4_court>Корт №2</round_1_4_court>
+    <round_1_4_is_played>False</round_1_4_is_played>
+    <round_1_4_has_score>False</round_1_4_has_score>
+    <round_1_4_cancellation_status/>
+    <round_1_4_team/>
+    <round_1_4_player1_name/>
+    <round_1_4_score/>
+    <round_1_4_sets_summary/>
+    <round_1_4_match_type>pending</round_1_4_match_type>
+  </participants>
+  <generated>2025-06-29T10:22:03</generated>
+</templateData>

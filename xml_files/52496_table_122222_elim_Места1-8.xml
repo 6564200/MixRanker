@@ -1,0 +1,80 @@
+<?xml version="1.0" ?>
+<templateData>
+  <tournament>
+    <id>52496</id>
+    <name>Кикимора-Лето Open Cup</name>
+    <sport>Tennis</sport>
+    <country>Russia</country>
+    <banner>https://cdn.rankedin.com/images/posters/tournaments/52496.png</banner>
+  </tournament>
+  <class>
+    <id>122222</id>
+    <name>Мужчины C</name>
+    <type>elimination</type>
+  </class>
+  <participants>
+    <places>1-8</places>
+    <class_name>Мужчины C</class_name>
+    <round_0_team_1_name>ALEKSEY Troshin</round_0_team_1_name>
+    <round_0_team_1_ShortName>ALEKSEY Troshin</round_0_team_1_ShortName>
+    <round_0_team_2_name>Andrei Molchanov</round_0_team_2_name>
+    <round_0_team_2_ShortName>Andrei Molchanov</round_0_team_2_ShortName>
+    <round_0_team_3_name>Artyom Churin</round_0_team_3_name>
+    <round_0_team_3_ShortName>Artyom Churin</round_0_team_3_ShortName>
+    <round_0_team_4_name>Aleksandr Kolpakov</round_0_team_4_name>
+    <round_0_team_4_ShortName>Aleksandr Kolpakov</round_0_team_4_ShortName>
+    <round_0_team_5_name>Станислав Токмаков</round_0_team_5_name>
+    <round_0_team_5_ShortName>Станислав Токмаков</round_0_team_5_ShortName>
+    <round_0_team_6_name>Vladislav Filimonov</round_0_team_6_name>
+    <round_0_team_6_ShortName>Vladislav Filimonov</round_0_team_6_ShortName>
+    <round_0_team_7_name>Александр Шевалдин</round_0_team_7_name>
+    <round_0_team_7_ShortName>Александр Шевалдин</round_0_team_7_ShortName>
+    <round_0_team_8_name>Anton Goriachevskii</round_0_team_8_name>
+    <round_0_team_8_ShortName>Anton Goriachevskii</round_0_team_8_ShortName>
+    <round_1_1_court>Корт №1</round_1_1_court>
+    <round_1_1_is_played>True</round_1_1_is_played>
+    <round_1_1_has_score>True</round_1_1_has_score>
+    <round_1_1_cancellation_status/>
+    <round_1_1_team>ALEKSEY Troshin</round_1_1_team>
+    <round_1_1_Shortteam>ALEKSEY Troshin</round_1_1_Shortteam>
+    <round_1_1_player1_name>ALEKSEY Troshin</round_1_1_player1_name>
+    <round_1_1_player2_name/>
+    <round_1_1_score>2-0</round_1_1_score>
+    <round_1_1_sets_summary>(11-7) (11-6)</round_1_1_sets_summary>
+    <round_1_1_match_type>normal</round_1_1_match_type>
+    <round_1_2_court>Корт №2</round_1_2_court>
+    <round_1_2_is_played>True</round_1_2_is_played>
+    <round_1_2_has_score>True</round_1_2_has_score>
+    <round_1_2_cancellation_status/>
+    <round_1_2_team>Aleksandr Kolpakov</round_1_2_team>
+    <round_1_2_Shortteam>Aleksandr Kolpakov</round_1_2_Shortteam>
+    <round_1_2_player1_name>Aleksandr Kolpakov</round_1_2_player1_name>
+    <round_1_2_player2_name/>
+    <round_1_2_score>2-1</round_1_2_score>
+    <round_1_2_sets_summary>(2-11) (11-9) (13-11)</round_1_2_sets_summary>
+    <round_1_2_match_type>normal</round_1_2_match_type>
+    <round_1_3_court>Корт №3</round_1_3_court>
+    <round_1_3_is_played>True</round_1_3_is_played>
+    <round_1_3_has_score>True</round_1_3_has_score>
+    <round_1_3_cancellation_status/>
+    <round_1_3_team>Станислав Токмаков</round_1_3_team>
+    <round_1_3_Shortteam>Станислав Токмаков</round_1_3_Shortteam>
+    <round_1_3_player1_name>Станислав Токмаков</round_1_3_player1_name>
+    <round_1_3_player2_name/>
+    <round_1_3_score>2-1</round_1_3_score>
+    <round_1_3_sets_summary>(8-11) (11-2) (11-9)</round_1_3_sets_summary>
+    <round_1_3_match_type>normal</round_1_3_match_type>
+    <round_1_4_court>Корт №1</round_1_4_court>
+    <round_1_4_is_played>True</round_1_4_is_played>
+    <round_1_4_has_score>True</round_1_4_has_score>
+    <round_1_4_cancellation_status/>
+    <round_1_4_team>Anton Goriachevskii</round_1_4_team>
+    <round_1_4_Shortteam>Anton Goriachevskii</round_1_4_Shortteam>
+    <round_1_4_player1_name>Anton Goriachevskii</round_1_4_player1_name>
+    <round_1_4_player2_name/>
+    <round_1_4_score>2-0</round_1_4_score>
+    <round_1_4_sets_summary>(11-5) (11-3)</round_1_4_sets_summary>
+    <round_1_4_match_type>normal</round_1_4_match_type>
+  </participants>
+  <generated>2025-06-29T10:22:03</generated>
+</templateData>

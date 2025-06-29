@@ -1,0 +1,55 @@
+<?xml version="1.0" ?>
+<templateData>
+  <courtName>Корт №1</courtName>
+  <courtStatus>Active</courtStatus>
+  <currentClassName>Мужчины C</currentClassName>
+  <currentMatchState>live</currentMatchState>
+  <currentDurationSeconds>600</currentDurationSeconds>
+  <player1FirstName>Andrei</player1FirstName>
+  <player1MiddleName/>
+  <player1LastName>Dunaev</player1LastName>
+  <player1FullName>Andrei Dunaev</player1FullName>
+  <player1LastNameShort>DUN</player1LastNameShort>
+  <player1InitialLastName>A. Dunaev</player1InitialLastName>
+  <player3FirstName>Aleksandr</player3FirstName>
+  <player3MiddleName/>
+  <player3LastName>Kolpakov</player3LastName>
+  <player3FullName>Aleksandr Kolpakov</player3FullName>
+  <player3LastNameShort>KOL</player3LastNameShort>
+  <player3InitialLastName>A. Kolpakov</player3InitialLastName>
+  <team1Score>1</team1Score>
+  <team2Score>0</team2Score>
+  <set1Team1>11</set1Team1>
+  <set1Team2>3</set1Team2>
+  <set2Team1>9</set2Team1>
+  <set2Team2>4</set2Team2>
+  <team1NamesShort>DUN</team1NamesShort>
+  <team1NamesInitial>A.Dunaev</team1NamesInitial>
+  <team1NamesFull>Andrei Dunaev</team1NamesFull>
+  <team2NamesShort>KOL</team2NamesShort>
+  <team2NamesInitial>A.Kolpakov</team2NamesInitial>
+  <team2NamesFull>Aleksandr Kolpakov</team2NamesFull>
+  <nextClassName>Мужчины C</nextClassName>
+  <nextStartTime>2025-06-29T10:12:00</nextStartTime>
+  <nextScheduledTime>2025-06-29T10:12:00</nextScheduledTime>
+  <nextMatchState>scheduled</nextMatchState>
+  <nextPlayer1FirstName>Алексей</nextPlayer1FirstName>
+  <nextPlayer1MiddleName/>
+  <nextPlayer1LastName>Колышницын</nextPlayer1LastName>
+  <nextPlayer1FullName>Алексей Колышницын</nextPlayer1FullName>
+  <nextPlayer1LastNameShort>КОЛ</nextPlayer1LastNameShort>
+  <nextPlayer1InitialLastName>А. Колышницын</nextPlayer1InitialLastName>
+  <nextPlayer3FirstName>Андрей</nextPlayer3FirstName>
+  <nextPlayer3MiddleName/>
+  <nextPlayer3LastName>Чудиновских</nextPlayer3LastName>
+  <nextPlayer3FullName>Андрей Чудиновских</nextPlayer3FullName>
+  <nextPlayer3LastNameShort>ЧУД</nextPlayer3LastNameShort>
+  <nextPlayer3InitialLastName>А. Чудиновских</nextPlayer3InitialLastName>
+  <nextTeam1NamesShort>КОЛ</nextTeam1NamesShort>
+  <nextTeam1NamesInitial>А.Колышницын</nextTeam1NamesInitial>
+  <nextTeam1NamesFull>Алексей Колышницын</nextTeam1NamesFull>
+  <nextTeam2NamesShort>ЧУД</nextTeam2NamesShort>
+  <nextTeam2NamesInitial>А.Чудиновских</nextTeam2NamesInitial>
+  <nextTeam2NamesFull>Андрей Чудиновских</nextTeam2NamesFull>
+  <updated>2025-06-29T10:22:03</updated>
+</templateData>

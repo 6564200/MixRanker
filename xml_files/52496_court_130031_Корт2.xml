@@ -1,0 +1,53 @@
+<?xml version="1.0" ?>
+<templateData>
+  <courtName>Корт №2</courtName>
+  <courtStatus>Active</courtStatus>
+  <currentClassName>Мужчины C</currentClassName>
+  <currentMatchState>live</currentMatchState>
+  <currentDurationSeconds>204</currentDurationSeconds>
+  <player1FirstName>Andrei</player1FirstName>
+  <player1MiddleName/>
+  <player1LastName>Molchanov</player1LastName>
+  <player1FullName>Andrei Molchanov</player1FullName>
+  <player1LastNameShort>MOL</player1LastNameShort>
+  <player1InitialLastName>A. Molchanov</player1InitialLastName>
+  <player3FirstName>Александр</player3FirstName>
+  <player3MiddleName/>
+  <player3LastName>Шевалдин</player3LastName>
+  <player3FullName>Александр Шевалдин</player3FullName>
+  <player3LastNameShort>ШЕВ</player3LastNameShort>
+  <player3InitialLastName>А. Шевалдин</player3InitialLastName>
+  <team1Score>0</team1Score>
+  <team2Score>0</team2Score>
+  <set1Team1>0</set1Team1>
+  <set1Team2>0</set1Team2>
+  <team1NamesShort>MOL</team1NamesShort>
+  <team1NamesInitial>A.Molchanov</team1NamesInitial>
+  <team1NamesFull>Andrei Molchanov</team1NamesFull>
+  <team2NamesShort>ШЕВ</team2NamesShort>
+  <team2NamesInitial>А.Шевалдин</team2NamesInitial>
+  <team2NamesFull>Александр Шевалдин</team2NamesFull>
+  <nextClassName>Мужчины C</nextClassName>
+  <nextStartTime>2025-06-29T10:12:00</nextStartTime>
+  <nextScheduledTime>2025-06-29T10:12:00</nextScheduledTime>
+  <nextMatchState>scheduled</nextMatchState>
+  <nextPlayer1FirstName>Anton</nextPlayer1FirstName>
+  <nextPlayer1MiddleName/>
+  <nextPlayer1LastName>Goriachevskii</nextPlayer1LastName>
+  <nextPlayer1FullName>Anton Goriachevskii</nextPlayer1FullName>
+  <nextPlayer1LastNameShort>GOR</nextPlayer1LastNameShort>
+  <nextPlayer1InitialLastName>A. Goriachevskii</nextPlayer1InitialLastName>
+  <nextPlayer3FirstName>Александр</nextPlayer3FirstName>
+  <nextPlayer3MiddleName/>
+  <nextPlayer3LastName>Шипицын</nextPlayer3LastName>
+  <nextPlayer3FullName>Александр Шипицын</nextPlayer3FullName>
+  <nextPlayer3LastNameShort>ШИП</nextPlayer3LastNameShort>
+  <nextPlayer3InitialLastName>А. Шипицын</nextPlayer3InitialLastName>
+  <nextTeam1NamesShort>GOR</nextTeam1NamesShort>
+  <nextTeam1NamesInitial>A.Goriachevskii</nextTeam1NamesInitial>
+  <nextTeam1NamesFull>Anton Goriachevskii</nextTeam1NamesFull>
+  <nextTeam2NamesShort>ШИП</nextTeam2NamesShort>
+  <nextTeam2NamesInitial>А.Шипицын</nextTeam2NamesInitial>
+  <nextTeam2NamesFull>Александр Шипицын</nextTeam2NamesFull>
+  <updated>2025-06-29T10:22:03</updated>
+</templateData>
