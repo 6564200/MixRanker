@@ -6,14 +6,14 @@
 }
 
 * {
-    margin: 0;
-    padding: 0;
+    margin: 20;
+    padding: 20;
     box-sizing: border-box;
 }
 
 body {
-    width: 390px;
-    height: 110px;
+    width: 510px;
+    height: 150px;
     background: transparent;
     font-family: 'TT Bluescreens', 'Orbitron', monospace;
     font-weight: bold;
@@ -24,21 +24,20 @@ body {
 
 .scoreboard {
     width: 100%;
-    height: 90px;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    border: 2px solid #fff;
-    background: rgba(0, 0, 0, 0.8);
+    /* border: 20px solid #fff; */
+    /* background: rgba(0, 0, 0, 0.8); */
     position: relative;
 }
 
-
-
 .team-row {
-    height: 43px;
+    width: 100%;
+    height: 130px;
     display: flex;
     align-items: center;
-    border-bottom: 1px solid #333;
+    border-bottom: 3px solid #333;
     position: relative;
 }
 
@@ -47,58 +46,63 @@ body {
 }
 
 .team-name {
-    width: 200px;
+    width: 320px;
     color: #fff;
-    font-size: 14px;
-    padding: 0 10px;
+    font-size: 32px;
+    padding: 0 30px;
     text-align: left;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    /*text-shadow: 2px 2px 4px rgba(0,0,0,0.8);*/
     white-space: nowrap;
     overflow: hidden;
     display: flex;
     align-items: center;
-    line-height: 1.1;
+    line-height: 1;
 }
 
 .sets {
+    width: 30px;
+    padding: 20 20px;
+
     display: flex;
     color: #fff;
-    font-size: 14px;
+    font-size: 32px;
     text-align: center;
 }
 
 .set {
-    width: 30px;
+    width: 32px;
     height: 30px;
     margin: 0 2px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255,255,255,0.1);
+    /* background: rgba(255,255,255,0.1);
     border: 1px solid #666;
-    border-radius: 3px;
+    border-radius: 3px; */
 }
 
 .score {
     width: 60px;
     color: #fff;
-    font-size: 22px;
+    font-size: 32px;
     font-weight: 900;
     text-align: center;
-    background: rgba(0,0,0,0.5);
-    border-left: 2px solid #333;
+    /* background: rgba(0,0,0,0.5); */
+    border-left: 6px solid #333;
     display: flex;
     align-items: center;
     justify-content: center;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    /* text-shadow: 2px 2px 4px rgba(0,0,0,0.8); */
 }
 
 .team1 {
-    background: linear-gradient(90deg, rgba(0,100,200,0.3) 0%, rgba(0,0,0,0.8) 100%);
+    background: linear-gradient(0deg, rgba(55,56,61,1) 0%, rgba(5,8,13,1) 100%);
+    border-bottom: 3px solid #93BF20;
 }
 
 .team2 {
-    background: linear-gradient(90deg, rgba(200,50,0,0.3) 0%, rgba(0,0,0,0.8) 100%);
+    background: linear-gradient(0deg, rgba(55,56,61,1) 0%, rgba(5,8,13,1) 100%);
+    border-bottom: 3px solid #93BF20;
 }
 
 .no-match {
@@ -124,9 +128,9 @@ body {
 }
 
 .info-bar {
-    height: 20px;
-    background: rgba(0, 0, 0, 0.9);
-    border-top: 1px solid #333;
+    height: 70px;
+    background: linear-gradient(0deg, rgba(182,214,105,1) 100%, rgba(146,192,32,1) 100%);
+    /* border-radius: 3px; */
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -144,6 +148,10 @@ body {
 }
 
 .court-name {
+    padding: 0 20px;
+    font-size: 20px;
     flex-shrink: 0;
-    margin-left: 10px;
+    color: rgba(6, 5, 10, 1);
+    text-shadow: 0px 0px 0px rgba(0,0,0,0.8);
+    /* margin-left: 20px; */
 }
