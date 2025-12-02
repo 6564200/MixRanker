@@ -490,12 +490,8 @@ class XMLGenerator:
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{court_name} - Scoreboard</title>
-        <link rel="stylesheet" href="/static/css/scoreboard.css">
-        <style>
-            .sets {{
-                width: {sets_width}px;
-            }}
-        </style>
+        <link rel="stylesheet" href="/static/css/scoreboard.css?v=0.0.1">
+
         <script>
             setInterval(function() {{
                 location.reload();
@@ -503,69 +499,82 @@ class XMLGenerator:
         </script>
     </head>
     <body>
-        <div class="scoreboard">'''
+        <div class="scoreboard-container">
+            <div class="scoreboard">
+                <div class="cort">
+                    <span class="text-cort">{court_name}</span>
+                </div>'''
         
         if show_current_match:
-            html_content += f'''
-            <div class="team-row">
-                <div class="team-name">{team1_name}</div>
-                <div class="sets">'''
+            html_set_score_2 = ''
             
-            # Сеты для команды 1
+             # Сеты для команды 1
             if detailed_result and len(detailed_result) > 0:
                 for i in range(min(max_sets, len(detailed_result))):
                     set_score = detailed_result[i].get("firstParticipantScore", 0)
-                    html_content += f'<div class="set">{set_score}</div>'
+                    html_set_score_1 = f'<div class="set set1-{i}">{set_score}</div>'
                 
                 for i in range(len(detailed_result), max_sets):
-                    html_content += '<div class="set">-</div>'
+                    html_set1 += '<div class="set_1">-</div>'
             else:
                 # Для матчей без детального счета показываем пустые сеты
                 for i in range(max_sets):
-                    html_content += '<div class="set">-</div>'
-            
-            html_content += f'''
-                </div>
-                <div class="score">{team1_score if show_score else "-"}</div>
-            </div>
-            
-            <div class="team-row team2{state_class}">
-                <div class="team-name">{team2_name}</div>
-                <div class="sets">'''
+                    html_set_score_1 += '<div class="set set1-{i}">-</div>'           
             
             # Сеты для команды 2
             if detailed_result and len(detailed_result) > 0:
                 for i in range(min(max_sets, len(detailed_result))):
                     set_score = detailed_result[i].get("secondParticipantScore", 0)
-                    html_content += f'<div class="set">{set_score}</div>'
+                    html_set_score_2 += f'<div class="set set1-{i}">{set_score}</div>'
                 
                 for i in range(len(detailed_result), max_sets):
-                    html_content += '<div class="set">-</div>'
+                    html_set2 += '<div class="set_2">-</div>'
             else:
                 # Для матчей без детального счета показываем пустые сеты
                 for i in range(max_sets):
-                    html_content += '<div class="set">-</div>'
+                    html_set_score_2 += '<div class="set set2-{i}">-</div>'            
             
             html_content += f'''
+
+                
+		  	
+                <!-- Team 1 Row -->
+                <div class="team-row">
+                    <div class="bg-team">
+                        <span class="team-name">{team1_name}</span>
+                        {html_set_score_1 if show_score else "*"}
+                        <div class="main-score-area bg-rad1">
+                            <span class="score-text">{team1_score if show_score else "-"}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="score">{team2_score if show_score else "-"}</div>
-            </div>'''
+                
+                <div class="divider-bar"></div>
+                <!-- Team 2 Row -->
+                <div class="team-row">
+                    <div class="bg-team">
+                        <span class="team-name">{team2_name}</span>
+                        {html_set_score_2 if show_score else "*"}
+                        <div class="main-score-area bg-rad2">
+                            <span class="score-text">{team2_score if show_score else "-"}</span>
+                        </div>
+                    </div>
+                </div>'''
+            
             
         else:
             # Корт полностью свободен
             html_content += '''
-            <div class="team-row no-match">
-                <div class="team-name">NO ACTIVE MATCH</div>
+            <div class="team-row">
+                <div class="bg-team"></div>
+                <div class="team2">NO ACTIVE MATCH</div>
+                <div class="bg-score bg-rad2"></div>
             </div>'''
         
         html_content += '''
             </div>
-            <div class="info-bar">
-                <div class="tournament-name">''' + tournament_name + (' - ' + class_name if class_name else '') + '''</div>
-                <div class="court-name">''' + court_name + '''</div>
-            </div>
-        </body>
-        </html>'''
+    </body>
+</html>'''
         
         return html_content
 
