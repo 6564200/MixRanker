@@ -819,9 +819,9 @@ class RankedinAPI:
                             group_name = "Групповой этап"
                             if isinstance(rr_data, dict):
                                 if "RoundRobin" in rr_data and isinstance(rr_data["RoundRobin"], dict) and rr_data["RoundRobin"].get("Name"):
-                                    group_name = f"Группа {rr_data['RoundRobin']['Name']}"
+                                    group_name = f"{rr_data['RoundRobin']['Name']}"
                                 elif rr_data.get("Name"):
-                                    group_name = f"Группа {rr_data['Name']}"
+                                    group_name = f"{rr_data['Name']}"
 
                             xml_types.append({
                                 "id": f"table_{class_id}_rr_{i}",
