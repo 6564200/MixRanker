@@ -9,12 +9,18 @@
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
   --bs-secondary-color: #515556;
+  --bs-modal-bg: #ffffff;
+  --bs-modal-color: #03414c;
   --bs-success-text-emphasis: #515556;
   --bg-tertiary: #e2e8f0;
   --text-primary: #03414C;
   --text-secondary: #27565F;
   --text-muted: #8BCCD8;
   --border-color: #e5e7eb;
+  --bs-modal-border-radius: 12px;
+  --bs-modal-padding: 16px;
+  --bs-modal-header-padding: 6px;
+  --bs-modal-footer-gap: 8px;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -29,6 +35,8 @@
   --bs-success-bg-subtle: #656d65;
   --bs-success-border-subtle: #6a8565;
   --bs-alert-border-color: #1b664a;
+  --bs-modal-bg: #374151;
+  --bs-modal-color: #f9fafb;
   --bg-tertiary: #374151;
   --text-primary: #f9fafb;
   --text-secondary: #d1d5db;
@@ -39,6 +47,7 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+  --bs-heading-color: #f3f4f6;
 }
 
 * {
@@ -251,7 +260,7 @@ body {
 }
 
 /* Стили для модального окна авторизации */
-.auth-overlay {
+.overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -278,6 +287,27 @@ body {
     align-items: center;
     gap: 0.5rem;
     color: var(--text-secondary);
+}
+
+.scrollable-list {
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+#previewArea {
+    min-height: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #212529;
+}
+
+#previewArea img {
+    max-width: 100%;
+    max-height: 300px;
+    height: auto;
+    object-fit: contain;
 }
 
 /* Анимация для обновления корта */

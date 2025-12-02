@@ -325,7 +325,7 @@
     </div>
 
 	<!-- Модальное окно авторизации -->
-	<div class="auth-overlay" id="authOverlay" style="display: none;">
+	<div class="overlay" id="authOverlay" style="display: none;">
 		<div class="auth-modal">
 			<h4 class="text-center mb-4">
 				<i class="fas fa-lock me-2"></i>Авторизация
@@ -351,6 +351,48 @@
 			</form>
 		</div>
 	</div>
+
+    <!-- Модальное окно загрузки фотографий -->
+    <div class="overlay" id="uploadOverlay" style="display: none;">
+        <div class="modal-dialog w-50 h-75">
+            <div class="modal-content">
+                <div class="modal-header justify-content-center">
+                    <h4 class="modal-title">Загрузка фотографий участников</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h5>Выберите участника</h5>
+                            <div class="list-group scrollable-list" id="participantList"></div>
+                        </div>
+                        <div class="col-md-8">
+                            <div id="uploadFormArea" style="display: none;">
+                                <h5>Загрузка фото для: <span id="selectedParticipantName"></span></h5>
+
+                                <div id="singlePhotoUploadContainer">
+                                    <input type="hidden" id="selectedParticipantId" name="participantId">
+                                    <div class="mb-3" id="previewArea"></div>
+
+                                    <div class="mb-3">
+                                        <label for="photoFile" class="form-label">Файл фотографии</label>
+                                        <input class="form-control" type="file" id="photoFile" name="photo" accept="image/*" required>
+                                    </div>
+
+                                    <button type="button" class="btn btn-warning" id="uploadPhotoButton" onclick="uploadPhoto()">Загрузить фото</button>
+                                </div>
+                            </div>
+                            <div id="noSelectionMessage">
+                                Пожалуйста, выберите участника из списка слева.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">Готово</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>

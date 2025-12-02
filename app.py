@@ -15,6 +15,9 @@ import time
 import random
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_file, render_template, Response, session
+from werkzeug.utils import secure_filename
+from PIL import Image
+from rembg import remove, new_session
 from functools import wraps
 from typing import Dict, List, Any, Optional
 from config import get_config
@@ -31,6 +34,8 @@ os.makedirs('static/css', exist_ok=True)
 os.makedirs('static/js', exist_ok=True)
 os.makedirs('templates', exist_ok=True)
 os.makedirs('static/fonts', exist_ok=True)
+UPLOAD_FOLDER = 'static/photos'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Настройка логирования
 logging.basicConfig(
@@ -51,6 +56,10 @@ try:
 except ImportError as e:
     logger.error(f"Ошибка импорта модулей: {e}")
     sys.exit(1)
+
+# Сессия модели rembg
+MODEL_NAME = 'birefnet-portrait'
+RB_SESSION = new_session(MODEL_NAME)
 
 # Создание Flask приложения
 app = Flask(__name__)
@@ -194,6 +203,25 @@ def init_database():
             -- Создаем админа по умолчанию (пароль: admin123)
             INSERT OR IGNORE INTO users (username, password, role) 
             VALUES ('admin', 'admin123', 'admin');
+            
+            CREATE TABLE IF NOT EXISTS participants (
+                id INTEGER PRIMARY KEY,
+                rankedin_id TEXT UNIQUE,
+                first_name TEXT NOT NULL,
+                middle_name TEXT,
+                last_name TEXT NOT NULL,
+                country_code TEXT NOT NULL,
+                photo_url TEXT,
+                info TEXT
+            );
+            
+            CREATE TABLE IF NOT EXISTS participants_tournaments (
+                participant_id INTEGER NOT NULL,
+                tournament_id TEXT NOT NULL,
+                PRIMARY KEY (participant_id, tournament_id),
+                FOREIGN KEY (participant_id) REFERENCES participants(id) ON DELETE CASCADE,
+                FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE
+            );
             
             -- Индексы для производительности
             CREATE INDEX IF NOT EXISTS idx_courts_tournament ON courts_data(tournament_id);
@@ -478,6 +506,7 @@ def load_tournament(tournament_id):
             }), 400
 
         metadata = tournament_data.get("metadata", {})
+        participants = tournament_data.get("participants", [])
 
         # 2. Сохранение в БД (включая расписание)
         def save_tournament_transaction(conn):
@@ -510,6 +539,33 @@ def load_tournament(tournament_id):
                 json.dumps(tournament_data.get("court_usage", {}))
             ))
 
+            # Сохраняем участников
+            participants_values = [
+                (
+                    p.get("Id"),
+                    p.get("RankedinId"),
+                    p.get("FirstName"),
+                    p.get("LastName"),
+                    p.get("CountryShort")
+                )
+                for p in participants
+            ]
+            tournament_links_values = [
+                (p.get("Id"), tournament_id) for p in participants
+            ]
+
+            cursor.executemany('''
+                INSERT OR IGNORE INTO participants
+                (id, rankedin_id, first_name, last_name, country_code)
+                VALUES (?, ?, ?, ?, ?)
+            ''', participants_values)
+
+            cursor.executemany('''
+                INSERT OR IGNORE INTO participants_tournaments
+                (participant_id, tournament_id)
+                VALUES (?, ?)
+            ''', tournament_links_values)
+
             return True
 
         execute_db_transaction_with_retry(save_tournament_transaction)
@@ -539,6 +595,124 @@ def load_tournament(tournament_id):
             "success": False,
             "error": f"Ошибка загрузки турнира: {str(e)}"
         }), 500
+
+@app.route('/api/tournament/<tournament_id>/participants', methods=['GET', 'POST'])
+def manage_participants(tournament_id):
+    """Получение списка участников"""
+    try:
+        if request.method == 'POST':
+            # Обновляем список участников с API
+            participants = api.get_tournament_participants(tournament_id)
+
+            def update_participants_transaction(conn):
+                cursor = conn.cursor()
+                participants_values = [
+                    (
+                        p.get("Id"),
+                        p.get("RankedinId"),
+                        p.get("FirstName"),
+                        p.get("LastName"),
+                        p.get("CountryShort")
+                    )
+                    for p in participants
+                ]
+                tournament_links_values = [
+                    (p.get("Id"), tournament_id) for p in participants
+                ]
+
+                cursor.executemany('''
+                     INSERT OR IGNORE INTO participants
+                     (id, rankedin_id, first_name, last_name, country_code)
+                     VALUES (?, ?, ?, ?, ?)
+                ''', participants_values)
+
+                cursor.executemany('''
+                     INSERT OR IGNORE INTO participants_tournaments
+                     (participant_id, tournament_id)
+                     VALUES (?, ?)
+                ''', tournament_links_values)
+
+            execute_db_transaction_with_retry(update_participants_transaction)
+
+        # Получаем список участников из БД
+        def get_participants_transaction(conn):
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT * FROM participants AS p
+                JOIN participants_tournaments AS pt ON p.id = pt.participant_id
+                WHERE pt.tournament_id = ?;
+            ''', (tournament_id,))
+
+            column_names = [description[0] for description in cursor.description]
+            results = cursor.fetchall()
+
+            return [dict(zip(column_names, row_tuple)) for row_tuple in results]
+
+        participants = execute_db_transaction_with_retry(get_participants_transaction)
+
+        return jsonify(participants)
+
+    except Exception as e:
+        logger.error(f"Ошибка получения списка участников турнира {tournament_id}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/participants/upload-photo', methods=['POST'])
+def upload_participant_photo():
+    """Загрузка, обработка и сохранение фотографии"""
+    if 'photo' not in request.files:
+        return jsonify({"success": False, "error": "Нет файла фотографии"}), 400
+
+    file = request.files['photo']
+    participant_id = request.form.get('participant_id')
+
+    if file and participant_id:
+        filename_base = f"{secure_filename(participant_id)}.png"
+        save_path_processed = os.path.join(UPLOAD_FOLDER, filename_base)
+        temp_save_path = os.path.join(UPLOAD_FOLDER, f"temp_{file.filename}")
+        file.save(temp_save_path)
+
+        def process_image(image_path, output_path):
+            """Удаляет фон и масштабирует изображение"""
+            try:
+                with Image.open(image_path) as img:
+                    max_size = 2160
+                    if max(img.size) > 2160:
+                        ratio = max_size / max(img.size)
+                        new_size = tuple(int(dim * ratio) for dim in img.size)
+                        img = img.resize(new_size, Image.Resampling.LANCZOS)
+                    output_img = remove(img, session=RB_SESSION)
+                    output_img.save(output_path, format="PNG")
+                    return True
+            except Exception as e:
+                logging.error(f"Ошибка при обработке изображения {image_path}: {e}")
+                return False
+
+        def update_participant_photo_url_transaction(conn, participant_id, photo_url):
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE participants
+                SET photo_url = ?
+                WHERE id = ?;
+            ''', (photo_url, participant_id))
+
+        if process_image(temp_save_path, save_path_processed):
+            os.remove(temp_save_path)
+            photo_url_for_db = f"/{UPLOAD_FOLDER}/{filename_base}"
+            execute_db_transaction_with_retry(
+                lambda conn: update_participant_photo_url_transaction(conn, participant_id, photo_url_for_db)
+            )
+
+            return jsonify({
+                "success": True,
+                "message": "Фото обработано и сохранено",
+                "preview_url": photo_url_for_db
+            }), 200
+        else:
+            os.remove(temp_save_path)
+            return jsonify({"success": False, "error": "Ошибка обработки изображения (rembg/PIL)"}), 500
+
+    return jsonify({"success": False, "error": "Неизвестная ошибка загрузки"}), 500
+
 
 @app.route('/api/tournament/<tournament_id>/schedule/reload', methods=['POST'])
 def reload_tournament_schedule(tournament_id):
