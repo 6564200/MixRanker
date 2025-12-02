@@ -1,157 +1,170 @@
 @font-face {
-    font-family: 'TT Bluescreens';
-    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
-    font-weight: bold;
-    font-style: italic;
+    font-family: 'Onest Bol';
+    src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
 }
 
-* {
-    margin: 20;
-    padding: 20;
-    box-sizing: border-box;
+@font-face {
+    font-family: 'Onest Med';
+    src: url('/static/fonts/OnestLight1602-hint') format('truetype');
+    font-weight: medium;
+}
+
+:root {
+    --font-onest-bold: 'Onest Bol';
+    --font-onest-med: 'Onest Med';
+
+    /* Цвета текста */
+    --text-dark: #070707;
+    --text-light: #F9F9F9;
+    --text-m-light: #b5b5b5;
+    
+    /* Цвета ячеек */
+    --cell-gradient-b-bg: linear-gradient(to bottom, #202020, #070707);
+    --cell-line-bg: #91bf1f;
+    --cell-gradient-l-bg: linear-gradient(to bottom, #b6d569, #91bf1f);
+    --b-radius: 6px;
 }
 
 body {
-    width: 510px;
+    margin: 0;
+    padding: 10px;
+    background-color: transparent;
+    font-family: 'Onest', sans-serif;
+    display: flex;
+}
+
+
+.scoreboard-container {
+    width: 645px;
     height: 150px;
-    background: transparent;
-    font-family: 'TT Bluescreens', 'Orbitron', monospace;
-    font-weight: bold;
-    font-style: italic;
-    overflow: hidden;
-    position: relative;
 }
 
 .scoreboard {
-    width: 100%;
-    height: 100%;
+  position: flex;
+  flex-direction: column;
+}
+/* cort & text_cort container */
+.cort {
+    width: 92px;
+    height: 24px;
+    background: linear-gradient(180deg, #A0CF32 0%, #85C200 100%);
+    border-radius: 4px 4px 0px 0px;
     display: flex;
-    flex-direction: column;
-    /* border: 20px solid #fff; */
-    /* background: rgba(0, 0, 0, 0.8); */
-    position: relative;
+    align-items: center;
+    justify-content: center;
 }
 
+.text-cort {
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 20px;
+    color: #080609;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+/* Общие стили для строк команд для упрощения структуры */
 .team-row {
     width: 100%;
-    height: 130px;
-    display: flex;
-    align-items: center;
-    border-bottom: 3px solid #333;
-    position: relative;
+    height: 43px;
 }
 
-.team-row:last-child {
-    border-bottom: none;
+.team-row:first-of-type {
+    top: 24px; 
 }
 
-.team-name {
-    width: 320px;
-    color: #fff;
-    font-size: 32px;
-    padding: 0 30px;
-    text-align: left;
-    /*text-shadow: 2px 2px 4px rgba(0,0,0,0.8);*/
-    white-space: nowrap;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    line-height: 1;
+.team-row:last-of-type {
+    top: 67px; 
 }
 
-.sets {
-    width: 30px;
-    padding: 20 20px;
 
-    display: flex;
-    color: #fff;
-    font-size: 32px;
-    text-align: center;
-}
-
-.set {
-    width: 32px;
-    height: 30px;
-    margin: 0 2px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* background: rgba(255,255,255,0.1);
-    border: 1px solid #666;
-    border-radius: 3px; */
-}
-
-.score {
-    width: 60px;
-    color: #fff;
-    font-size: 32px;
-    font-weight: 900;
-    text-align: center;
-    /* background: rgba(0,0,0,0.5); */
-    border-left: 6px solid #333;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* text-shadow: 2px 2px 4px rgba(0,0,0,0.8); */
-}
-
-.team1 {
-    background: linear-gradient(0deg, rgba(55,56,61,1) 0%, rgba(5,8,13,1) 100%);
-    border-bottom: 3px solid #93BF20;
-}
-
-.team2 {
-    background: linear-gradient(0deg, rgba(55,56,61,1) 0%, rgba(5,8,13,1) 100%);
-    border-bottom: 3px solid #93BF20;
-}
-
-.no-match {
-    justify-content: center;
-    height: 86px;
-}
-
-.no-match .team-name {
+.bg-team {
+    display: flex; /* Используем flexbox внутри строки для расположения имени и счета */
+    position: relative; /* Чтобы спозиционировать элементы счета внутри */
     width: 100%;
-    text-align: center;
-    font-size: 24px;
-    color: #888;
+    height: 100%;
+    background: var(--cell-gradient-b-bg);
+	border-radius: 0px var(--b-radius) var(--b-radius) 0px ;
 }
 
-.next-match .team-name {
-    color: #aaa;
-    font-size: 13px;
+.divider-bar {
+    width: 100%;
+    height: 3px; /* Ширина 3px */
+    background-color: var(--cell-line-bg); /* Цвет из ваших переменных */
+    /* Убедитесь, что она находится между двумя .team-row в HTML */
 }
 
-.next-match .score {
-    color: #666;
-    font-size: 16px;
+/* bg_score1 & bg_score2 */
+.main-score-area {
+    position: absolute; /* Позиционируем относительно .bg-team */
+    width: 58px;
+    height: 100%;
+    right: 0px; /* Прижимаем к правому краю .bg-team */
+    top: 0px;
+    background: linear-gradient(180deg, #AED756 0%, #85C200 100%);
 }
 
-.info-bar {
-    height: 70px;
-    background: linear-gradient(0deg, rgba(182,214,105,1) 100%, rgba(146,192,32,1) 100%);
-    /* border-radius: 3px; */
+.bg-rad1 {
+    border-radius: 0px var(--b-radius) 0px 0px;
+}
+
+.bg-rad2 {
+    border-radius: 0px 0px var(--b-radius) 0px;
+}
+
+/* team1 & team2 text styles */
+.team-name {
+    padding-left: 18px;
+    /* Остальное позиционирование убрано, т.к. используется flexbox */
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 28px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 10px;
-    font-size: 10px;
-    color: #ccc;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-}
-
-.tournament-name {
-    flex: 1;
+    color: #FFFFFF;
+    text-transform: uppercase;
+    /* Позволяем тексту занимать все доступное место до счета */
+    flex-grow: 1; 
+    /* Добавляем обрезку текста, если он слишком длинный */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    padding-right: 10px; /* Небольшой отступ перед счетом */
 }
 
-.court-name {
-    padding: 0 20px;
-    font-size: 20px;
-    flex-shrink: 0;
-    color: rgba(6, 5, 10, 1);
-    text-shadow: 0px 0px 0px rgba(0,0,0,0.8);
-    /* margin-left: 20px; */
+/* Styles for set scores (set1_1, set1_2, etc.) */
+.set {
+    position: absolute;
+    width: 43px;
+    height: 43px;
+    top: 0px;
+	right: 58px; /* Справа от основного счета (58px ширина main-score-area) */
+    font-weight: 700;
+    font-size: 30px;
+    line-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #FFFFFF;
+    /* color: color(display-p3 1.000 1.000 1.000); */
+}
+
+.set1-0, .set2-0 { left: 473px; } /* 499px left minus 26px offset */
+.set1-1, .set2-1 { left: 430px; } /* 456px left minus 26px offset */
+.set1-2, .set2-2 { left: 387px; } /* 413px left minus 26px offset */
+
+
+.score-text {
+    /* Позиционирование убрано, т.к. оно внутри .main-score-area (который уже спозиционирован) */
+    width: 100%;
+    height: 100%;
+    font-weight: 700;
+    font-size: 30px;
+    line-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #080609;
 }
