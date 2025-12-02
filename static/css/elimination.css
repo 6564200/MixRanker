@@ -1,26 +1,53 @@
 @font-face {
-    font-family: 'TT Bluescreens';
+    font-family: 'Bluescreens';
     src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
-    font-weight: bold;
-    font-style: italic;
+    /* font-weight: bold; */
+    
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+@font-face {
+    font-family: 'Onest Bol';
+    src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
+
+    
+}
+
+@font-face {
+    font-family: 'Onest Med';
+    src: url('/static/fonts/OnestLight1602-hint') format('truetype');
+    font-weight: medium;
+    
+}
+
+:root {
+    --font-primary: 'Bluescreens';
+    --font-onest-bold: 'Onest Bol';
+    --font-onest-med:: 'Onest Med';
+
+    /* Цвета текста */
+    --text-dark: #070707;
+    --text-light: #F9F9F9;
+    --text-m-light: #b5b5b5;
+    
+    /* Цвета ячеек */
+    --cell-gradient-b-bg: linear-gradient(to bottom, #202020, #070707);
+    --cell-line-bg: #91bf1f;
+    --cell-gradient-l-bg: linear-gradient(to bottom, #b6d569, #91bf1f);
+
+    --b-radius: 6px;
 }
 
 body {
-    font-family: 'TT Bluescreens', Arial, sans-serif;
-    font-weight: bold;
-    font-style: italic;
+    zoom: 100%;
+    font-family: var(--font-onest-bold);
     background: transparent;
-    color: #FFFFFF;
-    width: 3840px;
-    height: 2160px;
+    color: var(--text-dark);
+    width: 1920px;
+    height: 1080px;
     overflow: hidden;
     position: relative;
+    margin: 10;
+    padding: 0;
 }
 
 .elimination-container {
@@ -28,47 +55,37 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 30px;
+    margin: 30px;
 }
 
 .tournament-header {
-    text-align: center;
-    margin-bottom: 40px;
-    padding-bottom: 20px;
-}
-
-.tournament-header h1 {
-    font-size: 60px;
-    color: #FFFFFF;
-    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
-    margin-bottom: 10px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
-
-.tournament-header h2 {
-    font-size: 40px;
-    color: #CCCCCC;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-    letter-spacing: 1px;
-}
-
-.bracket-grid {
-    display: flex;
-    gap: 10px;
-    width: 100%;
-	max-width: 100%;
-   
+    text-align: left;
+    margin-bottom: 35px;
+    font-family: var(--font-primary);
+    font-size: 64px;
+    background-clip: text;
+    -webkit-background-clip: text;
+    background-image: var(--cell-gradient-l-bg);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
 }
 
 .round-column {
     display: flex;
-    flex-direction: column;
-    height: 100%;
-    position: relative;
-	
+    flex-direction: row;
+    justify-content: space-evenly;
+	width: 1400px;
 }
 
+.bracket-grid {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    gap: 20px; /* Расстояние между контейнерами */
+    width: 100%;
+    max-width: 100%;
+}
 
 .round-column-2 {
     display: flex;
@@ -76,9 +93,13 @@ body {
     height: 100%;
     position: relative;
 	grid-row: span 5;
+
 }
 
-.round-column-2:nth-child(1) div:nth-child(odd) { grid-row: span 2; }
+.round-column-2:nth-child(1) div:nth-child(odd) { 
+    grid-row: span 2; 
+
+}
 
 
 .round-column-win {
@@ -90,7 +111,7 @@ body {
 }
 
 .round-header {
-    font-size: 36px;
+    font-size: 35px;
     color: #2c3e50;
     text-align: center;
     position: relative;
@@ -98,293 +119,93 @@ body {
     margin-bottom: 20px;
 }
 
-.round-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+.round-matches{
+    margin-bottom: 30px;
+}
+/* Базовые стили контейнера и шрифтов */
+.container {
+    display: flex;
+    flex-direction: column;
+    width: 450px; /* Ширина из Figma для Rectangle 158/159 */
+    font-family: 'Onest', sans-serif;
+    margin-bottom: 20px; /* расстояние снизу каждого контейнера */
 
 }
 
-.round-header {
-    font-size: 36px;
-    color: #FFFFFF;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-    letter-spacing: 1px;
+.row {
+    display: flex;
+    align-items: center; /* Выравнивает все элементы по центру вертикали */
+    height: 42px; /* Высота строки из Figma */
+    /* Удаляем padding из .row, чтобы границы .names и .rank совпадали с краями .container */
+}
 
+/* Стили для верхнего и нижнего фонов */
+.row-top {
+    background: linear-gradient(180deg, #202020 0%, #080808 100%);
+    border-radius: var(--b-radius) var(--b-radius) 0px 0px;
+}
+
+.row-bottom {
+    background: linear-gradient(180deg, #202020 0%, #080808 100%);
+    border-radius: 0px 0px var(--b-radius) var(--b-radius);
+}
+/* Блоки общий счет (Rectangle 160/161) */
+.rank {
+    width: 44px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Центрируем число внутри зеленого блока */
+    background: linear-gradient(180deg, #AED35B 0%, #88BD00 100%);
+}
+
+.rank-top {
+    border-radius: var(--b-radius) var(--b-radius) 0px 0px;
+}
+
+.rank-bottom {
+    border-radius: 0px 0px var(--b-radius) var(--b-radius);
+}
+
+.rank-number {
+    font-weight: 700;
+    font-size: 32px;
+    color: #040404;
+}
+
+/* Блоки с именами */
+.names {
+    /* Автоматически займет оставшееся пространство */
+    flex-grow: 1; 
+    display: flex;
+    align-items: center;
+    padding-left: 10px; /* Добавляем отступ слева для текста */
+}
+
+.name-main {
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 28px;
+    color: #FFFFFF;
     text-transform: uppercase;
 }
 
-.round-matches {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-	margin: 20px;
-    width: 500px;
-    flex-wrap: wrap;
-    align-content: stretch;
-    justify-content: space-evenly;
-	gap: 10px;
+.lost {
+    color: #969696;
 }
 
-/* Стили для первого раунда (команды) */
-.team-slot {
-    display: flex;
-    align-items: center;
-    background: #F8F9FA;
-    padding: 0;
-    min-height: 70px;
-    transform: skew(-15deg);
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    
-    overflow: hidden;
+/* Блоки со счетом сетов*/
+.set-score {
+    width: 60px; 
+    text-align: right;     /* Размещаем счет справа от имени, но слева от рейтинга */
+    padding-right: 10px;
 }
 
-.team-slot:hover {
-    transform: skew(-15deg) scale(1.02);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-}
-
-.team-slot.bye-team {
-    background: linear-gradient(135deg, #e1e2e3, #d5d7d9);
-    opacity: 0.8;
-}
-
-.team-number {
-    background: #2C3E50;
-    width: 80px;
-    height: 70px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #FFFFFF;
-    font-size: 32px;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-
-    flex-shrink: 0;
-}
-
-.team-name {
-    flex: 1;
-    font-size: 32px;
-    color: #2C3E50;
-    text-shadow: none;
-    text-align: left;
-    font-weight: bold;
-    transform: skew(15deg);
-    padding: 0 25px;
-    line-height: 1.2;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.team-slot.bye-team .team-name {
-    color: #78838f;
-    
-}
-
-/* Стили для результатов матчей */
-.match-result {
-    display: flex;
-    align-items: center;
-    background: #F8F9FA;
-    border-radius: 0;
-    border: none;
-    padding: 0 25px;
-    min-height: 70px;
-    transform: skew(-15deg);
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    border: 2px solid rgba(0, 0, 0, 0.1);
-    position: relative;
-    overflow: hidden;
-}
-
-.match-result:hover {
-    transform: skew(-15deg) scale(1.02);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-}
-
-.match-result::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
-    pointer-events: none;
-}
-
-.winner-team {
-    flex: 1;
-    font-size: 35px;
-    color: #2C3E50;
-    text-shadow: none;
-    font-weight: bold;
-    text-align: left;
-    line-height: 1.2;
-	transform: skew(15deg);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.match-score {
-    font-size: 40px;
-    color: #2C3E50;
-    text-shadow: none;
-    font-weight: bold;
-    transform: skew(15deg);
-    min-width: 50px;
-    text-align: right;
-    flex-shrink: 0;
-}
-
-.sets-info {
-    display: block; 
-    font-size: 35px;
-    color: #666;
-    text-align: right;
-	transform: skew(15deg);
-    min-width: 120px;
-    flex-shrink: 0;
-    
-    margin-top: 0px;
-}
-
-							/* Специальные типы матчей */
-.match-result.played {
-    background: #F8F9FA;
-}
-
-.match-result.played .winner-team,
-.match-result.played .match-score {
-    color: #254171;
-}
-
-.match-result.walkover {
-    background: linear-gradient(135deg, #EBEFE4, #EBEFE4);
-}
-
-.match-result.walkover .winner-team,
-.match-result.walkover .match-score {
-    color: #254171;
-
-}
-
-.match-result.bye {
-    background: linear-gradient(135deg, #e1e2e3, #d5d7d9);
-}
-
-.match-result.bye .winner-team,
-.match-result.bye .match-score { 
-    color: #254171;
-
-}
-
-.match-result.pending {
-    background: #F8F9FA;
-    opacity: 0.7;
-}
-
-.match-result.pending .winner-team,
-.match-result.pending .match-score {
-    color: #616161;
-}
-
-/* Финальный столбец - золотой */
-.round-column:last-child .match-result {
-    background: linear-gradient(135deg, #FFD700, #FFA500);
-    border-color: rgba(255, 255, 255, 0);
-    box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-}
-
-.round-column:last-child .match-result:hover {
-    box-shadow: 0 0 40px rgba(255, 215, 0, 0.7);
-}
-
-.round-column:last-child .winner-team {
-    font-size: 36px;
-    color: #000;
-
-}
-
-.round-column:last-child .match-score {
-    color: #000;
-    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
-}
-
-/* Пустое сообщение */
-.empty-message {
-    text-align: center;
-    margin-top: 200px;
-}
-
-.empty-message p {
-    font-size: 48px;
-    color: #CCCCCC;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-}
-
-/* Адаптация для разного количества раундов */
-.bracket-grid:has(.round-column:nth-child(2):last-child) .round-column {
-    max-width: 48%;
-}
-
-.bracket-grid:has(.round-column:nth-child(3):last-child) .round-column {
-    max-width: 31%;
-}
-
-.bracket-grid:has(.round-column:nth-child(4):last-child) .round-column {
-    max-width: 23%;
-}
-
-.bracket-grid:has(.round-column:nth-child(5):last-child) .round-column {
-    max-width: 28%;
-}
-
-/* Медиа-запросы для масштабирования */
-@media (max-width: 3840px) {
-    body {
-        transform-origin: 0 0;
-        transform: scale(calc(100vw / 3840));
-    }
-}
-
-/* Анимация для активных матчей */
-@keyframes pulse-elimination {
-    0% {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    }
-    50% {
-        box-shadow: 0 8px 20px rgba(255, 215, 0, 0.5);
-    }
-    100% {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    }
-}
-
-.match-result.active {
-    animation: pulse-elimination 2s infinite;
-}
-
-/* Дополнительные эффекты для колонок */
-.round-column::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0) 100%);
-    border-radius: 20px;
-    pointer-events: none;
+.score {
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 28px;
+    color: #969696;
 }
 
 /* Автообновление страницы каждые 30 секунд */
@@ -397,13 +218,4 @@ body::after {
     height: 0;
     z-index: -1;
     animation: autoRefresh 30s infinite;
-}
-
-@keyframes autoRefresh {
-    0%, 99% { 
-        opacity: 1; 
-    }
-    100% { 
-        opacity: 0;
-    }
 }
