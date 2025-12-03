@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 import logging
 from markupsafe import escape
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -749,7 +750,9 @@ class XMLGenerator:
         id_url_dict = {d['id']: d for d in id_url}
         team1_players = [(p, id_url_dict[p.get('id')]) for p in team1_players if p.get('id')]
         team2_players = [(p, id_url_dict[p.get('id')]) for p in team2_players if p.get('id')]
-        start_time = court_data.get("next_start_time", "")
+        next_start_time = court_data.get("next_start_time", "")
+        datetime_object = datetime.strptime(next_start_time, "%Y-%m-%dT%H:%M:%S")
+        start_time = datetime_object.strftime("%H.%M")
 
         html_content = f'''<!DOCTYPE html>
                 <html lang="en">

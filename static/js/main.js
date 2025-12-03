@@ -447,6 +447,12 @@ async function uploadPhoto() {
     const selectedParticipantIdInput = document.getElementById('selectedParticipantId');
     const previewArea = document.getElementById('previewArea');
 
+    const countryValue = document.getElementById('country').value;
+    const ratingValue = document.getElementById('rating').value;
+    const heightValue = document.getElementById('height').value;
+    const positionValue = document.getElementById('position').value;
+    const englishValue = document.getElementById('english-name').value;
+
     const participantId = selectedParticipantIdInput.value;
     const files = photoFile.files;
     if (!participantId || files.length === 0) {
@@ -456,6 +462,11 @@ async function uploadPhoto() {
     const formData = new FormData();
     formData.append('photo', files[0]);
     formData.append('participant_id', participantId);
+    formData.append('country', countryValue);
+    formData.append('rating', ratingValue);
+    formData.append('height', heightValue);
+    formData.append('position', positionValue);
+    formData.append('english', englishValue);
 
     previewArea.innerHTML = '<div class="spinner-border text-warning" role="status"><span class="visually-hidden">Загрузка...</span></div>';
 
@@ -474,6 +485,11 @@ async function uploadPhoto() {
         if (result.success && result.preview_url) {
             previewArea.innerHTML = `<img class="img-fluid" src="${result.preview_url}" alt="Превью фото">`;
             photoFile.value = '';
+            document.getElementById('country').value = '';
+            document.getElementById('rating').value = '';
+            document.getElementById('height').value = '';
+            document.getElementById('position').value = '';
+            document.getElementById('english-name').value = '';
         } else {
             throw new Error(result.error || 'Неизвестная ошибка.');
         }

@@ -508,6 +508,15 @@ def load_tournament(tournament_id):
         metadata = tournament_data.get("metadata", {})
         participants = tournament_data.get("participants", [])
 
+        empty_json = {
+            'country': request.form.get('country', None),
+            'rating': request.form.get('rating', None),
+            'height': request.form.get('height', None),
+            'position': request.form.get('position', None),
+            'full_name': request.form.get('english-name', None)
+        }
+        json_string = json.dumps(empty_json)
+
         # 2. Сохранение в БД (включая расписание)
         def save_tournament_transaction(conn):
             cursor = conn.cursor()
@@ -546,7 +555,8 @@ def load_tournament(tournament_id):
                     p.get("RankedinId"),
                     p.get("FirstName"),
                     p.get("LastName"),
-                    p.get("CountryShort")
+                    p.get("CountryShort"),
+                    json_string
                 )
                 for p in participants
             ]
@@ -556,7 +566,7 @@ def load_tournament(tournament_id):
 
             cursor.executemany('''
                 INSERT OR IGNORE INTO participants
-                (id, rankedin_id, first_name, last_name, country_code)
+                (id, rankedin_id, first_name, last_name, country_code, info)
                 VALUES (?, ?, ?, ?, ?)
             ''', participants_values)
 
@@ -665,51 +675,39 @@ def upload_participant_photo():
     file = request.files['photo']
     participant_id = request.form.get('participant_id')
 
+    data_dict = {
+        'country': request.form.get('country', None),
+        'rating': request.form.get('rating', None),
+        'height': request.form.get('height', None),
+        'position': request.form.get('position', None),
+        'full_name': request.form.get('english-name', None)
+    }
+
+    data_string = json.dumps(data_dict)
+
     if file and participant_id:
         filename_base = f"{secure_filename(participant_id)}.png"
         save_path_processed = os.path.join(UPLOAD_FOLDER, filename_base)
-        temp_save_path = os.path.join(UPLOAD_FOLDER, f"temp_{file.filename}")
-        file.save(temp_save_path)
-
-        def process_image(image_path, output_path):
-            """Удаляет фон и масштабирует изображение"""
-            try:
-                with Image.open(image_path) as img:
-                    max_size = 2160
-                    if max(img.size) > max_size:
-                        ratio = max_size / max(img.size)
-                        new_size = tuple(int(dim * ratio) for dim in img.size)
-                        img = img.resize(new_size, Image.Resampling.LANCZOS)
-                    output_img = remove(img, session=RB_SESSION)
-                    output_img.save(output_path, format="PNG")
-                    return True
-            except Exception as e:
-                logging.error(f"Ошибка при обработке изображения {image_path}: {e}")
-                return False
+        file.save(save_path_processed)
 
         def update_participant_photo_url_transaction(conn, participant_id, photo_url):
             cursor = conn.cursor()
             cursor.execute('''
                 UPDATE participants
-                SET photo_url = ?
+                SET photo_url = ?, info = ?
                 WHERE id = ?;
-            ''', (photo_url, participant_id))
+            ''', (photo_url, data_string, participant_id))
 
-        if process_image(temp_save_path, save_path_processed):
-            os.remove(temp_save_path)
-            photo_url_for_db = f"/{UPLOAD_FOLDER}/{filename_base}"
-            execute_db_transaction_with_retry(
-                lambda conn: update_participant_photo_url_transaction(conn, participant_id, photo_url_for_db)
-            )
+        photo_url_for_db = f"/{UPLOAD_FOLDER}/{filename_base}"
+        execute_db_transaction_with_retry(
+            lambda conn: update_participant_photo_url_transaction(conn, participant_id, photo_url_for_db)
+        )
 
-            return jsonify({
-                "success": True,
-                "message": "Фото обработано и сохранено",
-                "preview_url": photo_url_for_db
-            }), 200
-        else:
-            os.remove(temp_save_path)
-            return jsonify({"success": False, "error": "Ошибка обработки изображения (rembg/PIL)"}), 500
+        return jsonify({
+            "success": True,
+            "message": "Фото обработано и сохранено",
+            "preview_url": photo_url_for_db
+        }), 200
 
     return jsonify({"success": False, "error": "Неизвестная ошибка загрузки"}), 500
 
