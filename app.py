@@ -676,7 +676,7 @@ def upload_participant_photo():
             try:
                 with Image.open(image_path) as img:
                     max_size = 2160
-                    if max(img.size) > 2160:
+                    if max(img.size) > max_size:
                         ratio = max_size / max(img.size)
                         new_size = tuple(int(dim * ratio) for dim in img.size)
                         img = img.resize(new_size, Image.Resampling.LANCZOS)
@@ -712,7 +712,6 @@ def upload_participant_photo():
             return jsonify({"success": False, "error": "Ошибка обработки изображения (rembg/PIL)"}), 500
 
     return jsonify({"success": False, "error": "Неизвестная ошибка загрузки"}), 500
-
 
 @app.route('/api/tournament/<tournament_id>/schedule/reload', methods=['POST'])
 def reload_tournament_schedule(tournament_id):
@@ -1443,11 +1442,11 @@ def generate_court_html(tournament_id, court_id):
         tournament_data = get_tournament_data_from_db(tournament_id)
         if not tournament_data:
             return jsonify({"error": "Турнир не найден"}), 404
-        
+
         court_data = api.get_court_scoreboard(str(court_id))
         if "error" in court_data:
             return jsonify({"error": "Ошибка получения данных корта"}), 500
-        
+
         # Формируем информацию о типе для совместимости
         xml_type_info = {
             "id": f"court_{court_id}",
@@ -1456,12 +1455,12 @@ def generate_court_html(tournament_id, court_id):
             "court_id": court_id,
             "court_name": court_data.get("court_name", f"Корт {court_id}")
         }
-        
+
         # Генерация HTML файла
         file_info = xml_manager.generate_and_save_html(xml_type_info, tournament_data, court_data)
-        
+
         return jsonify(file_info)
-        
+
     except Exception as e:
         logger.error(f"Ошибка генерации HTML для корта {court_id}: {e}")
         return jsonify({"error": str(e)}), 500
@@ -1474,17 +1473,87 @@ def get_live_court_html(tournament_id, court_id):
         tournament_data = get_tournament_data_from_db(tournament_id)
         if not tournament_data:
             return "<html><body><h1>Турнир не найден</h1></body></html>", 404
-        
+
         #   Получение данных корта из БД
         court_data = get_court_data_from_db(tournament_id, str(court_id))
         if not court_data or "error" in court_data:
             return "<html><body><h1>Ошибка получения данных корта из БД</h1></body></html>", 500
-        
+
         # Генерация HTML из данных БД
         html_content = xml_manager.generator.generate_court_scoreboard_html(court_data, tournament_data)
-        
+
         return Response(html_content, mimetype='text/html; charset=utf-8')
-        
+
+    except Exception as e:
+        logger.error(f"Ошибка получения live HTML для корта {court_id}: {e}")
+        return f"<html><body><h1>Ошибка: {str(e)}</h1></body></html>", 500
+
+@app.route('/api/html-live/<tournament_id>/<court_id>/score')
+def get_live_court_score_html(tournament_id, court_id):
+    """Получение полноразмерного счёта текущего корта из БД"""
+    try:
+        #   Получение данных турнира из БД
+        tournament_data = get_tournament_data_from_db(tournament_id)
+        if not tournament_data:
+            return "<html><body><h1>Турнир не найден</h1></body></html>", 404
+
+        #   Получение данных корта из БД
+        court_data = get_court_data_from_db(tournament_id, str(court_id))
+        if not court_data or "error" in court_data:
+            return "<html><body><h1>Ошибка получения данных корта из БД</h1></body></html>", 500
+
+        # Генерация HTML из данных БД
+        html_content = xml_manager.generator.generate_court_fullscreen_scoreboard_html(court_data, tournament_data)
+
+        return Response(html_content, mimetype='text/html; charset=utf-8')
+
+    except Exception as e:
+        logger.error(f"Ошибка получения live HTML для корта {court_id}: {e}")
+        return f"<html><body><h1>Ошибка: {str(e)}</h1></body></html>", 500
+
+@app.route('/api/html-live/<tournament_id>/<court_id>/next')
+def get_next_match_html(tournament_id, court_id):
+    """Получение страницы HTML, заявляющей следующую игру"""
+    try:
+        #   Получение данных турнира из БД
+        tournament_data = get_tournament_data_from_db(tournament_id)
+        if not tournament_data:
+            return "<html><body><h1>Турнир не найден</h1></body></html>", 404
+
+        #   Получение данных корта из БД
+        court_data = get_court_data_from_db(tournament_id, str(court_id))
+        if not court_data or "error" in court_data:
+            return "<html><body><h1>Ошибка получения данных корта из БД</h1></body></html>", 500
+
+        next_participants = court_data.get("next_first_participant", [])
+        team1_ids = []
+        team2_ids = []
+        if len(next_participants) > 0:
+            team1_players = court_data.get("next_first_participant", [])
+            team1_ids = [p.get("id") for p in team1_players if p.get("id", "")]
+            team2_players = court_data.get("next_second_participant", [])
+            team2_ids = [p.get("id") for p in team2_players if p.get("id", "")]
+
+        def get_photo_urls_for_next(conn):
+            ids = team1_ids + team2_ids
+            if ids:
+                cursor = conn.cursor()
+                cursor.execute(f'''
+                    SELECT p.id, p_photo_url
+                    FROM participants as p
+                    WHERE id IN ({','.join('?' for _ in ids)});
+                ''', tuple(ids))
+                column_names = [description[0] for description in cursor.description]
+                results = cursor.fetchall()
+
+                return [dict(zip(column_names, row_tuple)) for row_tuple in results]
+            return []
+
+        id_url = execute_db_transaction_with_retry(get_photo_urls_for_next)
+        html_content = xml_manager.generator.generate_next_match_card_html(court_data, id_url, tournament_data)
+
+        return Response(html_content, mimetype='text/html; charset=utf-8')
+
     except Exception as e:
         logger.error(f"Ошибка получения live HTML для корта {court_id}: {e}")
         return f"<html><body><h1>Ошибка: {str(e)}</h1></body></html>", 500

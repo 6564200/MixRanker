@@ -569,7 +569,217 @@ class XMLGenerator:
         
         return html_content
 
+    def generate_court_fullscreen_scoreboard_html(self, court_data: Dict, tournament_data: Dict = None) -> str:
+        """Генерирует полноразмерную HTML страницу scoreboard текущего корта"""
+        # Определяем состояние корта
+        match_state = court_data.get("current_match_state", "free")
 
+        # Проверяем наличие участников
+        current_participants = court_data.get("current_first_participant") or court_data.get("first_participant", [])
+        next_participants = court_data.get("next_first_participant", [])
+
+        # Определяем что показывать
+        if current_participants and len(current_participants) > 0:
+            # Есть текущий матч - показываем его
+            team1_players = court_data.get("current_first_participant", court_data.get("first_participant", []))
+            team2_players = court_data.get("current_second_participant", court_data.get("second_participant", []))
+            team1_score = court_data.get("current_first_participant_score",
+                                         court_data.get("first_participant_score", 0))
+            team2_score = court_data.get("current_second_participant_score",
+                                         court_data.get("second_participant_score", 0))
+            detailed_result = court_data.get("current_detailed_result", court_data.get("detailed_result", []))
+            show_current_match = True
+
+            # Определяем тип отображения счета
+            if match_state == "live":
+                show_score = True
+            elif match_state == "finished":
+                show_score = True
+            elif match_state in ["scheduled", "playing_no_score"]:
+                show_score = False  # Показываем участников, но без счета
+            else:
+                show_score = True  # По умолчанию показываем
+
+        elif next_participants and len(next_participants) > 0:
+            # Нет текущего матча, но есть следующий
+            team1_players = court_data.get("next_first_participant", [])
+            team2_players = court_data.get("next_second_participant", [])
+            team1_score = 0
+            team2_score = 0
+            detailed_result = []
+            show_current_match = True
+            show_score = False  # Следующий матч всегда без счета
+
+        else:
+            # Корт полностью свободен
+            team1_players = []
+            team2_players = []
+            team1_score = 0
+            team2_score = 0
+            detailed_result = []
+            show_current_match = False
+            show_score = False
+
+        team1_scores = [0, 0, 0, team1_score]
+        team2_scores = [0, 0, 0, team2_score]
+        if detailed_result and len(detailed_result) > 0:
+            for i in range(min(len(detailed_result), 3)):
+                team1_set_score = detailed_result[i].get("firstParticipantScore", 0)
+                team1_scores[i] = team1_set_score
+                team2_set_score = detailed_result[i].get("secondParticipantScore", 0)
+                team2_scores[i] = team2_set_score
+
+        if team1_players:
+            team1_players = [p.get("fullName", "") for p in team1_players if p.get("fullName")]
+
+        if team2_players:
+            team2_players = [p.get("fullName", "") for p in team2_players if p.get("fullName")]
+
+        # Название корта
+        court_name = court_data.get("court_name", "Court")
+
+        if show_current_match:
+            html_content = f'''<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>{court_name} - Scoreboard</title>
+                    <link rel="stylesheet" href="/static/css/fullscreen_scoreboard.css">
+                    <script>
+                        setInterval(function() {{
+                            location.reload();
+                        }}, 9000);
+                    </script>
+                </head>
+                <body>
+                    <div class="scoreboard">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="player-cell"></th>
+                                    <th class="score-cell">{'Сет 1' if show_score else ''}</th>
+                                    <th class="score-cell">{'Сет 2' if show_score else ''}</th>
+                                    <th class="score-cell">{'Сет 3' if show_score else ''}</th>
+                                    <th class="score-cell">{'Итог' if show_score else ''}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="player-cell">{'<br>'.join(team1_players)}</td>
+                                    <td class="score-cell">{team1_scores[0] if show_score else ''}</td>
+                                    <td class="score-cell">{team1_scores[1] if show_score else ''}</td>
+                                    <td class="score-cell">{team1_scores[2] if show_score else ''}</td>
+                                    <td class="score-cell">{team1_scores[3] if show_score else ''}</td>
+                                </tr>
+                                <tr>
+                                    <td class="player-cell">{'<br>'.join(team2_players)}</td>
+                                    <td class="score-cell">{team2_scores[0] if show_score else ''}</td>
+                                    <td class="score-cell">{team2_scores[1] if show_score else ''}</td>
+                                    <td class="score-cell">{team2_scores[2] if show_score else ''}</td>
+                                    <td class="score-cell">{team2_scores[3] if show_score else ''}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </body>
+                </html>'''
+
+        else:
+            html_content = f'''<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>{court_name} - Scoreboard</title>
+                    <link rel="stylesheet" href="/static/css/fullscreen_scoreboard.css">
+                    <script>
+                        setInterval(function() {{
+                            location.reload();
+                        }}, 9000);
+                    </script>
+                </head>
+                <body>
+                    <div class="scoreboard">
+                        <div class="team-row no-match">
+                            <div class="team-name">NO ACTIVE MATCH</div>
+                        </div>
+                    </div>
+                </body>
+                </html>'''
+
+        return html_content
+
+    def generate_next_match_card_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
+        """Генерирует страницу HTML, заявляющей следующую игру"""
+        court_name = court_data.get("court_name", "Court")
+        next_participants = court_data.get("next_first_participant", [])
+        if not next_participants or not id_url:
+            html_content = f'''<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>{court_name} - Next match</title>
+                    <link rel="stylesheet" href="/static/css/next_match.css">
+                    <script>
+                        setInterval(function() {{
+                            location.reload();
+                        }}, 9000);
+                    </script>
+                </head>
+                <body>
+                    <div class="next-match">NO NEXT MATCH</div>
+                </body>
+                </html>'''
+            return html_content
+
+        team1_players = court_data.get("next_first_participant", [])
+        team2_players = court_data.get("next_second_participant", [])
+        id_url_dict = {d['id']: d for d in id_url}
+        team1_players = [(p, id_url_dict[p.get('id')]) for p in team1_players if p.get('id')]
+        team2_players = [(p, id_url_dict[p.get('id')]) for p in team2_players if p.get('id')]
+        start_time = court_data.get("next_start_time", "")
+
+        html_content = f'''<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>{court_name} - Next match</title>
+                    <link rel="stylesheet" href="/static/css/next_match.css">
+                    <script>
+                        setInterval(function() {{
+                            location.reload();
+                        }}, 9000);
+                    </script>
+                </head>
+                <body>
+                    <div class="next-match">
+                        <div class="time">{start_time}</div>
+                        <div class="block">
+                            <div class="left_team">
+                                <div class="left_participants">
+                                    {'<br>'.join([p[0].get("fullName") for p in team1_players])}
+                                </div>
+                                <div class="left-images">
+                                    {''.join(f'<img src="{p[1]['photo_url']}" alt="{p[0].get("fullName")}">' for p in team1_players)}
+                                </div>
+                            </div>
+                            <div class="right_team">
+                                <div class="right_participants">
+                                    {'<br>'.join([p[0].get("fullName") for p in team2_players])}
+                                </div>
+                                <div class="right-images">
+                                    {''.join(f'<img src="{p[1]['photo_url']} alt={p[0].get("fullName")}">' for p in team2_players)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </body>
+                </html>'''
+
+        return html_content
 
     def _add_elimination_data(self, root: ET.Element, class_data: Dict, draw_index: int):
         """Добавляет данные игр на выбывание в плоском формате с обработкой Bye и Walkover"""
