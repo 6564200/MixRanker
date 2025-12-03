@@ -773,7 +773,7 @@ class XMLGenerator:
                                     {'<br>'.join([p[0].get("fullName") for p in team1_players])}
                                 </div>
                                 <div class="left-images">
-                                    {''.join(f'<img src="{p[1]['photo_url']}" alt="{p[0].get("fullName")}">' for p in team1_players)}
+                                    {''.join(f'<img src="{p[1]["photo_url"]}" alt="{p[0].get("fullName")}">' for p in team1_players)}
                                 </div>
                             </div>
                             <div class="right_team">
@@ -781,7 +781,7 @@ class XMLGenerator:
                                     {'<br>'.join([p[0].get("fullName") for p in team2_players])}
                                 </div>
                                 <div class="right-images">
-                                    {''.join(f'<img src="{p[1]['photo_url']} alt={p[0].get("fullName")}">' for p in team2_players)}
+                                    {''.join(f'<img src="{p[1]["photo_url"]} alt={p[0].get("fullName")}">' for p in team2_players)}
                                 </div>
                             </div>
                         </div>
@@ -914,7 +914,7 @@ class XMLGenerator:
                                 {'<br>'.join([p[0].get("fullName") for p in team1_players])}
                             </div>
                             <div class="left-images">
-                                {''.join(f'<img src="{p[1]['photo_url']}" alt="{p[0].get("fullName")}">' for p in team1_players)}
+                                {''.join(f'<img src="{p[1]["photo_url"]}" alt="{p[0].get("fullName")}">' for p in team1_players)}
                             </div>
                         </div>
                         <div class="right_team">
@@ -922,7 +922,7 @@ class XMLGenerator:
                                 {'<br>'.join([p[0].get("fullName") for p in team2_players])}
                             </div>
                             <div class="right-images">
-                                {''.join(f'<img src="{p[1]['photo_url']} alt={p[0].get("fullName")}">' for p in team2_players)}
+                                {''.join(f'<img src="{p[1]["photo_url"]} alt={p[0].get("fullName")}">' for p in team2_players)}
                             </div>
                         </div>
                     </div>

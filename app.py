@@ -58,7 +58,7 @@ except ImportError as e:
     sys.exit(1)
 
 # Сессия модели rembg
-MODEL_NAME = 'birefnet-portrait'
+MODEL_NAME = 'birefnet-general-lite'
 RB_SESSION = new_session(MODEL_NAME)
 
 # Создание Flask приложения
