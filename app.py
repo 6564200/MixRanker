@@ -1539,7 +1539,7 @@ def get_next_match_html(tournament_id, court_id):
             if ids:
                 cursor = conn.cursor()
                 cursor.execute(f'''
-                    SELECT p.id, p_photo_url
+                    SELECT p.id, p.photo_url
                     FROM participants as p
                     WHERE id IN ({','.join('?' for _ in ids)});
                 ''', tuple(ids))
@@ -1551,6 +1551,49 @@ def get_next_match_html(tournament_id, court_id):
 
         id_url = execute_db_transaction_with_retry(get_photo_urls_for_next)
         html_content = xml_manager.generator.generate_next_match_card_html(court_data, id_url, tournament_data)
+
+        return Response(html_content, mimetype='text/html; charset=utf-8')
+
+    except Exception as e:
+        logger.error(f"Ошибка получения live HTML для корта {court_id}: {e}")
+        return f"<html><body><h1>Ошибка: {str(e)}</h1></body></html>", 500
+
+@app.route('/api/html-live/<tournament_id>/<court_id>/vs')
+def get_vs_card_html(tournament_id, court_id):
+    """Получение vs страницы HTML"""
+    try:
+        #   Получение данных турнира из БД
+        tournament_data = get_tournament_data_from_db(tournament_id)
+        if not tournament_data:
+            return "<html><body><h1>Турнир не найден</h1></body></html>", 404
+
+        #   Получение данных корта из БД
+        court_data = get_court_data_from_db(tournament_id, str(court_id))
+        if not court_data or "error" in court_data:
+            return "<html><body><h1>Ошибка получения данных корта из БД</h1></body></html>", 500
+
+        team1_players = court_data.get("current_first_participant", court_data.get("first_participant", []))
+        team2_players = court_data.get("current_second_participant", court_data.get("second_participant", []))
+        team1_ids = [p.get("id") for p in team1_players if p.get("id", "")]
+        team2_ids = [p.get("id") for p in team2_players if p.get("id", "")]
+
+        def get_photo_urls_for_next(conn):
+            ids = team1_ids + team2_ids
+            if ids:
+                cursor = conn.cursor()
+                cursor.execute(f'''
+                    SELECT p.id, p.photo_url
+                    FROM participants as p
+                    WHERE id IN ({','.join('?' for _ in ids)});
+                ''', tuple(ids))
+                column_names = [description[0] for description in cursor.description]
+                results = cursor.fetchall()
+
+                return [dict(zip(column_names, row_tuple)) for row_tuple in results]
+            return []
+
+        id_url = execute_db_transaction_with_retry(get_photo_urls_for_next)
+        html_content = xml_manager.generator.generate_vs_card_html(court_data, id_url, tournament_data)
 
         return Response(html_content, mimetype='text/html; charset=utf-8')
 

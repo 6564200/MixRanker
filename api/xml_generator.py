@@ -720,7 +720,7 @@ class XMLGenerator:
         return html_content
 
     def generate_next_match_card_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
-        """Генерирует страницу HTML, заявляющей следующую игру"""
+        """Генерирует страницу HTML, заявляющей следующую игру на текущем корте"""
         court_name = court_data.get("court_name", "Court")
         next_participants = court_data.get("next_first_participant", [])
         if not next_participants or not id_url:
@@ -787,6 +787,147 @@ class XMLGenerator:
                     </div>
                 </body>
                 </html>'''
+
+        return html_content
+
+    def generate_vs_card_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
+        """Генерирует HTML VS-страницу текущего корта"""
+        court_name = court_data.get("court_name", "Court")
+        match_state = court_data.get("current_match_state", "free")
+
+        current_participants = court_data.get("current_first_participant") or court_data.get("first_participant", [])
+        if not current_participants or not id_url:
+            html_content = f'''<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>{court_name} - Next match</title>
+                    <link rel="stylesheet" href="/static/css/vs.css">
+                    <script>
+                        setInterval(function() {{
+                            location.reload();
+                        }}, 9000);
+                    </script>
+                </head>
+                <body>
+                    <div class="vs">NO CURRENT MATCH</div>
+                </body>
+                </html>'''
+            return html_content
+
+
+        team1_score = court_data.get("current_first_participant_score",
+                                     court_data.get("first_participant_score", 0))
+        team2_score = court_data.get("current_second_participant_score",
+                                     court_data.get("second_participant_score", 0))
+        detailed_result = court_data.get("current_detailed_result", court_data.get("detailed_result", []))
+
+        team1_scores = [0, 0, 0, team1_score]
+        team2_scores = [0, 0, 0, team2_score]
+        if detailed_result and len(detailed_result) > 0:
+            for i in range(min(len(detailed_result), 3)):
+                team1_set_score = detailed_result[i].get("firstParticipantScore", 0)
+                team1_scores[i] = team1_set_score
+                team2_set_score = detailed_result[i].get("secondParticipantScore", 0)
+                team2_scores[i] = team2_set_score
+
+        team1_players = court_data.get("current_first_participant", court_data.get("first_participant", []))
+        team2_players = court_data.get("current_second_participant", court_data.get("second_participant", []))
+        id_url_dict = {d['id']: d for d in id_url}
+        team1_players = [(p, id_url_dict[p.get('id')]) for p in team1_players if p.get('id')]
+        team2_players = [(p, id_url_dict[p.get('id')]) for p in team2_players if p.get('id')]
+
+        html_content = f'''<!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>{court_name} - VS</title>
+                <link rel="stylesheet" href="/static/css/vs.css">
+                <script>
+                    setInterval(function() {{
+                        location.reload();
+                    }}, 9000);
+                </script>
+            </head>
+            <body>
+                <div class="next-match">
+                    <div class="scoreboard">
+                        <table id="first_set">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">Сет 1</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{team1_scores[0]}</td>
+                                    <td>{team2_scores[0]}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table id="second_set">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">Сет 2</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{team1_scores[1]}</td>
+                                    <td>{team2_scores[1]}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table id="third_set">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">Сет 3</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{team1_scores[2]}</td>
+                                    <td>{team2_scores[2]}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table id="final">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">Итог</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{team1_scores[3]}</td>
+                                    <td>{team2_scores[3]}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="block">
+                        <div class="left_team">
+                            <div class="left_participants">
+                                {'<br>'.join([p[0].get("fullName") for p in team1_players])}
+                            </div>
+                            <div class="left-images">
+                                {''.join(f'<img src="{p[1]['photo_url']}" alt="{p[0].get("fullName")}">' for p in team1_players)}
+                            </div>
+                        </div>
+                        <div class="right_team">
+                            <div class="right_participants">
+                                {'<br>'.join([p[0].get("fullName") for p in team2_players])}
+                            </div>
+                            <div class="right-images">
+                                {''.join(f'<img src="{p[1]['photo_url']} alt={p[0].get("fullName")}">' for p in team2_players)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>'''
 
         return html_content
 
