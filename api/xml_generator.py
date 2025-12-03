@@ -2541,9 +2541,6 @@ class XMLGenerator:
                             </head>
                             <body>
                                 <div class="elimination-container">
-                                    <div class="tournament-header">
-                                        {class_name}, {stage_name}
-                                    </div>
                                     <div class="round-column">
                                     '''
         

@@ -38,11 +38,9 @@
 }
 
 body {
-    zoom: 60%;
-    background-color: transparent;  
+    zoom: 43%;
+    background-color: #324E9E;  
     font-family: var(--font-onest-bold);
-    
-    
     width: 1920px;
     height: 1080px;
     overflow: hidden;
@@ -56,7 +54,7 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
-    margin: 30px;
+    margin: 0px;
 }
 
 .tournament-header {
@@ -76,7 +74,7 @@ body {
     display: flex;
     flex-direction: row;
     justify-content: space-evenly;
-	width: 1400px;
+	width: 100%;
 }
 
 .bracket-grid {
@@ -181,6 +179,7 @@ body {
     display: flex;
     align-items: center;
     padding-left: 10px; /* Добавляем отступ слева для текста */
+	overflow: hidden;
 }
 
 .name-main {
@@ -189,6 +188,7 @@ body {
     line-height: 28px;
     color: #FFFFFF;
     text-transform: uppercase;
+	
 }
 
 .lost {
