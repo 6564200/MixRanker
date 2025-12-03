@@ -310,6 +310,9 @@ function renderTournaments() {
                     <button class="btn btn-sm btn-outline-primary" onclick="viewTournament('${tournament.id}')" title="Просмотр">
                         <i class="fas fa-eye"></i>
                     </button>
+                    <button class="btn btn-sm btn-outline-warning" onclick="fetchParticipants('${tournament.id}')" title="Загрузить фотографии">
+                        <i class="fas fa-camera"></i>
+                    </button>
                     <button class="btn btn-sm btn-outline-success" onclick="generateAllXML('${tournament.id}')" title="Генерировать все XML">
                         <i class="fas fa-code"></i>
                     </button>
@@ -334,6 +337,164 @@ function updateTournamentSelects() {
 
     select.innerHTML = '<option value="">Выберите турнир</option>' +
         tournaments.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+}
+
+function openUploadModal() {
+    document.getElementById('uploadOverlay').style.display = 'flex';
+}
+
+function closeUploadModal() {
+    document.getElementById('uploadOverlay').style.display = 'none';
+    document.getElementById('participantList').innerHTML = '';
+    document.getElementById('uploadFormArea').style.display = 'none';
+    document.getElementById('noSelectionMessage').style.display = 'block';
+    document.getElementById('previewArea').innerHTML = '';
+    document.getElementById('photoFile').value = '';
+}
+
+async function fetchParticipants(tournamentId) {
+    try {
+        openUploadModal();
+        const response = await fetch(`/api/tournament/${tournamentId}/participants`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Ошибка при загрузке данных: ' + response.statusText);
+        }
+
+        const participants = await response.json();
+        renderParticipantsList(participants);
+    } catch (error) {
+        console.error("Ошибка:", error);
+        showAlert('Ошибка загрузки списка участников', 'danger');
+        document.getElementById('participantList').innerHTML =
+            `<div class="p-3 text-danger">Не удалось загрузить участников. ${error.message}</div>`;
+    }
+}
+
+function renderParticipantsList(participants) {
+    const participantList = document.getElementById('participantList');
+    if (participants.length === 0) {
+        participantList.innerHTML = '<div class="p-3">Участников не найдено.</div>';
+        return;
+    }
+
+    participants.forEach(participant => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.classList.add('list-group-item', 'list-group-item-action', 'd-flex', 'flex-column',
+            'align-items-start', 'position-relative');
+        button.dataset.participantId = participant.id;
+
+        if (participant.photo_url) {
+            button.dataset.photoUrl = participant.photo_url;
+        } else {
+            button.dataset.photoUrl = '';
+        }
+
+        const nameSpan = document.createElement('span');
+        nameSpan.style.fontSize = '0.9rem';
+        nameSpan.textContent = `${participant.first_name} ${participant.last_name}`;
+        button.appendChild(nameSpan);
+
+        const idSpan = document.createElement('span');
+        idSpan.classList.add('text-muted');
+        idSpan.style.fontSize = '0.7rem';
+        idSpan.textContent = `RankedIn ID: ${participant.rankedin_id}`;
+        button.appendChild(idSpan);
+
+        if (participant.photo_url) {
+            const icon = document.createElement('i');
+            icon.classList.add('fas', 'fa-check-circle', 'text-success');
+            icon.style.position = 'absolute';
+            icon.style.right = '10px';
+            icon.style.top = '10px';
+            button.appendChild(icon);
+        }
+
+        button.addEventListener('click', () => selectParticipant(participant));
+        participantList.appendChild(button);
+    });
+}
+
+function selectParticipant(participant) {
+    document.getElementById('selectedParticipantName').textContent = `${participant.first_name} ${participant.last_name}`;
+    document.getElementById('selectedParticipantId').value = participant.id;
+    document.getElementById('uploadFormArea').style.display = 'block';
+    document.getElementById('noSelectionMessage').style.display = 'none';
+
+    const selectedButton = document.querySelector(`[data-participant-id="${participant.id}"]`);
+    document.querySelectorAll('.list-group-item-action').forEach(btn => {
+            btn.classList.remove('active');
+        });
+    selectedButton.classList.add('active');
+
+    const photoUrl = selectedButton.dataset.photoUrl;
+    const previewArea = document.getElementById('previewArea');
+    if (photoUrl) {
+        previewArea.innerHTML = `<img class="img-fluid" src="${photoUrl}" alt="Текущее фото">`;
+    } else {
+        previewArea.innerHTML = '<div style="color: #FFFFFF">Фото отсутствует. Загрузите его!</div>';
+    }
+}
+
+async function uploadPhoto() {
+    const photoFile = document.getElementById('photoFile');
+    const selectedParticipantIdInput = document.getElementById('selectedParticipantId');
+    const previewArea = document.getElementById('previewArea');
+
+    const participantId = selectedParticipantIdInput.value;
+    const files = photoFile.files;
+    if (!participantId || files.length === 0) {
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('photo', files[0]);
+    formData.append('participant_id', participantId);
+
+    previewArea.innerHTML = '<div class="spinner-border text-warning" role="status"><span class="visually-hidden">Загрузка...</span></div>';
+
+    try {
+        const response = await fetch('/api/participants/upload-photo', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('Ошибка обработки фото на сервере.');
+        }
+
+        const result = await response.json();
+
+        if (result.success && result.preview_url) {
+            previewArea.innerHTML = `<img class="img-fluid" src="${result.preview_url}" alt="Превью фото">`;
+            photoFile.value = '';
+        } else {
+            throw new Error(result.error || 'Неизвестная ошибка.');
+        }
+
+        const participantButton = document.querySelector(`[data-participant-id="${participantId}"]`);
+        if (participantButton) {
+            participantButton.dataset.photoUrl = result.preview_url;
+            if (!participantButton.querySelector('i.fa-check-circle')) {
+                const icon = document.createElement('i');
+                icon.classList.add('fas', 'fa-check-circle', 'text-success');
+                icon.style.position = 'absolute';
+                icon.style.right = '10px';
+                icon.style.top = '10px';
+                participantButton.appendChild(icon);
+            }
+        }
+
+    } catch (error) {
+        console.error("Ошибка загрузки фото:", error);
+        previewArea.innerHTML = `<div class="text-danger">Ошибка: ${error.message}</div>`;
+    }
 }
 
 // === МОНИТОРИНГ КОРТОВ ===

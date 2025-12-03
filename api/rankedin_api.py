@@ -645,6 +645,19 @@ class RankedinAPI:
 
         return debug_info
 
+    def get_tournament_participants(self, tournament_id: str) -> Optional[List[Dict]]:
+        """
+        Получение списка участников турнира
+        https://api.rankedin.com/v1/Tournament/GetAllSeedsAsync?tournamentId={tournamentId}
+        """
+        url = "/Tournament/GetAllSeedsAsync"
+        result = self._make_get_request(url, {"tournamentId": tournament_id})
+
+        if result:
+            logger.debug(f"Найдено {len(result)} участников для турнира {tournament_id}.")
+
+        return result
+
     # Комплексные методы для получения всех данных турнира
     def get_full_tournament_data(self, tournament_id: str) -> Dict[str, Any]:
         """Получение полных данных турнира включая расписание"""
@@ -653,6 +666,7 @@ class RankedinAPI:
         tournament_data = {
             "tournament_id": tournament_id,
             "metadata": None,
+            "participants": [],
             "classes": [],
             "courts": [],
             "dates": [],
@@ -664,6 +678,7 @@ class RankedinAPI:
 
         # 1. Базовые данные
         tournament_data["metadata"] = self.get_tournament_metadata(tournament_id)
+        tournament_data["participants"] = self.get_tournament_participants(tournament_id)
         tournament_data["classes"] = self.get_tournament_classes(tournament_id) or []
 
         courts_info = self.get_tournament_courts(tournament_id)

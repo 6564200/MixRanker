@@ -508,7 +508,7 @@ class XMLGenerator:
         if show_current_match:
             html_set_score_2 = ''
             html_set_score_1 = ''
-            
+
              # Сеты для команды 1
             if detailed_result and len(detailed_result) > 0:
                 for i in range(min(max_sets, len(detailed_result))):
@@ -520,7 +520,7 @@ class XMLGenerator:
             else:
                 # Для матчей без детального счета показываем пустые сеты
                 for i in range(max_sets):
-                    html_set_score_1 += '<div class="set set1-{i}">-</div>'           
+                    html_set_score_1 += '<div class="set set1-{i}">-</div>'
             
             # Сеты для команды 2
             if detailed_result and len(detailed_result) > 0:
@@ -533,7 +533,7 @@ class XMLGenerator:
             else:
                 # Для матчей без детального счета показываем пустые сеты
                 for i in range(max_sets):
-                    html_set_score_2 += '<div class="set set2-{i}">-</div>'            
+                    html_set_score_2 += '<div class="set set2-{i}">-</div>'
             
             html_content += f'''
 
@@ -562,7 +562,7 @@ class XMLGenerator:
                     </div>
                 </div>'''
             
-            
+
         else:
             # Корт полностью свободен
             html_content += '''
@@ -579,7 +579,358 @@ class XMLGenerator:
         
         return html_content
 
+    def generate_court_fullscreen_scoreboard_html(self, court_data: Dict, tournament_data: Dict = None) -> str:
+        """Генерирует полноразмерную HTML страницу scoreboard текущего корта"""
+        # Определяем состояние корта
+        match_state = court_data.get("current_match_state", "free")
 
+        # Проверяем наличие участников
+        current_participants = court_data.get("current_first_participant") or court_data.get("first_participant", [])
+        next_participants = court_data.get("next_first_participant", [])
+
+        # Определяем что показывать
+        if current_participants and len(current_participants) > 0:
+            # Есть текущий матч - показываем его
+            team1_players = court_data.get("current_first_participant", court_data.get("first_participant", []))
+            team2_players = court_data.get("current_second_participant", court_data.get("second_participant", []))
+            team1_score = court_data.get("current_first_participant_score",
+                                         court_data.get("first_participant_score", 0))
+            team2_score = court_data.get("current_second_participant_score",
+                                         court_data.get("second_participant_score", 0))
+            detailed_result = court_data.get("current_detailed_result", court_data.get("detailed_result", []))
+            show_current_match = True
+
+            # Определяем тип отображения счета
+            if match_state == "live":
+                show_score = True
+            elif match_state == "finished":
+                show_score = True
+            elif match_state in ["scheduled", "playing_no_score"]:
+                show_score = False  # Показываем участников, но без счета
+            else:
+                show_score = True  # По умолчанию показываем
+
+        elif next_participants and len(next_participants) > 0:
+            # Нет текущего матча, но есть следующий
+            team1_players = court_data.get("next_first_participant", [])
+            team2_players = court_data.get("next_second_participant", [])
+            team1_score = 0
+            team2_score = 0
+            detailed_result = []
+            show_current_match = True
+            show_score = False  # Следующий матч всегда без счета
+
+        else:
+            # Корт полностью свободен
+            team1_players = []
+            team2_players = []
+            team1_score = 0
+            team2_score = 0
+            detailed_result = []
+            show_current_match = False
+            show_score = False
+
+        team1_scores = [0, 0, 0, team1_score]
+        team2_scores = [0, 0, 0, team2_score]
+        if detailed_result and len(detailed_result) > 0:
+            for i in range(min(len(detailed_result), 3)):
+                team1_set_score = detailed_result[i].get("firstParticipantScore", 0)
+                team1_scores[i] = team1_set_score
+                team2_set_score = detailed_result[i].get("secondParticipantScore", 0)
+                team2_scores[i] = team2_set_score
+
+        if team1_players:
+            team1_players = [p.get("fullName", "") for p in team1_players if p.get("fullName")]
+
+        if team2_players:
+            team2_players = [p.get("fullName", "") for p in team2_players if p.get("fullName")]
+
+        # Название корта
+        court_name = court_data.get("court_name", "Court")
+
+        if show_current_match:
+            html_content = f'''<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>{court_name} - Scoreboard</title>
+                    <link rel="stylesheet" href="/static/css/fullscreen_scoreboard.css">
+                    <script>
+                        setInterval(function() {{
+                            location.reload();
+                        }}, 9000);
+                    </script>
+                </head>
+                <body>
+                    <div class="scoreboard">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="player-cell"></th>
+                                    <th class="score-cell">{'Сет 1' if show_score else ''}</th>
+                                    <th class="score-cell">{'Сет 2' if show_score else ''}</th>
+                                    <th class="score-cell">{'Сет 3' if show_score else ''}</th>
+                                    <th class="score-cell">{'Итог' if show_score else ''}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="player-cell">{'<br>'.join(team1_players)}</td>
+                                    <td class="score-cell">{team1_scores[0] if show_score else ''}</td>
+                                    <td class="score-cell">{team1_scores[1] if show_score else ''}</td>
+                                    <td class="score-cell">{team1_scores[2] if show_score else ''}</td>
+                                    <td class="score-cell">{team1_scores[3] if show_score else ''}</td>
+                                </tr>
+                                <tr>
+                                    <td class="player-cell">{'<br>'.join(team2_players)}</td>
+                                    <td class="score-cell">{team2_scores[0] if show_score else ''}</td>
+                                    <td class="score-cell">{team2_scores[1] if show_score else ''}</td>
+                                    <td class="score-cell">{team2_scores[2] if show_score else ''}</td>
+                                    <td class="score-cell">{team2_scores[3] if show_score else ''}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </body>
+                </html>'''
+
+        else:
+            html_content = f'''<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>{court_name} - Scoreboard</title>
+                    <link rel="stylesheet" href="/static/css/fullscreen_scoreboard.css">
+                    <script>
+                        setInterval(function() {{
+                            location.reload();
+                        }}, 9000);
+                    </script>
+                </head>
+                <body>
+                    <div class="scoreboard">
+                        <div class="team-row no-match">
+                            <div class="team-name">NO ACTIVE MATCH</div>
+                        </div>
+                    </div>
+                </body>
+                </html>'''
+
+        return html_content
+
+    def generate_next_match_card_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
+        """Генерирует страницу HTML, заявляющей следующую игру на текущем корте"""
+        court_name = court_data.get("court_name", "Court")
+        next_participants = court_data.get("next_first_participant", [])
+        if not next_participants or not id_url:
+            html_content = f'''<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>{court_name} - Next match</title>
+                    <link rel="stylesheet" href="/static/css/next_match.css">
+                    <script>
+                        setInterval(function() {{
+                            location.reload();
+                        }}, 9000);
+                    </script>
+                </head>
+                <body>
+                    <div class="next-match">NO NEXT MATCH</div>
+                </body>
+                </html>'''
+            return html_content
+
+        team1_players = court_data.get("next_first_participant", [])
+        team2_players = court_data.get("next_second_participant", [])
+        id_url_dict = {d['id']: d for d in id_url}
+        team1_players = [(p, id_url_dict[p.get('id')]) for p in team1_players if p.get('id')]
+        team2_players = [(p, id_url_dict[p.get('id')]) for p in team2_players if p.get('id')]
+        start_time = court_data.get("next_start_time", "")
+
+        html_content = f'''<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>{court_name} - Next match</title>
+                    <link rel="stylesheet" href="/static/css/next_match.css">
+                    <script>
+                        setInterval(function() {{
+                            location.reload();
+                        }}, 9000);
+                    </script>
+                </head>
+                <body>
+                    <div class="next-match">
+                        <div class="time">{start_time}</div>
+                        <div class="block">
+                            <div class="left_team">
+                                <div class="left_participants">
+                                    {'<br>'.join([p[0].get("fullName") for p in team1_players])}
+                                </div>
+                                <div class="left-images">
+                                    {''.join(f'<img src="{p[1]['photo_url']}" alt="{p[0].get("fullName")}">' for p in team1_players)}
+                                </div>
+                            </div>
+                            <div class="right_team">
+                                <div class="right_participants">
+                                    {'<br>'.join([p[0].get("fullName") for p in team2_players])}
+                                </div>
+                                <div class="right-images">
+                                    {''.join(f'<img src="{p[1]['photo_url']} alt={p[0].get("fullName")}">' for p in team2_players)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </body>
+                </html>'''
+
+        return html_content
+
+    def generate_vs_card_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
+        """Генерирует HTML VS-страницу текущего корта"""
+        court_name = court_data.get("court_name", "Court")
+        match_state = court_data.get("current_match_state", "free")
+
+        current_participants = court_data.get("current_first_participant") or court_data.get("first_participant", [])
+        if not current_participants or not id_url:
+            html_content = f'''<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>{court_name} - Next match</title>
+                    <link rel="stylesheet" href="/static/css/vs.css">
+                    <script>
+                        setInterval(function() {{
+                            location.reload();
+                        }}, 9000);
+                    </script>
+                </head>
+                <body>
+                    <div class="vs">NO CURRENT MATCH</div>
+                </body>
+                </html>'''
+            return html_content
+
+
+        team1_score = court_data.get("current_first_participant_score",
+                                     court_data.get("first_participant_score", 0))
+        team2_score = court_data.get("current_second_participant_score",
+                                     court_data.get("second_participant_score", 0))
+        detailed_result = court_data.get("current_detailed_result", court_data.get("detailed_result", []))
+
+        team1_scores = [0, 0, 0, team1_score]
+        team2_scores = [0, 0, 0, team2_score]
+        if detailed_result and len(detailed_result) > 0:
+            for i in range(min(len(detailed_result), 3)):
+                team1_set_score = detailed_result[i].get("firstParticipantScore", 0)
+                team1_scores[i] = team1_set_score
+                team2_set_score = detailed_result[i].get("secondParticipantScore", 0)
+                team2_scores[i] = team2_set_score
+
+        team1_players = court_data.get("current_first_participant", court_data.get("first_participant", []))
+        team2_players = court_data.get("current_second_participant", court_data.get("second_participant", []))
+        id_url_dict = {d['id']: d for d in id_url}
+        team1_players = [(p, id_url_dict[p.get('id')]) for p in team1_players if p.get('id')]
+        team2_players = [(p, id_url_dict[p.get('id')]) for p in team2_players if p.get('id')]
+
+        html_content = f'''<!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>{court_name} - VS</title>
+                <link rel="stylesheet" href="/static/css/vs.css">
+                <script>
+                    setInterval(function() {{
+                        location.reload();
+                    }}, 9000);
+                </script>
+            </head>
+            <body>
+                <div class="next-match">
+                    <div class="scoreboard">
+                        <table id="first_set">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">Сет 1</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{team1_scores[0]}</td>
+                                    <td>{team2_scores[0]}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table id="second_set">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">Сет 2</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{team1_scores[1]}</td>
+                                    <td>{team2_scores[1]}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table id="third_set">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">Сет 3</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{team1_scores[2]}</td>
+                                    <td>{team2_scores[2]}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table id="final">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">Итог</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{team1_scores[3]}</td>
+                                    <td>{team2_scores[3]}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="block">
+                        <div class="left_team">
+                            <div class="left_participants">
+                                {'<br>'.join([p[0].get("fullName") for p in team1_players])}
+                            </div>
+                            <div class="left-images">
+                                {''.join(f'<img src="{p[1]['photo_url']}" alt="{p[0].get("fullName")}">' for p in team1_players)}
+                            </div>
+                        </div>
+                        <div class="right_team">
+                            <div class="right_participants">
+                                {'<br>'.join([p[0].get("fullName") for p in team2_players])}
+                            </div>
+                            <div class="right-images">
+                                {''.join(f'<img src="{p[1]['photo_url']} alt={p[0].get("fullName")}">' for p in team2_players)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>'''
+
+        return html_content
 
     def _add_elimination_data(self, root: ET.Element, class_data: Dict, draw_index: int):
         """Добавляет данные игр на выбывание в плоском формате с обработкой Bye и Walkover"""
@@ -1228,43 +1579,43 @@ class XMLGenerator:
         if not target_date:
             target_date = dt.now().strftime("%d.%m.%Y")
             #target_date = dt(year=2025, month=10, day=25).strftime("%d.%m.%Y") #для тестов
-        
+
         # Группируем матчи по кортам и фильтруем по дате
         courts_matches = {}
         all_matches = []
-        
+
         for match in court_usage:
             if not isinstance(match, dict):
                 continue
-                
+
             match_date = match.get("MatchDate", "")
             if match_date:
                 try:
                     dt_obj = dt.fromisoformat(match_date.replace('T', ' ').replace('Z', ''))
                     match_date_formatted = dt_obj.strftime("%d.%m.%Y")
-                    
+
                     # Фильтруем только матчи на нужную дату
                     if match_date_formatted != target_date:
                         continue
-                        
+
                     court_id = str(match.get("CourtId", ""))
                     court_name = court_names_map.get(court_id, f"Корт {court_id}")
-                    
+
                     # Добавляем время начала для сортировки
                     match["start_time"] = dt_obj.strftime("%H:%M")
                     match["date_formatted"] = match_date_formatted
                     match["court_name"] = court_name
                     match["datetime_obj"] = dt_obj
-                    
+
                     all_matches.append(match)
-                    
+
                     if court_name not in courts_matches:
                         courts_matches[court_name] = []
                     courts_matches[court_name].append(match)
-                    
+
                 except Exception as e:
                     continue
-        
+
         if not courts_matches:
             return self._generate_empty_schedule_html(tournament_name, f"Нет матчей на {target_date}")
 
@@ -1279,28 +1630,28 @@ class XMLGenerator:
         for court_name, matches in courts_matches.items():
             finished = []
             active_and_future = []
-            
+
             for match in matches:
                 status = self._get_match_status(match)
                 if status == "finished":
                     finished.append(match)
                 else:
                     active_and_future.append(match)
-            
+
             # Берём последние 3 завершённых + все активные и будущие
             filtered_matches = finished[-3:] + active_and_future
             filtered_courts_matches[court_name] = filtered_matches
-        
+
         courts_matches = filtered_courts_matches
 
         # Собираем все оставшиеся матчи для временных слотов
         all_remaining_matches = []
         for matches in courts_matches.values():
             all_remaining_matches.extend(matches)
-        
+
         # Создаем уникальные временные слоты только для оставшихся матчей
         time_slots = sorted(list(set([m["start_time"] for m in all_remaining_matches])))
-        
+
         # Генерируем HTML
         html_content = f'''<!DOCTYPE html>
     <html lang="ru">
@@ -1319,65 +1670,65 @@ class XMLGenerator:
         <div class="schedule-container">
             <div class="main-grid">
                 <div class="time-scale">'''
-        
+
         # Временные слоты
         for time_slot in time_slots:
             html_content += f'''
                     <div class="time-slot">{time_slot}</div>'''
-        
+
         html_content += '''
                 </div>
                 
                 <div class="courts-container">
                     <div class="courts-header">'''
-        
+
         # Заголовки кортов
         for court_name in sorted(courts_matches.keys()):
             html_content += f'''
                         <div class="court-header">
                             <h3>{court_name}</h3>
                         </div>'''
-        
+
         html_content += '''
                     </div>
                     
                     <div class="matches-grid">'''
-        
+
         # Столбцы кортов с матчами
         for court_name in sorted(courts_matches.keys()):
             matches = courts_matches[court_name]
-            
+
             html_content += '''
                         <div class="court-column">'''
-            
+
             for match in matches:
                 match_status = self._get_match_status(match)
                 status_class = self._get_status_class(match_status)
-                
+
                 challenger_name = match.get("ChallengerName", "TBD")
                 challenged_name = match.get("ChallengedName", "TBD")
                 episode_number = match.get("episode_number", 1)
-                
+
                 # Результаты матча
                 challenger_result = match.get("ChallengerResult", "0")
                 challenged_result = match.get("ChallengedResult", "0")
-                
+
                 if not challenger_result:
                     challenger_result = "0"
                 if not challenged_result:
                     challenged_result = "0"
-                
+
                 # Проверка на Won W.O.
                 challenger_wo = ""
                 challenged_wo = ""
-                
+
                 if challenger_result == "Won W.O.":
                     challenger_wo = "Won W.O."
                     challenger_result = ""
                 if challenged_result == "Won W.O.":
                     challenged_wo = "Won W.O."
                     challenged_result = ""
-                
+
                 html_content += f'''
                             <div class="match-item {status_class}">
                                 <div class="match-content">
@@ -1396,10 +1747,10 @@ class XMLGenerator:
                                     </div>
                                 </div>
                             </div>'''
-            
+
             html_content += '''
                         </div>'''
-        
+
         html_content += '''
                     </div>
                 </div>
@@ -1407,7 +1758,7 @@ class XMLGenerator:
         </div>
     </body>
     </html>'''
-        
+
         return html_content
 
 
@@ -1435,44 +1786,44 @@ class XMLGenerator:
         if not target_date:
             target_date = dt.now().strftime("%d.%m.%Y")
             #target_date = dt(year=2025, month=10, day=25).strftime("%d.%m.%Y") # для тестов
-        
+
         # Группируем матчи по кортам и фильтруем по дате
         courts_matches = {}
         all_matches = []
-        
+
         for match in court_usage:
             print(match)
             if not isinstance(match, dict):
                 continue
-                
+
             match_date = match.get("MatchDate", "")
             if match_date:
                 try:
                     dt_obj = dt.fromisoformat(match_date.replace('T', ' ').replace('Z', ''))
                     match_date_formatted = dt_obj.strftime("%d.%m.%Y")
-                    
+
                     # Фильтруем только матчи на нужную дату
                     if match_date_formatted != target_date:
                         continue
-                        
+
                     court_id = str(match.get("CourtId", ""))
                     court_name = court_names_map.get(court_id, f"Корт {court_id}")
-                    
+
                     # Добавляем время начала для сортировки
                     match["start_time"] = dt_obj.strftime("%H:%M")
                     match["date_formatted"] = match_date_formatted
                     match["court_name"] = court_name
                     match["datetime_obj"] = dt_obj
-                    
+
                     all_matches.append(match)
-                    
+
                     if court_name not in courts_matches:
                         courts_matches[court_name] = []
                     courts_matches[court_name].append(match)
-                    
+
                 except Exception as e:
                     continue
-        
+
         if not courts_matches:
             return self._generate_empty_schedule_html(tournament_name, f"Нет матчей на {target_date}")
 
@@ -1484,7 +1835,7 @@ class XMLGenerator:
 
         # Создаем уникальные временные слоты
         time_slots = sorted(list(set([m["start_time"] for m in all_matches])))
-        
+
         # Генерируем HTML
         html_content = f'''<!DOCTYPE html>
     <html lang="ru">
@@ -1503,49 +1854,49 @@ class XMLGenerator:
         <div class="schedule-container">
             <div class="main-grid">
                 <div class="time-scale">'''
-        
+
         # Временные слоты
         for time_slot in time_slots:
             html_content += f'''
                     <div class="time-slot">{time_slot}</div>'''
-        
+
         html_content += '''
                 </div>
                 
                 <div class="courts-container">
                     <div class="courts-header">'''
-        
+
         # Заголовки кортов
         for court_name in sorted(courts_matches.keys()):
             html_content += f'''
                         <div class="court-header">
                             <h3>{court_name}</h3>
                         </div>'''
-        
+
         html_content += '''
                     </div>
                     
                     <div class="matches-grid">'''
-        
+
         # Столбцы кортов с матчами
         for court_name in sorted(courts_matches.keys()):
             matches = courts_matches[court_name]
-            
+
             html_content += '''
                         <div class="court-column">'''
-            
+
             for match in matches:
                 match_status = self._get_match_status(match)
                 status_class = self._get_status_class(match_status)
-                
+
                 challenger_name = match.get("ChallengerName", "TBD")
                 challenged_name = match.get("ChallengedName", "TBD")
                 episode_number = match.get("episode_number", 1)
-                
+
                 # Результаты матча
                 challenger_result = match.get("ChallengerResult", "0")
                 challenged_result = match.get("ChallengedResult", "0")
-                
+
                 if not challenger_result:
                     challenger_result = "0"
                 if not challenged_result:
@@ -1554,7 +1905,7 @@ class XMLGenerator:
                 # Проверка на Won W.O.
                 challenger_wo = ""
                 challenged_wo = ""
-                
+
                 if challenger_result == "Won W.O.":
                     challenger_wo = "W.O."
                     challenger_result = ""
@@ -1562,7 +1913,7 @@ class XMLGenerator:
                     challenged_wo = "W.O."
                     challenged_result = ""
 
-                
+
                 html_content += f'''
                         <div class="match-item {status_class}">
                             <div class="match-content">
@@ -1581,10 +1932,10 @@ class XMLGenerator:
                                 </div>
                             </div>
                         </div>'''
-            
+
             html_content += '''
                         </div>'''
-        
+
         html_content += '''
                     </div>
                 </div>
@@ -1592,7 +1943,7 @@ class XMLGenerator:
         </div>
     </body>
     </html>'''
-        
+
         return html_content
 
 
