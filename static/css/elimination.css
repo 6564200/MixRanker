@@ -38,10 +38,11 @@
 }
 
 body {
-    zoom: 100%;
+    zoom: 60%;
+    background-color: transparent;  
     font-family: var(--font-onest-bold);
-    background: transparent;
-    color: var(--text-dark);
+    
+    
     width: 1920px;
     height: 1080px;
     overflow: hidden;

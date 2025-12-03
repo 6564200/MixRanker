@@ -507,7 +507,8 @@ class XMLGenerator:
         
         if show_current_match:
             html_set_score_2 = ''
-            
+            html_set_score_1 = ''
+
              # Сеты для команды 1
             if detailed_result and len(detailed_result) > 0:
                 for i in range(min(max_sets, len(detailed_result))):
@@ -1553,7 +1554,401 @@ class XMLGenerator:
         ET.SubElement(error_elem, "timestamp").text = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         ET.SubElement(error_elem, "type").text = "data_processing_error"
 
+
     def generate_schedule_html(self, tournament_data: Dict, target_date: str = None) -> str:
+        """Генерирует HTML для расписания матчей с новым дизайном из Figma"""
+        # Метаинформация о турнире
+        metadata = tournament_data.get("metadata", {})
+        tournament_name = metadata.get("name", "Неизвестный турнир")
+        # Получаем расписание
+        court_usage = tournament_data.get("court_usage")
+
+        if not court_usage or not isinstance(court_usage, list):
+            return self._generate_empty_schedule_html(tournament_name, "Данные расписания не загружены")
+
+        # Получаем информацию о кортах из tournaments.courts
+        courts_info = tournament_data.get("courts", [])
+        court_names_map = {}
+        for court in courts_info:
+            if isinstance(court, dict) and court.get("Item1") and court.get("Item2"):
+                court_id = str(court["Item1"])
+                court_name = court["Item2"]
+                court_names_map[court_id] = court_name
+
+        from datetime import datetime as dt
+        if not target_date:
+            target_date = dt.now().strftime("%d.%m.%Y")
+            #target_date = dt(year=2025, month=10, day=25).strftime("%d.%m.%Y") #для тестов
+
+        # Группируем матчи по кортам и фильтруем по дате
+        courts_matches = {}
+        all_matches = []
+
+        for match in court_usage:
+            if not isinstance(match, dict):
+                continue
+
+            match_date = match.get("MatchDate", "")
+            if match_date:
+                try:
+                    dt_obj = dt.fromisoformat(match_date.replace('T', ' ').replace('Z', ''))
+                    match_date_formatted = dt_obj.strftime("%d.%m.%Y")
+
+                    # Фильтруем только матчи на нужную дату
+                    if match_date_formatted != target_date:
+                        continue
+
+                    court_id = str(match.get("CourtId", ""))
+                    court_name = court_names_map.get(court_id, f"Корт {court_id}")
+
+                    # Добавляем время начала для сортировки
+                    match["start_time"] = dt_obj.strftime("%H:%M")
+                    match["date_formatted"] = match_date_formatted
+                    match["court_name"] = court_name
+                    match["datetime_obj"] = dt_obj
+
+                    all_matches.append(match)
+
+                    if court_name not in courts_matches:
+                        courts_matches[court_name] = []
+                    courts_matches[court_name].append(match)
+
+                except Exception as e:
+                    continue
+
+        if not courts_matches:
+            return self._generate_empty_schedule_html(tournament_name, f"Нет матчей на {target_date}")
+
+        # Сортируем матчи в каждом корте по времени и присваиваем номера
+        for court_name in courts_matches:
+            courts_matches[court_name].sort(key=lambda x: x.get("datetime_obj"))
+            for i, match in enumerate(courts_matches[court_name], 1):
+                match["episode_number"] = i
+
+        # Фильтруем матчи - оставляем последние 3 завершённых + все активные и будущие
+        filtered_courts_matches = {}
+        for court_name, matches in courts_matches.items():
+            finished = []
+            active_and_future = []
+
+            for match in matches:
+                status = self._get_match_status(match)
+                if status == "finished":
+                    finished.append(match)
+                else:
+                    active_and_future.append(match)
+
+            # Берём последние 3 завершённых + все активные и будущие
+            filtered_matches = finished[-3:] + active_and_future
+            filtered_courts_matches[court_name] = filtered_matches
+
+        courts_matches = filtered_courts_matches
+
+        # Собираем все оставшиеся матчи для временных слотов
+        all_remaining_matches = []
+        for matches in courts_matches.values():
+            all_remaining_matches.extend(matches)
+
+        # Создаем уникальные временные слоты только для оставшихся матчей
+        time_slots = sorted(list(set([m["start_time"] for m in all_remaining_matches])))
+
+        # Генерируем HTML
+        html_content = f'''<!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Расписание матчей - {tournament_name}</title>
+        <link rel="stylesheet" href="/static/css/schedule_new.css">
+        <script>
+            setInterval(function() {{
+                location.reload();
+            }}, 30000);
+        </script>
+    </head>
+    <body>
+        <div class="schedule-container">
+            <div class="main-grid">
+                <div class="time-scale">'''
+
+        # Временные слоты
+        for time_slot in time_slots:
+            html_content += f'''
+                    <div class="time-slot">{time_slot}</div>'''
+
+        html_content += '''
+                </div>
+                
+                <div class="courts-container">
+                    <div class="courts-header">'''
+
+        # Заголовки кортов
+        for court_name in sorted(courts_matches.keys()):
+            html_content += f'''
+                        <div class="court-header">
+                            <h3>{court_name}</h3>
+                        </div>'''
+
+        html_content += '''
+                    </div>
+                    
+                    <div class="matches-grid">'''
+
+        # Столбцы кортов с матчами
+        for court_name in sorted(courts_matches.keys()):
+            matches = courts_matches[court_name]
+
+            html_content += '''
+                        <div class="court-column">'''
+
+            for match in matches:
+                match_status = self._get_match_status(match)
+                status_class = self._get_status_class(match_status)
+
+                challenger_name = match.get("ChallengerName", "TBD")
+                challenged_name = match.get("ChallengedName", "TBD")
+                episode_number = match.get("episode_number", 1)
+
+                # Результаты матча
+                challenger_result = match.get("ChallengerResult", "0")
+                challenged_result = match.get("ChallengedResult", "0")
+
+                if not challenger_result:
+                    challenger_result = "0"
+                if not challenged_result:
+                    challenged_result = "0"
+
+                # Проверка на Won W.O.
+                challenger_wo = ""
+                challenged_wo = ""
+
+                if challenger_result == "Won W.O.":
+                    challenger_wo = "Won W.O."
+                    challenger_result = ""
+                if challenged_result == "Won W.O.":
+                    challenged_wo = "Won W.O."
+                    challenged_result = ""
+
+                html_content += f'''
+                            <div class="match-item {status_class}">
+                                <div class="match-content">
+                                    <div class="match-number">{episode_number}</div>
+                                    <div class="match-teams-wrapper">
+                                        <div class="match-team">
+                                            <div class="match-team-name">{challenger_name}</div>
+                                            {"<div class='match-team-wo'>Won W.O.</div>" if challenger_wo else ""}
+                                            {"<div class='match-team-score'>" + challenger_result + "</div>" if challenger_result else ""}
+                                        </div>
+                                        <div class="match-team">
+                                            <div class="match-team-name">{challenged_name}</div>
+                                            {"<div class='match-team-wo'>Won W.O.</div>" if challenged_wo else ""}
+                                            {"<div class='match-team-score'>" + challenged_result + "</div>" if challenged_result else ""}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>'''
+
+            html_content += '''
+                        </div>'''
+
+        html_content += '''
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>'''
+
+        return html_content
+
+
+    def generate_schedule_html_new(self, tournament_data: Dict, target_date: str = None) -> str:
+        """Генерирует HTML для расписания матчей с новым дизайном 3.12.2025"""
+        # Метаинформация о турнире
+        metadata = tournament_data.get("metadata", {})
+        tournament_name = metadata.get("name", "Неизвестный турнир")
+        # Получаем расписание
+        court_usage = tournament_data.get("court_usage")
+
+        if not court_usage or not isinstance(court_usage, list):
+            return self._generate_empty_schedule_html(tournament_name, "Данные расписания не загружены")
+
+        # Получаем информацию о кортах из tournaments.courts
+        courts_info = tournament_data.get("courts", [])
+        court_names_map = {}
+        for court in courts_info:
+            if isinstance(court, dict) and court.get("Item1") and court.get("Item2"):
+                court_id = str(court["Item1"])
+                court_name = court["Item2"]
+                court_names_map[court_id] = court_name
+
+        from datetime import datetime as dt
+        if not target_date:
+            target_date = dt.now().strftime("%d.%m.%Y")
+            #target_date = dt(year=2025, month=10, day=25).strftime("%d.%m.%Y") # для тестов
+
+        # Группируем матчи по кортам и фильтруем по дате
+        courts_matches = {}
+        all_matches = []
+
+        for match in court_usage:
+            print(match)
+            if not isinstance(match, dict):
+                continue
+
+            match_date = match.get("MatchDate", "")
+            if match_date:
+                try:
+                    dt_obj = dt.fromisoformat(match_date.replace('T', ' ').replace('Z', ''))
+                    match_date_formatted = dt_obj.strftime("%d.%m.%Y")
+
+                    # Фильтруем только матчи на нужную дату
+                    if match_date_formatted != target_date:
+                        continue
+
+                    court_id = str(match.get("CourtId", ""))
+                    court_name = court_names_map.get(court_id, f"Корт {court_id}")
+
+                    # Добавляем время начала для сортировки
+                    match["start_time"] = dt_obj.strftime("%H:%M")
+                    match["date_formatted"] = match_date_formatted
+                    match["court_name"] = court_name
+                    match["datetime_obj"] = dt_obj
+
+                    all_matches.append(match)
+
+                    if court_name not in courts_matches:
+                        courts_matches[court_name] = []
+                    courts_matches[court_name].append(match)
+
+                except Exception as e:
+                    continue
+
+        if not courts_matches:
+            return self._generate_empty_schedule_html(tournament_name, f"Нет матчей на {target_date}")
+
+        # Сортируем матчи в каждом корте по времени и присваиваем номера
+        for court_name in courts_matches:
+            courts_matches[court_name].sort(key=lambda x: x.get("datetime_obj"))
+            for i, match in enumerate(courts_matches[court_name], 1):
+                match["episode_number"] = i
+
+        # Создаем уникальные временные слоты
+        time_slots = sorted(list(set([m["start_time"] for m in all_matches])))
+
+        # Генерируем HTML
+        html_content = f'''<!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Расписание матчей - {tournament_name}</title>
+        <link rel="stylesheet" href="/static/css/schedule_new.css">
+        <script>
+            setInterval(function() {{
+                location.reload();
+            }}, 30000);
+        </script>
+    </head>
+    <body>
+        <div class="schedule-container">
+            <div class="main-grid">
+                <div class="time-scale">'''
+
+        # Временные слоты
+        for time_slot in time_slots:
+            html_content += f'''
+                    <div class="time-slot">{time_slot}</div>'''
+
+        html_content += '''
+                </div>
+                
+                <div class="courts-container">
+                    <div class="courts-header">'''
+
+        # Заголовки кортов
+        for court_name in sorted(courts_matches.keys()):
+            html_content += f'''
+                        <div class="court-header">
+                            <h3>{court_name}</h3>
+                        </div>'''
+
+        html_content += '''
+                    </div>
+                    
+                    <div class="matches-grid">'''
+
+        # Столбцы кортов с матчами
+        for court_name in sorted(courts_matches.keys()):
+            matches = courts_matches[court_name]
+
+            html_content += '''
+                        <div class="court-column">'''
+
+            for match in matches:
+                match_status = self._get_match_status(match)
+                status_class = self._get_status_class(match_status)
+
+                challenger_name = match.get("ChallengerName", "TBD")
+                challenged_name = match.get("ChallengedName", "TBD")
+                episode_number = match.get("episode_number", 1)
+
+                # Результаты матча
+                challenger_result = match.get("ChallengerResult", "0")
+                challenged_result = match.get("ChallengedResult", "0")
+
+                if not challenger_result:
+                    challenger_result = "0"
+                if not challenged_result:
+                    challenged_result = "0"
+
+                # Проверка на Won W.O.
+                challenger_wo = ""
+                challenged_wo = ""
+
+                if challenger_result == "Won W.O.":
+                    challenger_wo = "W.O."
+                    challenger_result = ""
+                if challenged_result == "Won W.O.":
+                    challenged_wo = "W.O."
+                    challenged_result = ""
+
+
+                html_content += f'''
+                        <div class="match-item {status_class}">
+                            <div class="match-content">
+                                <div class="match-number">{episode_number}</div>
+                                <div class="match-teams-wrapper">
+                                    <div class="match-team">
+                                        <div class="match-team-name">{challenger_name}</div>
+                                        {"<div class='match-team-wo'>Won W.O.</div>" if challenger_wo else ""}
+                                        {"<div class='match-team-score'>" + challenger_result + "</div>" if challenger_result else ""}
+                                    </div>
+                                    <div class="match-team">
+                                        <div class="match-team-name">{challenged_name}</div>
+                                        {"<div class='match-team-wo'>Won W.O.</div>" if challenged_wo else ""}
+                                        {"<div class='match-team-score'>" + challenged_result + "</div>" if challenged_result else ""}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>'''
+
+            html_content += '''
+                        </div>'''
+
+        html_content += '''
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>'''
+
+        return html_content
+
+
+
+    def generate_schedule_html_old(self, tournament_data: Dict, target_date: str = None) -> str:
         """Генерирует HTML для расписания матчей с временной шкалой и позиционированием"""
         # Метаинформация о турнире
         metadata = tournament_data.get("metadata", {})
