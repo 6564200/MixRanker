@@ -46,12 +46,12 @@
 }
 
 body {
-    zoom: 100%;
+    zoom: 50%;
     font-family: var(--font-onest-bold);
-    background: transparent;
+    background: #324E9E;
     color: var(--text-dark);
-    width: 2000px;
-    height: 1100px;
+    width: 1823px;
+    height: 407px;
     overflow: hidden;
     position: relative;
     margin: 0;
@@ -63,7 +63,7 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: 0px;
     align-items: center;
 }
 
