@@ -720,7 +720,7 @@ class XMLGenerator:
 
         return html_content
 
-    def generate_next_match_card_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
+    def generate_next_match_page_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
         """Генерирует страницу HTML, заявляющей следующую игру на текущем корте"""
         court_name = court_data.get("court_name", "Court")
         next_participants = court_data.get("next_first_participant", [])
@@ -773,7 +773,7 @@ class XMLGenerator:
                                     {'<br>'.join([p[0].get("fullName") for p in team1_players])}
                                 </div>
                                 <div class="left-images">
-                                    {''.join(f'<img src="{p[1]['photo_url']}" alt="{p[0].get("fullName")}">' for p in team1_players)}
+                                    {''.join(f'<img src="{p[1]["photo_url"]}" alt="{p[0].get("fullName")}">' for p in team1_players)}
                                 </div>
                             </div>
                             <div class="right_team">
@@ -781,7 +781,7 @@ class XMLGenerator:
                                     {'<br>'.join([p[0].get("fullName") for p in team2_players])}
                                 </div>
                                 <div class="right-images">
-                                    {''.join(f'<img src="{p[1]['photo_url']} alt={p[0].get("fullName")}">' for p in team2_players)}
+                                    {''.join(f'<img src="{p[1]["photo_url"]} alt={p[0].get("fullName")}">' for p in team2_players)}
                                 </div>
                             </div>
                         </div>
@@ -791,7 +791,7 @@ class XMLGenerator:
 
         return html_content
 
-    def generate_vs_card_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
+    def generate_vs_page_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
         """Генерирует HTML VS-страницу текущего корта"""
         court_name = court_data.get("court_name", "Court")
         match_state = court_data.get("current_match_state", "free")
@@ -914,7 +914,7 @@ class XMLGenerator:
                                 {'<br>'.join([p[0].get("fullName") for p in team1_players])}
                             </div>
                             <div class="left-images">
-                                {''.join(f'<img src="{p[1]['photo_url']}" alt="{p[0].get("fullName")}">' for p in team1_players)}
+                                {''.join(f'<img src="{p[1]["photo_url"]}" alt="{p[0].get("fullName")}">' for p in team1_players)}
                             </div>
                         </div>
                         <div class="right_team">
@@ -922,7 +922,7 @@ class XMLGenerator:
                                 {'<br>'.join([p[0].get("fullName") for p in team2_players])}
                             </div>
                             <div class="right-images">
-                                {''.join(f'<img src="{p[1]['photo_url']} alt={p[0].get("fullName")}">' for p in team2_players)}
+                                {''.join(f'<img src="{p[1]["photo_url"]} alt={p[0].get("fullName")}">' for p in team2_players)}
                             </div>
                         </div>
                     </div>
@@ -931,6 +931,137 @@ class XMLGenerator:
             </html>'''
 
         return html_content
+
+    def generate_introduction_page_html(self, participant_info: Dict) -> str:
+        full_name = f'{participant_info["firstName"]} {participant_info["lastName"]}'
+        country = participant_info['country']
+        rating = participant_info['rating']
+        height = participant_info['height']
+        position = participant_info['position']
+
+        html_content = f'''<!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>{participant_info['id']} - Introduction</title>
+                <link rel="stylesheet" href="/static/css/introduction.css">
+                <script>
+                    setInterval(function() {{
+                        location.reload();
+                    }}, 9000);
+                </script>
+            </head>
+            <body>
+                <div class="introduction">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th colspan="2">{full_name}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="key">СТРАНА</td>
+                                <td class="value">{country}</td>
+                            </tr>
+                            <tr>
+                                <td class="key">РЕЙТИНГ FIP</td>
+                                <td class="value">{rating}</td>
+                            </tr>
+                            <tr>
+                                <td class="key">РОСТ</td>
+                                <td class="value">{height}</td>
+                            </tr>
+                            <tr>
+                                <td class="key">ИГРОВАЯ ПОЗИЦИЯ</td>
+                                <td class="value">{position}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </body>
+            </html>'''
+        return html_content
+
+    def generate_winner_page_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
+        """Генерирует HTML страницу победителей текущего корта"""
+        court_name = court_data.get("court_name", "Court")
+        match_state = court_data.get("current_match_state", "free")
+
+        current_participants = court_data.get("current_first_participant") or court_data.get("first_participant", [])
+        if not match_state == 'finished' or not current_participants or not id_url:
+            html_content = f'''<!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>{court_name} - Winner</title>
+                            <link rel="stylesheet" href="/static/css/winner.css">
+                            <script>
+                                setInterval(function() {{
+                                    location.reload();
+                                }}, 9000);
+                            </script>
+                        </head>
+                        <body>
+                            <div class="winner">NO WINNER</div>
+                        </body>
+                        </html>'''
+            return html_content
+
+        first_win = court_data.get("current_is_winner_first")
+        if first_win:
+            winners = court_data.get("current_first_participant") or court_data.get("first_participant", [])
+            losers = court_data.get("current_second_participant") or court_data.get("second_participant", [])
+        else:
+            winners = court_data.get("current_second_participant") or court_data.get("second_participant", [])
+            losers = court_data.get("current_first_participant") or court_data.get("first_participant", [])
+        id_url_dict = {d['id']: d for d in id_url}
+        winners = [(p, id_url_dict[p.get('id')]) for p in winners if p.get('id')]
+        losers_name = ' / '.join([l.get("initialLastName", l.get("lastName"))] for l in losers)
+
+        scores = []
+        detailed_result = court_data.get("current_detailed_result", court_data.get("detailed_result", []))
+        if detailed_result and len(detailed_result) > 0:
+            for result in detailed_result:
+                scores.append(f'{result.get("firstParticipantScore")}/{result.get("secondParticipantScore")}')
+
+        html_content = f'''<!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>{court_name} - Winner</title>
+                <link rel="stylesheet" href="/static/css/winner.css">
+                <script>
+                    setInterval(function() {{
+                        location.reload();
+                    }}, 9000);
+                </script>
+            </head>
+            <body>
+                <div class="winner">
+                    <div class="winner_container">
+                        <span>ПОБЕДИТЕЛЬ</span>
+                        <table>
+                            {["".join(f'<tr><td>{winner[0].get("fullName")}</td></tr>') for winner in winners]}
+                        </table>
+                        <div class="image_container">
+                            {[f'<img src="{winner[1]}">' for winner in winners]}
+                        </div>
+                        <div class="info_block>
+                            <span>ПРОТИВ</span>
+                            <span class="loser">{losers_name}</span>
+                            {[f'<div class="set_score>{score}</div>' for score in scores]}
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>'''
+        return html_content
+
+
 
     def _add_elimination_data(self, root: ET.Element, class_data: Dict, draw_index: int):
         """Добавляет данные игр на выбывание в плоском формате с обработкой Bye и Walkover"""
