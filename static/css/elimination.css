@@ -41,8 +41,8 @@ body {
     zoom: 43%;
     background-color: #324E9E;  
     font-family: var(--font-onest-bold);
-    width: 1920px;
-    height: 1080px;
+    /*width: 1920px;
+    height: 1080px; */
     overflow: hidden;
     position: relative;
     margin: 10;
@@ -73,16 +73,17 @@ body {
 .round-column {
     display: flex;
     flex-direction: row;
-    justify-content: space-evenly;
+    justify-content: flex-start;
 	width: 100%;
+	gap: 0px;
 }
 
 .bracket-grid {
     display: flex;
     flex-direction: column;
-    justify-content: space-evenly;
+    justify-content: space-evenly; 
     gap: 20px; /* Расстояние между контейнерами */
-    width: 100%;
+    width: 490px;
     max-width: 100%;
 }
 

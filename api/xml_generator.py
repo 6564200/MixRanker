@@ -2560,9 +2560,13 @@ class XMLGenerator:
                     # Финальный раунд - используем универсальную функцию
                     full_results = self._generate_match_pairs_from_api(round_index, round_info['matches'])
                     
-                    html_content += '<div class="bracket-grid">'
+                    html_content += f'''<div class="bracket-grid">
+                    <div class="struct"> {rounds_data[round_index]['title']} </div>
+                    '''
+                    
                     for match in full_results:
                         html_content += f'''
+
                             <div class="container">
                                 <div class="row row-top">
                                     <div class="names">
@@ -2593,7 +2597,9 @@ class XMLGenerator:
                     # Используем универсальную функцию для формирования пар
                     full_results = self._generate_match_pairs_from_api(round_index, round_info['matches'])
 
-                    html_content += f'''<div class="bracket-grid">'''
+                    html_content += f'''<div class="bracket-grid">
+                    <div class="struct"> {rounds_data[round_index]} </div>
+                    '''
                     for match in full_results:
                             html_content += f'''
 
