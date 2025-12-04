@@ -198,7 +198,7 @@ class RankedinAPI:
             "event_state": details.get("eventState", "Неизвестный статус"),
             "sport": details.get("sport", ""),
         }
-
+        
         # Определяем состояние корта и что отображать
         live_match = data.get("liveMatch")
         previous_match = data.get("previousMatch")
@@ -208,6 +208,9 @@ class RankedinAPI:
             # СОСТОЯНИЕ 3: На корте идёт матч в реальном времени
             base_match = live_match.get("base", {}) or live_match
             result.update(self._extract_match_data(base_match, "current"))
+            
+            #logger.debug(f"---------------- {base_match}") #------------------------------------------------------------------------------------ https://live.rankedin.com/api/v1/court/155890/scoreboard
+            
             
             # Извлекаем live счет из state
             live_state = live_match.get("state", {})
@@ -425,6 +428,8 @@ class RankedinAPI:
 
         logger.debug(f"Fallback: создано {len(classes_with_draws)} классов с сетками")
         return classes_with_draws
+
+
 
     # ЗАПРОС №9: Групповые этапы (Round Robin)
     def get_round_robin_draws(self, tournament_class_id: str, draw_strength: int = 0, draw_stage: int = 0) -> Optional[List[Dict]]:
@@ -784,16 +789,79 @@ class RankedinAPI:
 
         return courts_data
 
+
+
+
+    def _parse_detailed_result_new(self, detailed_list: List[Dict]) -> List[Dict]:    #-------------------------------------------------------------------------------------
+        """
+        Парсит подробный счет по сетам/геймам/очкам рекурсивно.
+        """
+        parsed_results = []
+        for item in detailed_list:
+            if isinstance(item, dict):
+                # Создаем базовый словарь для текущего уровня (сет/гейм/очко)
+                current_level_data = {
+                    "index": item.get("index"), # Добавил извлечение index для наглядности
+                    "firstParticipantScore": item.get("firstParticipantScore", 0),
+                    "secondParticipantScore": item.get("secondParticipantScore", 0),
+                    "loserTiebreak": item.get("loserTiebreak")
+                }
+                
+                # Проверяем наличие следующего уровня вложенности (например, очки внутри гейма)
+                next_level_detailed = item.get("detailedResult", [])
+                if next_level_detailed:
+                    # Рекурсивно вызываем эту же функцию для парсинга следующего уровня
+                    # и сохраняем результат в поле 'sub_results'
+                    current_level_data['sub_results'] = self._parse_detailed_result_recursive(next_level_detailed)
+                
+                parsed_results.append(current_level_data)
+                
+        return parsed_results
+
     def _parse_detailed_result(self, detailed: List[Dict]) -> List[Dict]:
-        """Парсит подробный счет по сетам"""
-        return [
-            {
+        """Парсит подробный счет по сетам и геймам"""
+        result = []
+        for s in detailed:
+            if not isinstance(s, dict):
+                continue
+                
+            set_info = {
                 "firstParticipantScore": s.get("firstParticipantScore", 0),
                 "secondParticipantScore": s.get("secondParticipantScore", 0),
-                "loserTiebreak": s.get("loserTiebreak")
+                "loserTiebreak": s.get("loserTiebreak"),
+                "gameScore": None  # Счет текущего гейма
             }
-            for s in detailed if isinstance(s, dict)
-        ]
+            
+            # Извлекаем счет текущего гейма из detailedResult
+            game_details = s.get("detailedResult", [])
+            if game_details and len(game_details) > 0:
+                current_game = game_details[-1]  # Последний = текущий гейм
+                game_first = current_game.get("firstParticipantScore", 0)
+                game_second = current_game.get("secondParticipantScore", 0)
+                
+                # ВАЖНО: Проверяем тайбрейк
+                # Если loserTiebreak == 0, это означает что идет тайбрейк
+                is_tiebreak = current_game.get("loserTiebreak") == 0
+                
+                # Преобразуем в теннисный счет (0→0, 1→15, 2→30, 3→40, 4+→AD)
+                # Но в тайбрейке показываем числовой счет как есть
+                def to_tennis(score, tiebreak):
+                    if tiebreak:
+                        return str(score)  # В тайбрейке просто число
+                    if score >= 4:
+                        return "AD"
+                    return {0: "0", 1: "15", 2: "30", 3: "40"}.get(score, str(score))
+                
+                set_info["gameScore"] = {
+                    "first": to_tennis(game_first, is_tiebreak),
+                    "second": to_tennis(game_second, is_tiebreak),
+                    "display": f"{to_tennis(game_first, is_tiebreak)}-{to_tennis(game_second, is_tiebreak)}",
+                    "isTiebreak": is_tiebreak
+                }
+            
+            result.append(set_info)
+        
+        return result
 
     def get_xml_data_types(self, tournament_data: Dict) -> List[Dict]:
         """Генерирует список доступных типов XML на основе данных турнира"""

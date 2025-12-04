@@ -38,11 +38,11 @@
 }
 
 body {
-    zoom: 43%;
-    background-color: #324E9E;  
+    zoom: 100%;
+    background: transparent;  
     font-family: var(--font-onest-bold);
-    /*width: 1920px;
-    height: 1080px; */
+    width: 3840px;
+    height: 2160px;
     overflow: hidden;
     position: relative;
     margin: 10;
@@ -82,7 +82,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-evenly; 
-    gap: 20px; /* Расстояние между контейнерами */
+    gap: 10px; /* Расстояние между контейнерами */
     width: 490px;
     max-width: 100%;
 }
@@ -101,6 +101,12 @@ body {
 
 }
 
+.places {
+	text-transform: uppercase;
+	font-size: 25px;
+	color: #FFFFFF;
+	text-align: center;
+}
 
 .round-column-win {
     display: flex;
@@ -193,7 +199,8 @@ body {
 }
 
 .lost {
-    color: #969696;
+    /*  color: #969696; */
+	color: var(--text-light)
 }
 
 /* Блоки со счетом сетов*/

@@ -46,9 +46,9 @@
 }
 
 body {
-    zoom: 50%;
+    zoom: 100%;
     font-family: var(--font-onest-bold);
-    background: #324E9E;
+    background: transparent;
     color: var(--text-dark);
     width: 1823px;
     height: 407px;
@@ -237,6 +237,16 @@ body {
     width: 175px;
     height: 83px;
     background: var(--cell-gradient-b-bg);
+}
+
+.match-cell-empty-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 175px;
+    height: 83px;
+    background: var(--cell-gradient-b-bg);	
 }
 
 .match-score {

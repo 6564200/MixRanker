@@ -8,10 +8,10 @@
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from typing import Dict, List, Any, Optional
 import logging
 from markupsafe import escape
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -396,11 +396,21 @@ class XMLGenerator:
             self._add_error_xml(root, f"Критическая ошибка: {str(e)}")
 
 
+    def _get_game_score_display(self, detailed_result: List[Dict], set_score: int, team: str) -> str:
+        """Возвращает счет гейма если есть, иначе счет сетов"""
+        if detailed_result and len(detailed_result) > 0:
+            last_set = detailed_result[-1]
+            game_score = last_set.get("gameScore")
+            if game_score:
+                return game_score.get(team, str(set_score))
+        return str(set_score)
+
     def generate_court_scoreboard_html(self, court_data: Dict, tournament_data: Dict = None) -> str:
         """Генерирует HTML страницу scoreboard для корта с правильной логикой состояний"""
 
         # Определяем состояние корта
         match_state = court_data.get("current_match_state", "free")
+        
         
         # Проверяем наличие участников 
         current_participants = court_data.get("current_first_participant") or court_data.get("first_participant", [])
@@ -496,7 +506,7 @@ class XMLGenerator:
         <script>
             setInterval(function() {{
                 location.reload();
-            }}, 9000);
+            }}, 3000);
         </script>
     </head>
     <body>
@@ -546,7 +556,7 @@ class XMLGenerator:
                         <span class="team-name">{team1_name}</span>
                         {html_set_score_1 if show_score else "*"}
                         <div class="main-score-area bg-rad1">
-                            <span class="score-text">{team1_score if show_score else "-"}</span>
+                        
                         </div>
                     </div>
                 </div>
@@ -558,7 +568,7 @@ class XMLGenerator:
                         <span class="team-name">{team2_name}</span>
                         {html_set_score_2 if show_score else "*"}
                         <div class="main-score-area bg-rad2">
-                            <span class="score-text">{team2_score if show_score else "-"}</span>
+                            <span class="score-text">{self._get_game_score_display(detailed_result, team1_score, 'first') if show_score else "-"}</span>
                         </div>
                     </div>
                 </div>'''
@@ -633,7 +643,9 @@ class XMLGenerator:
 
         team1_scores = [0, 0, 0, team1_score]
         team2_scores = [0, 0, 0, team2_score]
+        
         if detailed_result and len(detailed_result) > 0:
+
             for i in range(min(len(detailed_result), 3)):
                 team1_set_score = detailed_result[i].get("firstParticipantScore", 0)
                 team1_scores[i] = team1_set_score
@@ -651,50 +663,75 @@ class XMLGenerator:
 
         if show_current_match:
             html_content = f'''<!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>{court_name} - Scoreboard</title>
-                    <link rel="stylesheet" href="/static/css/fullscreen_scoreboard.css">
-                    <script>
-                        setInterval(function() {{
-                            location.reload();
-                        }}, 9000);
-                    </script>
-                </head>
-                <body>
-                    <div class="scoreboard">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th class="player-cell"></th>
-                                    <th class="score-cell">{'Сет 1' if show_score else ''}</th>
-                                    <th class="score-cell">{'Сет 2' if show_score else ''}</th>
-                                    <th class="score-cell">{'Сет 3' if show_score else ''}</th>
-                                    <th class="score-cell">{'Итог' if show_score else ''}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="player-cell">{'<br>'.join(team1_players)}</td>
-                                    <td class="score-cell">{team1_scores[0] if show_score else ''}</td>
-                                    <td class="score-cell">{team1_scores[1] if show_score else ''}</td>
-                                    <td class="score-cell">{team1_scores[2] if show_score else ''}</td>
-                                    <td class="score-cell">{team1_scores[3] if show_score else ''}</td>
-                                </tr>
-                                <tr>
-                                    <td class="player-cell">{'<br>'.join(team2_players)}</td>
-                                    <td class="score-cell">{team2_scores[0] if show_score else ''}</td>
-                                    <td class="score-cell">{team2_scores[1] if show_score else ''}</td>
-                                    <td class="score-cell">{team2_scores[2] if show_score else ''}</td>
-                                    <td class="score-cell">{team2_scores[3] if show_score else ''}</td>
-                                </tr>
-                            </tbody>
-                        </table>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Таблица результатов матча из Figma</title>
+    <!-- Подключение шрифта Onest с Google Fonts -->
+    <link href="fonts.googleapis.com" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/fullscreen_scoreboard.css">
+            <script>
+            setInterval(function() {{
+                location.reload();
+            }}, 1000);
+        </script>
+</head>
+<body>
+
+    <!-- Обертка для горизонтального скролла на маленьких экранах -->
+    <div class="table-container">
+        <div class="bg_table">
+            <div class="table-wrapper">
+
+                <!-- Заголовок таблицы: COURT HEADER -->
+                <div class="bg_head_tab">
+                    <div class="text_set">СЕТ 1</div>
+                    <div class="text_set">СЕТ 2</div>
+                    <div class="text_set">СЕТ 3</div>
+                    <div class="text_set_itog">ИТОГ</div>
+                </div>
+
+                <!-- Первая команда -->
+                <div class="bg_team1">
+                    <div class="command_name1">
+                        <div class="player_name1">{team1_players[0]}</div>
+                        <div class="player_name2">{team1_players[1]}</div>
                     </div>
-                </body>
-                </html>'''
+                    <div class="set_play1">
+                        <div class="text_set_score">{team1_scores[0] if show_score else ''}</div>
+                        <div class="text_set_score">{team1_scores[1] if show_score else ''}</div>
+                        <div class="text_set_score">{team1_scores[2] if show_score else ''}</div>
+                        <div class="text_set_itog_score">{self._get_game_score_display(detailed_result, team1_scores[3], 'first') if show_score else ''}</div>
+                    </div>
+                </div>
+
+                <!-- Разделительная линия -->
+                <div class="bg_line"></div>
+
+                <!-- Вторая команда -->
+                <div class="bg_team2">
+                    <div class="command_name2">
+                        <div class="player_name1">{team2_players[0]}</div>
+                        <div class="player_name2">{team2_players[1]}</div>
+                    </div>
+                    <div class="set_play2">
+                        <div class="text_set_score">{team2_scores[0] if show_score else ''}</div>
+                        <div class="text_set_score">{team2_scores[1] if show_score else ''}</div>
+                        <div class="text_set_score">{team2_scores[2] if show_score else ''}</div>
+                        <div class="text_set_itog_score">{self._get_game_score_display(detailed_result, team2_scores[3], 'second') if show_score else ''}</div>
+                        
+                        
+
+                    </div>
+                </div>
+                <div class="bg_line"></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>'''
 
         else:
             html_content = f'''<!DOCTYPE html>
@@ -717,7 +754,8 @@ class XMLGenerator:
                         </div>
                     </div>
                 </body>
-                </html>'''
+                </html>
+'''
 
         return html_content
 
@@ -750,9 +788,7 @@ class XMLGenerator:
         id_url_dict = {d['id']: d for d in id_url}
         team1_players = [(p, id_url_dict[p.get('id')]) for p in team1_players if p.get('id')]
         team2_players = [(p, id_url_dict[p.get('id')]) for p in team2_players if p.get('id')]
-        next_start_time = court_data.get("next_start_time", "")
-        datetime_object = datetime.strptime(next_start_time, "%Y-%m-%dT%H:%M:%S")
-        start_time = datetime_object.strftime("%H.%M")
+        start_time = court_data.get("next_start_time", "")
 
         html_content = f'''<!DOCTYPE html>
                 <html lang="en">
@@ -1393,7 +1429,8 @@ class XMLGenerator:
         
         current_class = court_data.get("current_class_name") or court_data.get("class_name", "")
         if current_class:
-            ET.SubElement(root, "currentClassName").text = current_class
+            ET.SubElement(root, "currentClassEvent").text = current_class[current_class.rfind(',')+1:]
+            ET.SubElement(root, "currentClassName").text = current_class[current_class.find(',')+1:]
             ET.SubElement(root, "currentMatchState").text = court_data.get("current_match_state", "")
             
             # Дополнительная информация о текущем матче
@@ -1711,6 +1748,8 @@ class XMLGenerator:
 
         from datetime import datetime as dt
         if not target_date:
+            tz_yekat = ZoneInfo("Asia/Yekaterinburg")
+            now_yekat = datetime.now(tz=tz_yekat)
             target_date = dt.now().strftime("%d.%m.%Y")
             #target_date = dt(year=2025, month=10, day=25).strftime("%d.%m.%Y") #для тестов
 
@@ -1926,7 +1965,7 @@ class XMLGenerator:
         all_matches = []
 
         for match in court_usage:
-            print(match)
+
             if not isinstance(match, dict):
                 continue
 
@@ -2082,8 +2121,8 @@ class XMLGenerator:
 
 
 
-    def generate_schedule_html_old(self, tournament_data: Dict, target_date: str = None) -> str:
-        """Генерирует HTML для расписания матчей с временной шкалой и позиционированием"""
+    def generate_schedule_html_addreality(self, tournament_data: Dict, target_date: str = None) -> str:
+        """Генерирует HTML для расписания матчей с новым дизайном 3.12.2025"""
         # Метаинформация о турнире
         metadata = tournament_data.get("metadata", {})
         tournament_name = metadata.get("name", "Неизвестный турнир")
@@ -2105,162 +2144,165 @@ class XMLGenerator:
         from datetime import datetime as dt
         if not target_date:
             target_date = dt.now().strftime("%d.%m.%Y")
-        
+            #target_date = dt(year=2025, month=10, day=25).strftime("%d.%m.%Y") # для тестов
+
         # Группируем матчи по кортам и фильтруем по дате
         courts_matches = {}
-        all_matches = []  # Все матчи для общей нумерации
-        
+        all_matches = []
+
         for match in court_usage:
+
             if not isinstance(match, dict):
                 continue
-                
+
             match_date = match.get("MatchDate", "")
             if match_date:
                 try:
                     dt_obj = dt.fromisoformat(match_date.replace('T', ' ').replace('Z', ''))
                     match_date_formatted = dt_obj.strftime("%d.%m.%Y")
-                    
+
                     # Фильтруем только матчи на нужную дату
                     if match_date_formatted != target_date:
                         continue
-                        
+
                     court_id = str(match.get("CourtId", ""))
                     court_name = court_names_map.get(court_id, f"Корт {court_id}")
-                    
-                    # Добавляем время начала для сортировки и позиционирования
+
+                    # Добавляем время начала для сортировки
                     match["start_time"] = dt_obj.strftime("%H:%M")
                     match["date_formatted"] = match_date_formatted
                     match["court_name"] = court_name
                     match["datetime_obj"] = dt_obj
-                    
+
                     all_matches.append(match)
-                    
+
                     if court_name not in courts_matches:
                         courts_matches[court_name] = []
                     courts_matches[court_name].append(match)
-                    
+
                 except Exception as e:
                     continue
-        
+
         if not courts_matches:
             return self._generate_empty_schedule_html(tournament_name, f"Нет матчей на {target_date}")
 
-        # Сортируем матчи в каждом корте по времени и присваиваем номера для каждого корта отдельно
+        # Сортируем матчи в каждом корте по времени и присваиваем номера
         for court_name in courts_matches:
             courts_matches[court_name].sort(key=lambda x: x.get("datetime_obj"))
-            # Присваиваем номера матчей для каждого корта отдельно
             for i, match in enumerate(courts_matches[court_name], 1):
                 match["episode_number"] = i
 
-        
-        # Создаем временную шкалу
-        time_slots = self._generate_time_slots(all_matches)
-        
+        # Создаем уникальные временные слоты
+        time_slots = sorted(list(set([m["start_time"] for m in all_matches])))
+
         # Генерируем HTML
         html_content = f'''<!DOCTYPE html>
-                        <html lang="ru">
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>Расписание матчей - {tournament_name}</title>
-                            <link rel="stylesheet" href="/static/css/schedule.css">
-                            <script>
-                                setInterval(function() {{
-                                    location.reload();
-                                }}, 30000);
-                            </script>
-                        </head>
-                        <body>
-                            <div class="schedule-container">
-                                <div class="header">
-                                    <h1 class="tournament-title">{tournament_name}</h1>
-                                    <h2 class="date-title">{target_date}</h2></div>
-                                <div class="main-grid">
-                                    ''' #<div class="time-scale">
-        
-        # Генерируем временную шкалу
-        #for time_slot in time_slots:
-        
-        html_content += '''
-            </div>
-            
-            <div class="courts-container">
-                <div class="courts-header">'''
-        
-        # Заголовки кортов
-        for court_name in sorted(courts_matches.keys()):
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Расписание матчей -Addreality говно {tournament_name}</title>
+        <link rel="stylesheet" href="/static/css/schedule_addreality.css">
+        <script>
+            setInterval(function() {{
+                location.reload();
+            }}, 30000);
+        </script>
+    </head>
+    <body>
+        <div class="schedule-container">
+            <div class="main-grid">
+                <div class="time-scale">'''
+
+        # Временные слоты
+        for time_slot in time_slots:
             html_content += f'''
-                    <div class="court-header">
-                        <h3>{court_name}</h3>
-                    </div>'''
-        
+                    <div class="time-slot">{time_slot}</div>'''
+
         html_content += '''
                 </div>
                 
-                <div class="matches-grid">'''
-        
-        # Столбцы кортов с позиционированными матчами
+                <div class="courts-container">
+                    <div class="courts-header">'''
+
+        # Заголовки кортов
+        for court_name in sorted(courts_matches.keys()):
+            html_content += f'''
+                        <div class="court-header">
+                            <h3>{court_name}</h3>
+                        </div>'''
+
+        html_content += '''
+                    </div>
+                    
+                    <div class="matches-grid">'''
+
+        # Столбцы кортов с матчами
         for court_name in sorted(courts_matches.keys()):
             matches = courts_matches[court_name]
-            
-            html_content += f'''
-                    <div class="court-column">'''
-            
-            # Генерируем матчи с абсолютным позиционированием по времени
+
+            html_content += '''
+                        <div class="court-column">'''
+
             for match in matches:
                 match_status = self._get_match_status(match)
                 status_class = self._get_status_class(match_status)
-                
-                pool_name = match.get("PoolName", "")
+
                 challenger_name = match.get("ChallengerName", "TBD")
                 challenged_name = match.get("ChallengedName", "TBD")
                 episode_number = match.get("episode_number", 1)
-                
+
                 # Результаты матча
-                challenger_result = match.get("ChallengerResult", "")
-                challenged_result = match.get("ChallengedResult", "")
-                
-                result_text = ""
-                if challenger_result and challenged_result:
-                    result_text = f"{challenger_result} - {challenged_result}"
-                else:
-                    result_text = "0 - 0"
-                
-                # Цвет группы
-                group_class = self._get_group_class(pool_name)
-                
-                # Форматируем названия команд в одну строку
-                teams_text = f"{challenger_name} vs {challenged_name}"
-                
-                # Вычисляем позицию по времени
-                position_top = self._calculate_time_position(match, time_slots)
-                
+                challenger_result = match.get("ChallengerResult", "0")
+                challenged_result = match.get("ChallengedResult", "0")
+
+                if not challenger_result:
+                    challenger_result = "0"
+                if not challenged_result:
+                    challenged_result = "0"
+
+                # Проверка на Won W.O.
+                challenger_wo = ""
+                challenged_wo = ""
+
+                if challenger_result == "Won W.O.":
+                    challenger_wo = "W.O."
+                    challenger_result = ""
+                if challenged_result == "Won W.O.":
+                    challenged_wo = "W.O."
+                    challenged_result = ""
+
+
                 html_content += f'''
-                        <div class="match-item {status_class}" style="top: {position_top}px;">
-                            <div class="match-number">{episode_number}</div>
+                        <div class="match-item {status_class}">
                             <div class="match-content">
-                                
-                                <div class="match-info">
-                                    <div class="match-group-horizontal {group_class}">{pool_name}</div>
-                                    <div class="match-teams-horizontal">{teams_text}</div>
-                                    
-                                </div>
-                                <div class="match-result-horizontal">{result_text}</div>
-                                <div class="tilted-square"></div>
-                            </div>
-                            
-                        </div>'''
-            
-            html_content += '''
-                    </div>'''
-        
-        html_content += '''
+                                <div class="match-number">{episode_number}</div>
+                                <div class="match-teams-wrapper">
+                                    <div class="match-team">
+                                        <div class="match-team-name">{challenger_name}</div>
+                                        {"<div class='match-team-wo'>Won W.O.</div>" if challenger_wo else ""}
+                                        {"<div class='match-team-score'>" + challenger_result + "</div>" if challenger_result else ""}
+                                    </div>
+                                    <div class="match-team">
+                                        <div class="match-team-name">{challenged_name}</div>
+                                        {"<div class='match-team-wo'>Won W.O.</div>" if challenged_wo else ""}
+                                        {"<div class='match-team-score'>" + challenged_result + "</div>" if challenged_result else ""}
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </body>
-                    </html>'''
+                        </div>'''
+
+            html_content += '''
+                        </div>'''
+
+        html_content += '''
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>'''
+
         return html_content
 
     def _generate_empty_schedule_html(self, tournament_name: str, message: str) -> str:
@@ -2534,7 +2576,7 @@ class XMLGenerator:
                             <head>
                                 <meta charset="UTF-8">
                                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                <title>{class_name} - {stage_name}</title>
+                                <title>{class_name} - {stage_name} TEST </title>
                                 <link rel="stylesheet" href="/static/css/elimination.css">
                                                         <script>
                                                             setInterval(function() {{
@@ -2560,9 +2602,9 @@ class XMLGenerator:
                     # Финальный раунд - используем универсальную функцию
                     full_results = self._generate_match_pairs_from_api(round_index, round_info['matches'])
                     
-                    html_content += f'''<div class="bracket-grid">
-                    <div class="struct"> {rounds_data[round_index]['title']} </div>
-                    '''
+                    html_content += f'''<div class="bracket-grid">'''
+                    
+                    if (len(rounds_data)-1) == 1: html_content += f'''<div class="places">{stage_name}</div> '''
                     
                     for match in full_results:
                         html_content += f'''
@@ -2573,7 +2615,7 @@ class XMLGenerator:
                                         <span class="name-main {match['secondary1']}">{match['team_1_name']}</span>
                                     </div>
                                     <div class="score">
-                                        <span class="set-score">{match['sets1']}</span>
+                                        <span class="set-score">{match['sets2']}</span>
                                     </div>
                                     <div class="rank rank-top">
                                         <span class="rank-number">{match['score'].split('-')[0]}</span>
@@ -2584,7 +2626,7 @@ class XMLGenerator:
                                         <span class="name-main {match['secondary2']}">{match['team_2_name']}</span>
                                     </div>
                                     <div class="score">
-                                        <span class="set-score">{match['sets2']}</span>
+                                        <span class="set-score">{match['sets1']}</span>
                                     </div>
                                     <div class="rank rank-bottom">
                                         <span class="rank-number">{match['score'].split('-')[1]}</span>
@@ -2597,9 +2639,9 @@ class XMLGenerator:
                     # Используем универсальную функцию для формирования пар
                     full_results = self._generate_match_pairs_from_api(round_index, round_info['matches'])
 
-                    html_content += f'''<div class="bracket-grid">
-                    <div class="struct"> {rounds_data[round_index]} </div>
-                    '''
+                    html_content += f'''<div class="bracket-grid">'''
+                    if round_index == 1: html_content += f'''<div class="places">{stage_name}</div>'''
+                    
                     for match in full_results:
                             html_content += f'''
 
@@ -2609,7 +2651,7 @@ class XMLGenerator:
                 <span class="name-main {match['secondary1']}">{match['team_1_name']}</span>
             </div>
             <div class="score">
-                <span class="set-score">{match['sets1']}</span>
+                <span class="set-score">{match['sets2']}</span>
             </div>
             <div class="rank rank-top">
                 <span class="rank-number">{match['score'].split('-')[0]}</span>
@@ -2620,7 +2662,7 @@ class XMLGenerator:
                 <span class="name-main {match['secondary2']}">{match['team_2_name']}</span>
             </div>
             <div class="score">
-                <span class="set-score">{match['sets2']}</span>
+                <span class="set-score">{match['sets1']}</span>
             </div>
             <div class="rank rank-bottom">
                 <span class="rank-number">{match['score'].split('-')[1]}</span>
@@ -2802,7 +2844,7 @@ class XMLGenerator:
                 
                 # Парсим сеты
                 import re
-                sets1 = [int(x) for x in re.findall(r'\((\d+)-', sets_summary)]
+                sets1 = [int(x) for x in re.findall(r'\((\d+)-', sets_summary)] #-----------------------------
                 sets2 = [int(x) for x in re.findall(r'-(\d+)\)', sets_summary)]
                 match_info['sets1'] = ' '.join(map(str, sets1))
                 match_info['sets2'] = ' '.join(map(str, sets2))
@@ -2826,10 +2868,10 @@ class XMLGenerator:
                     match_info['status'] = 'Bye'
                     if bye_winner.get("participant_id") == team1_id:
                         match_info['team_2_name'] = 'BYE'
-                        match_info['secondary2'] = 'lost'
+                        match_info['secondary1'] = 'lost'
                     elif bye_winner.get("participant_id") == team2_id:
                         match_info['team_1_name'] = 'BYE'
-                        match_info['secondary1'] = 'lost'
+                        match_info['secondary2'] = 'lost'
             
             match_pairs.append(match_info)
         
@@ -2916,7 +2958,7 @@ class XMLGenerator:
                     <div class="table-title">
                         <div class="table-header">
                             <div class="cell-num"></div>
-                            <div class="cell-gpp">{class_name} - {group_name}</div>
+                            <div class="cell-gpp">{class_name[class_name.find(",")+1:]  } - {group_name} </div>
                         </div>
                         '''
         
@@ -2946,7 +2988,7 @@ class XMLGenerator:
                         <div class="team-row">
                             <div class="team-number-cell">
                                 <div class="team-num">{i + 1}</div>
-                                <div class="team-name-cell">{upper_short_name}</div>
+                                <div class="team-name-cell">{upper_short_name} </div>
                             </div>
                             '''
             
@@ -2954,7 +2996,7 @@ class XMLGenerator:
             for j in range(len(participants)):
                 if i == j:
                     # Диагональная ячейка
-                    html_content += '<div class="diagonal-cell"></div>'
+                    html_content += f'''<div class="diagonal-cell"></div>'''
                 else:
                     match_result = matches_matrix.get(f"{i}_{j}", {})
                     result_class = self._get_match_result_class(match_result)

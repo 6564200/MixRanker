@@ -17,7 +17,6 @@ from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_file, render_template, Response, session
 from werkzeug.utils import secure_filename
 from PIL import Image
-from rembg import remove, new_session
 from functools import wraps
 from typing import Dict, List, Any, Optional
 from config import get_config
@@ -57,9 +56,6 @@ except ImportError as e:
     logger.error(f"Ошибка импорта модулей: {e}")
     sys.exit(1)
 
-# Сессия модели rembg
-MODEL_NAME = 'birefnet-general-lite'
-RB_SESSION = new_session(MODEL_NAME)
 
 # Создание Flask приложения
 app = Flask(__name__)
@@ -292,7 +288,7 @@ def check_user_credentials(username, password):
 # Роуты для аутентификации
 @app.route('/api/auth/login', methods=['POST'])
 def login():
-    """Авторизация пользователя с улучшенной обработкой Content-Type"""
+    """Авторизация пользователя"""
     try:
         # Проверяем Content-Type и получаем данные
         if request.content_type and 'application/json' in request.content_type:
@@ -567,7 +563,7 @@ def load_tournament(tournament_id):
             cursor.executemany('''
                 INSERT OR IGNORE INTO participants
                 (id, rankedin_id, first_name, last_name, country_code, info)
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?)
             ''', participants_values)
 
             cursor.executemany('''
@@ -1431,6 +1427,26 @@ def get_live_schedule_html(tournament_id):
     except Exception as e:
         logger.error(f"Ошибка получения live HTML расписания для турнира {tournament_id}: {e}")
         return f"<html><body><h1>Ошибка: {str(e)}</h1></body></html>", 500
+        
+@app.route('/api/html-live/schedule/<tournament_id>/addreality')
+def get_live_schedule_html_addreality(tournament_id):
+    """Получение актуального HTML расписания из БД """
+    try:
+        target_date = request.args.get('date')  # Опциональная дата в формате DD.MM.YYYY
+        
+        #   Получение данных турнира из БД (включая расписание)
+        tournament_data = get_tournament_data_from_db(tournament_id)
+        if not tournament_data:
+            return "<html><body><h1>Турнир не найден</h1></body></html>", 404
+        
+        #   Генерация HTML из данных БД
+        html_content = xml_manager.generator.generate_schedule_html_addreality(tournament_data, target_date)
+        
+        return Response(html_content, mimetype='text/html; charset=utf-8')
+        
+    except Exception as e:
+        logger.error(f"Ошибка получения live HTML расписания для турнира {tournament_id}: {e}")
+        return f"<html><body><h1>Ошибка: {str(e)}</h1></body></html>", 500
 
 @app.route('/api/html/<tournament_id>/<court_id>')
 def generate_court_html(tournament_id, court_id):
@@ -1609,16 +1625,17 @@ def get_introduction_page_html(participant_id):
         def get_info_for_introduction(conn):
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT p.firstName, p.lastName, p.country_code, p.info
-                FROM participants
+                SELECT p.first_name, p.last_name, p.country_code, p.info
+                FROM participants AS p
                 WHERE id = ?
-            ''', participant_id)
+            ''', (participant_id,))
 
             column_names = [description[0] for description in cursor.description]
             result = cursor.fetchone()
             result_dict = dict(zip(column_names, result))
             info = json.loads(result['info'])
             result_dict.update(info)
+            result_dict['id'] = participant_id
 
             return result_dict
 
