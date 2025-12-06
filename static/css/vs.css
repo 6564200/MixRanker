@@ -1,0 +1,259 @@
+
+
+body {
+    margin: 0;
+    padding: 0;
+    width: 3840px;
+    height: 2160px;
+    overflow: hidden;
+    background: transparent;
+    font-family: 'Onest', sans-serif;
+	zoom: 40%;
+}
+
+/* Container */
+.vs-container {
+    position: relative;
+    width: 3840px;
+    height: 2160px;
+    /* background: url('/static/images/background_4k.png') center center no-repeat; */
+    background-size: cover;
+}
+
+/* Header text */
+.header-text {
+    position: absolute;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2698px;
+    height: 271px;
+    text-align: center;
+    z-index: 10;
+}
+
+.header-location {
+    font-family: 'TT Bluescreens Trl Cnd', sans-serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 100px;
+    line-height: 200px;
+    letter-spacing: 0.09em;
+    color: #FFFFFF;
+    margin-bottom: 0;
+}
+
+.header-title {
+    font-family: 'TT Bluescreens Trl Cnd', sans-serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 200px;
+    line-height: 139px;
+    letter-spacing: 0.17em;
+    color: #FFFFFF;
+}
+
+/* Teams container - НА ЗАДНЕМ ПЛАНЕ */
+.teams-wrapper {
+    position: absolute;
+    bottom: 50px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 0 10px;
+    z-index: 1;
+}
+
+/* Team container */
+.team-container {
+    position: relative;
+    display: block;
+    width: 1750px;
+    height: 1800px;
+}
+
+.team-container.team-left {
+    text-align: left;
+}
+
+.team-container.team-right {
+    text-align: right;
+}
+
+/* Player photo - НА ЗАДНЕМ ПЛАНЕ */
+.player-photo {
+    width: 1350px;
+    height: 1800px;
+    object-fit: cover;
+    object-position: center bottom;
+    position: absolute;
+    bottom: 0;
+}
+
+/* Наложение для левой команды */
+.team-container.team-left .player-photo:first-child {
+    left: 0;
+    z-index: 1;
+}
+
+.team-container.team-left .player-photo:last-child {
+    left: 400px;
+    z-index: 2;
+}
+
+/* Наложение для правой команды */
+.team-container.team-right .player-photo:first-child {
+    right: 400px;
+    z-index: 2;
+}
+
+.team-container.team-right .player-photo:last-child {
+    right: 0;
+    z-index: 1;
+}
+
+.player-photo.silhouette {
+    opacity: 0.3;
+}
+
+/* Score section - НАД ФОТО */
+.score-section {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    z-index: 5;
+}
+
+/* Single set score block */
+.set-block {
+    width: 955px;
+    height: 271px;
+}
+
+/* Set header - СЕРЫЙ для сетов */
+.set-header {
+    width: 955px;
+    height: 72px;
+    background: linear-gradient(180deg, #AED557 0%, #84C100 100%);
+    border-radius: 10px 10px 0px 0px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Set header - ЗЕЛЕНЫЙ для геймов */
+.game-block .game-header {
+    background: linear-gradient(180deg, #AED557 0%, #84C100 100%);
+}
+
+.set-header-text {
+    font-family: 'Onest', sans-serif;
+    font-weight: 700;
+    font-size: 50px;
+    line-height: 64px;
+    color: #080609;
+}
+
+/* Set scores */
+.set-scores {
+    width: 955px;
+    height: 199px;
+    background: linear-gradient(180deg, #202020 0%, #070707 100%);
+    display: flex;
+}
+
+.set-score {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Onest', sans-serif;
+    font-weight: 700;
+    font-size: 160px;
+    line-height: 204px;
+    color: #FFFFFF;
+    position: relative;
+}
+
+/* Divider between scores */
+.score-divider {
+    width: 7px;
+    height: 149px;
+    background: #9ACB19;
+    align-self: center;
+}
+
+/* Bottom plashka - НАД ФОТО */
+.bottom-plashka {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3647px;
+    height: 340px;
+    z-index: 10;
+}
+
+.plashka-border {
+    position: absolute;
+    width: 3647px;
+    height: 340px;
+    background: #95C602;
+    border-radius: 10px;
+}
+
+.plashka-content {
+    position: absolute;
+    top: 13px;
+    left: 0;
+    width: 3647px;
+    height: 314px;
+    background: #161417;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0px;
+}
+
+/* Team names in plashka */
+.team-names {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+	padding: 150px;
+	
+}
+
+.team-names.team-left {
+    align-items: flex-start;
+    text-align: left;
+	
+}
+
+.team-names.team-right {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.player-name {
+    font-family: 'Onest', sans-serif;
+    font-weight: 700;
+    font-size: 80px;
+    line-height: 102px;
+    letter-spacing: -0.04em;
+    color: #FFFFFF;
+    text-transform: uppercase;
+}
+
+/* Hidden class for 0-0 sets */
+.hidden {
+    display: none !important;
+}

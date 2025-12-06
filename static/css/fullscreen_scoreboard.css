@@ -1,10 +1,21 @@
-/* Базовые стили и обертка для адаптивности */
+@font-face {
+    font-family: 'Onest Bol';
+    src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'Onest Med';
+    src: url('/static/fonts/OnestLight1602-hint') format('truetype');
+    font-weight: medium;
+}
+
+
 body {
     margin: 0;
     padding: 0px;
     background-color: #AED557 ;
-    font-family: 'Onest', sans-serif;
-    zoom: 25%;
+    font-family: 'Onest';
+    zoom: 40%;
     background: transparent;
 	overflow: hidden; 
 }
@@ -85,13 +96,12 @@ body {
 .player_name1, .player_name2 {
     font-family: 'Onest', sans-serif;
     font-weight: 700;
-    font-size: 80px;
+    font-size: 82px;
     line-height: 102px;
     letter-spacing: -0.04em;
     color: #FFFFFF;
 	padding-left: 120px;
-	
-    /* Figma alignment flex-end/start handled by flex-direction on parent */
+	letter-spacing: 1px;
 }
 
 /* Контейнеры счетов */
@@ -118,6 +128,6 @@ body {
 /* Разделительная линия */
 .bg_line {
     width: 3448px;
-    height: 8px;
+    height: 13px;
     background: #AED557;
 }

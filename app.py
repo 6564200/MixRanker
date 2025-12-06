@@ -797,6 +797,77 @@ def get_tournaments():
         return jsonify({"error": str(e)}), 500
 
 
+
+# роут на VS
+@app.route('/api/html-live/<tournament_id>/<court_id>/vs')
+def get_court_vs_html(tournament_id, court_id):
+    """Получение VS HTML страницы с фотографиями игроков из БД"""
+    try:
+        # Получение данных турнира из БД
+        tournament_data = get_tournament_data_from_db(tournament_id)
+        if not tournament_data:
+            return "<html><body><h1>Турнир не найден</h1></body></html>", 404
+
+        # Получение данных корта из БД
+        court_data = get_court_data_from_db(tournament_id, str(court_id))
+        if not court_data or "error" in court_data:
+            return "<html><body><h1>Ошибка получения данных корта из БД</h1></body></html>", 500
+
+        # Получаем ID участников текущего матча
+        team1_ids = []
+        team2_ids = []
+        
+        # Пробуем current, потом обычные поля
+        team1_players = court_data.get("current_first_participant", court_data.get("first_participant", []))
+        team1_ids = [p.get("id") for p in team1_players if p.get("id")]
+        
+        team2_players = court_data.get("current_second_participant", court_data.get("second_participant", []))
+        team2_ids = [p.get("id") for p in team2_players if p.get("id")]
+
+        # Функция для получения photo_url из БД
+        def get_photo_urls_for_participants(conn):
+            ids = team1_ids + team2_ids
+            if ids:
+                cursor = conn.cursor()
+                cursor.execute(f'''
+                    SELECT p.id, p.photo_url
+                    FROM participants as p
+                    WHERE id IN ({','.join('?' for _ in ids)});
+                ''', tuple(ids))
+                column_names = [description[0] for description in cursor.description]
+                results = cursor.fetchall()
+                return [dict(zip(column_names, row_tuple)) for row_tuple in results]
+            return []
+
+        # Получаем фото из БД
+        photo_data = execute_db_transaction_with_retry(get_photo_urls_for_participants)
+        
+        # Создаем словарь id -> photo_url для быстрого поиска
+        photo_map = {item['id']: item['photo_url'] for item in photo_data if item.get('photo_url')}
+        
+        # Добавляем photo_url к участникам
+        for player in team1_players:
+            player_id = player.get('id')
+            if player_id and player_id in photo_map:
+                player['photo_url'] = photo_map[player_id]
+        
+        for player in team2_players:
+            player_id = player.get('id')
+            if player_id and player_id in photo_map:
+                player['photo_url'] = photo_map[player_id]
+
+        # Генерация HTML из данных БД
+        html_content = xml_manager.generator.generate_court_vs_html(court_data, tournament_data)
+
+        return Response(html_content, mimetype='text/html; charset=utf-8')
+
+    except Exception as e:
+        logger.error(f"Ошибка получения VS HTML для корта {court_id}: {e}")
+        return f"<html><body><h1>Ошибка: {str(e)}</h1></body></html>", 500
+
+
+
+
 @app.route('/api/tournament/<tournament_id>/courts')
 def get_tournament_courts(tournament_id):
     """Получение данных кортов турнира  """
@@ -1575,8 +1646,8 @@ def get_next_match_html(tournament_id, court_id):
         return f"<html><body><h1>Ошибка: {str(e)}</h1></body></html>", 500
 
 
-@app.route('/api/html-live/<tournament_id>/<court_id>/vs')
-def get_vs_page_html(tournament_id, court_id):
+@app.route('/api/html-live/<tournament_id>/<court_id>/vs_old')
+def get_vs_page_html________________(tournament_id, court_id):
     """Получение vs страницы HTML"""
     try:
         #   Получение данных турнира из БД

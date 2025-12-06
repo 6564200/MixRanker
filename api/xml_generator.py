@@ -668,8 +668,8 @@ class XMLGenerator:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Таблица результатов матча из Figma</title>
-    <!-- Подключение шрифта Onest с Google Fonts -->
-    <link href="fonts.googleapis.com" rel="stylesheet">
+
+
     <link rel="stylesheet" href="/static/css/fullscreen_scoreboard.css">
             <script>
             setInterval(function() {{
@@ -689,7 +689,7 @@ class XMLGenerator:
                     <div class="text_set">СЕТ 1</div>
                     <div class="text_set">СЕТ 2</div>
                     <div class="text_set">СЕТ 3</div>
-                    <div class="text_set_itog">ИТОГ</div>
+                    <div class="text_set_itog">ГЕЙМ</div>
                 </div>
 
                 <!-- Первая команда -->
@@ -830,6 +830,171 @@ class XMLGenerator:
 
         return html_content
 
+
+
+
+    def generate_court_vs_html(self, court_data: Dict, tournament_data: Dict = None) -> str:
+            """
+            Генерирует VS страницу (versus) с фотографиями игроков
+                HTML строка
+            """
+            # Получаем данные текущего матча
+            team1_players = court_data.get("current_first_participant", court_data.get("first_participant", []))
+            team2_players = court_data.get("current_second_participant", court_data.get("second_participant", []))
+            detailed_result = court_data.get("current_detailed_result", court_data.get("detailed_result", []))
+            
+            # Заголовок
+            header_location = "ПАДЕЛ-АРЕНА РМК, ЕКАТЕРИНБУРГ"
+            header_title = tournament_data.get("metadata", {}).get("name", "ТУРНИР") if tournament_data else "ТУРНИР"
+            
+            # Получаем счета по сетам и геймам (как в fullscreen)
+            team1_scores = [0, 0, 0, 0]
+            team2_scores = [0, 0, 0, 0]
+            
+            if detailed_result and len(detailed_result) > 0:
+                for i in range(min(len(detailed_result), 3)):
+                    team1_set_score = detailed_result[i].get("firstParticipantScore", 0)
+                    team1_scores[i] = team1_set_score
+                    team2_set_score = detailed_result[i].get("secondParticipantScore", 0)
+                    team2_scores[i] = team2_set_score
+            
+            # Формируем блоки сетов (только ненулевые)
+            sets_html = ""
+            visible_sets = []
+            
+            for i in range(3):
+                team1_score = team1_scores[i]
+                team2_score = team2_scores[i]
+                
+                # Показываем сет только если счет не 0-0
+                if team1_score != 0 or team2_score != 0:
+                    visible_sets.append({
+                        'number': i + 1,
+                        'team1_score': team1_score,
+                        'team2_score': team2_score
+                    })
+            
+            # Генерируем HTML для видимых сетов
+            for set_info in visible_sets:
+                sets_html += f'''
+                    <div class="set-block">
+                        <div class="set-header">
+                            <div class="set-header-text">СЕТ {set_info['number']}</div>
+                        </div>
+                        <div class="set-scores">
+                            <div class="set-score">{set_info['team1_score']}</div>
+                            <div class="score-divider"></div>
+                            <div class="set-score">{set_info['team2_score']}</div>
+                        </div>
+                    </div>
+                '''
+            
+            # Добавляем блок ГЕЙМЫ (зеленый, как ИТОГ в fullscreen)
+            # Используем метод _get_game_score_display для получения текущих геймов
+            team1_game = self._get_game_score_display(detailed_result, team1_scores[3], 'first')
+            team2_game = self._get_game_score_display(detailed_result, team2_scores[3], 'second')
+            
+
+            sets_html += f'''
+                <div class="set-block game-block">
+                    <div class="set-header game-header">
+                        <div class="set-header-text">ГЕЙМЫ</div>
+                    </div>
+                    <div class="set-scores">
+                        <div class="set-score">{team1_game}</div>
+                        <div class="score-divider"></div>
+                        <div class="set-score">{team2_game}</div>
+                    </div>
+                </div>
+            '''
+            
+            # Формируем фото команды 1 (левая сторона)
+            team1_photos = []
+            for player in team1_players[:2]:  # Максимум 2 игрока
+                photo_url = player.get("photo_url")
+                if photo_url:
+                    team1_photos.append(f'<img src="{photo_url}" class="player-photo" alt="{player.get("fullName", "")}">')
+                else:
+                    team1_photos.append('<img src="/static/images/silhouette.png" class="player-photo silhouette" alt="Player">')
+            
+            # Формируем фото команды 2 (правая сторона)
+            team2_photos = []
+            for player in team2_players[:2]:  # Максимум 2 игрока
+                photo_url = player.get("photo_url")
+                if photo_url:
+                    team2_photos.append(f'<img src="{photo_url}" class="player-photo" alt="{player.get("fullName", "")}">')
+                else:
+                    team2_photos.append('<img src="/static/images/silhouette.png" class="player-photo silhouette" alt="Player">')
+            
+            # Формируем имена для нижней планки
+            team1_names = ""
+            for player in team1_players[:2]:
+                full_name = player.get("fullName", "")
+                team1_names += f'<div class="player-name">{full_name}</div>'
+            
+            team2_names = ""
+            for player in team2_players[:2]:
+                full_name = player.get("fullName", "")
+                team2_names += f'<div class="player-name">{full_name}</div>'
+            
+            # Генерируем HTML----------------------------------{header_location}---------------{header_title}
+            html_content = f'''<!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>VS - {header_title}</title>
+        <link rel="stylesheet" href="/static/css/vs.css">
+
+    </head>
+    <body>
+        <div class="vs-container">
+            <!-- Header -->
+            <div class="header-text">
+                <div class="header-location"></div>
+                <div class="header-title"></div>
+            </div>
+            
+            <!-- Teams with photos -->
+            <div class="teams-wrapper">
+                <!-- Team 1 (left) -->
+                <div class="team-container team-left">
+                    {''.join(team1_photos)}
+                </div>
+                
+                <!-- Team 2 (right) -->
+                <div class="team-container team-right">
+                    {''.join(team2_photos)}
+                </div>
+            </div>
+            
+            <!-- Score section -->
+            <div class="score-section">
+                {sets_html}
+            </div>
+            
+            <!-- Bottom plashka with team names -->
+            <div class="bottom-plashka">
+                <div class="plashka-border"></div>
+                <div class="plashka-content">
+                    <div class="team-names team-left">
+                        {team1_names}
+                    </div>
+                    <div class="team-names team-right">
+                        {team2_names}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>'''
+            
+            return html_content
+
+
+
+
+
     def generate_vs_page_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
         """Генерирует HTML VS-страницу текущего корта"""
         court_name = court_data.get("court_name", "Court")
@@ -936,7 +1101,7 @@ class XMLGenerator:
                         <table id="final">
                             <thead>
                                 <tr>
-                                    <th colspan="2">Итог</th>
+                                    <th colspan="2">ГЕЙМ</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1247,7 +1412,7 @@ class XMLGenerator:
                                     ET.SubElement(participants, f"{prefix}_player1_name").text = ""
                                     ET.SubElement(participants, f"{prefix}_score").text = ""
                                     ET.SubElement(participants, f"{prefix}_sets_summary").text = ""
-                                    ET.SubElement(participants, f"{prefix}_match_type").text = "pending"
+                                    ET.SubElement(participants, f"{prefix}_match_type").text = ""
 
                             else:
                                 # 4. Другие случаи - пустые поля
@@ -1427,10 +1592,13 @@ class XMLGenerator:
         ET.SubElement(root, "courtName").text = court_data.get("court_name", "Корт")
         ET.SubElement(root, "courtStatus").text = court_data.get("event_state", "")
         
-        current_class = court_data.get("current_class_name") or court_data.get("class_name", "")
+        current_class =  court_data.get("class_name", "") or court_data.get("current_class_name")
+
         if current_class:
-            ET.SubElement(root, "currentClassEvent").text = current_class[current_class.rfind(',')+1:]
-            ET.SubElement(root, "currentClassName").text = current_class[current_class.find(',')+1:]
+            
+            ET.SubElement(root, "currentClassEvent").text = current_class[:current_class.rfind(',')] + 'l'
+            ET.SubElement(root, "currentClassName").text = '' #current_class[current_class.rfind(',')+1:]
+                
             ET.SubElement(root, "currentMatchState").text = court_data.get("current_match_state", "")
             
             # Дополнительная информация о текущем матче
@@ -2608,14 +2776,13 @@ class XMLGenerator:
                     
                     for match in full_results:
                         html_content += f'''
-
                             <div class="container">
                                 <div class="row row-top">
                                     <div class="names">
                                         <span class="name-main {match['secondary1']}">{match['team_1_name']}</span>
                                     </div>
                                     <div class="score">
-                                        <span class="set-score">{match['sets2']}</span>
+                                        <span class="set-score">{match['sets1']}</span>
                                     </div>
                                     <div class="rank rank-top">
                                         <span class="rank-number">{match['score'].split('-')[0]}</span>
@@ -2626,7 +2793,7 @@ class XMLGenerator:
                                         <span class="name-main {match['secondary2']}">{match['team_2_name']}</span>
                                     </div>
                                     <div class="score">
-                                        <span class="set-score">{match['sets1']}</span>
+                                        <span class="set-score">{match['sets2']}</span>
                                     </div>
                                     <div class="rank rank-bottom">
                                         <span class="rank-number">{match['score'].split('-')[1]}</span>
@@ -2635,8 +2802,7 @@ class XMLGenerator:
                             </div>'''
                     html_content += '</div>'
 
-                else: # Последующие раунды
-                    # Используем универсальную функцию для формирования пар
+                else: # Последующие раунды Используем универсальную функцию для формирования пар
                     full_results = self._generate_match_pairs_from_api(round_index, round_info['matches'])
 
                     html_content += f'''<div class="bracket-grid">'''
@@ -2644,14 +2810,13 @@ class XMLGenerator:
                     
                     for match in full_results:
                             html_content += f'''
-
     <div class="container">
         <div class="row row-top">
             <div class="names">
                 <span class="name-main {match['secondary1']}">{match['team_1_name']}</span>
             </div>
             <div class="score">
-                <span class="set-score">{match['sets2']}</span>
+                <span class="set-score">{match['sets1']}</span>
             </div>
             <div class="rank rank-top">
                 <span class="rank-number">{match['score'].split('-')[0]}</span>
@@ -2662,22 +2827,14 @@ class XMLGenerator:
                 <span class="name-main {match['secondary2']}">{match['team_2_name']}</span>
             </div>
             <div class="score">
-                <span class="set-score">{match['sets1']}</span>
+                <span class="set-score">{match['sets2']}</span>
             </div>
             <div class="rank rank-bottom">
                 <span class="rank-number">{match['score'].split('-')[1]}</span>
             </div>
         </div>
-    </div>
-
-    '''                
+    </div>'''                
                     html_content += f'''</div>'''
-
-
-
-
-
-                    
         html_content += '''</div> '''
         
         html_content += '''
@@ -2771,17 +2928,6 @@ class XMLGenerator:
             first_round[i] = { 'class': css_class, 'team-name': short_name, 'sets-info': '', 'match-score': '', 'Id': Id}
 
         return first_round
-
-
-
-
-
-
-
-
-
-
-
 
     def _generate_match_pairs_from_api(self, round_index: int, matches: List[Dict]) -> List[Dict]:
         """Универсальная функция для формирования пар матчей из API данных"""

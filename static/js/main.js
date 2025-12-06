@@ -702,9 +702,10 @@ function renderCourts() {
                     </small>
 					<div class="d-flex gap-1">
 						${hasCurrentMatch || hasNextMatch ? `
-							<button class="btn btn-sm btn-outline-primary" onclick="generateCourtXML('${court.court_id}')">
-								<i class="fas fa-code me-1"></i>XML
-							</button>
+
+<button class="btn btn-sm btn-outline-primary" onclick="openCourtVS(this.dataset.tournamentId, '${court.court_id}')" data-tournament-id="${currentTournamentId}" title="HTML VS">
+    <i class="fas fa-users me-1"></i>VS
+</button>
 							<button class="btn btn-sm btn-warning" onclick="openCourtHTML('${currentTournamentId}', '${court.court_id}')" title="HTML Scoreboard">
 								<i class="fas fa-tv"></i>
 							</button>
@@ -869,6 +870,15 @@ function renderLiveXMLList(liveXMLInfo) {
 
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
+
+
+function openCourtVS(tournamentId, courtId) {
+   
+    const liveUrl = `/api/html-live/${tournamentId}/${courtId}/vs`;
+    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+}
+
+
 
 // generateScheduleHTML с календариком
 function generateScheduleHTML() {

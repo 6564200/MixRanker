@@ -83,7 +83,7 @@ body {
     flex-direction: column;
     justify-content: space-evenly; 
     gap: 10px; /* Расстояние между контейнерами */
-    width: 490px;
+    width: 540px;
     max-width: 100%;
 }
 
@@ -132,10 +132,10 @@ body {
 .container {
     display: flex;
     flex-direction: column;
-    width: 450px; /* Ширина из Figma для Rectangle 158/159 */
+    width: auto; /* Ширина из Figma для Rectangle 158/159 */
     font-family: 'Onest', sans-serif;
     margin-bottom: 20px; /* расстояние снизу каждого контейнера */
-
+	margin-left: 20px;
 }
 
 .row {
