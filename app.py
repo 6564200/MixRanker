@@ -478,7 +478,7 @@ def get_live_elimination_html(tournament_id, class_id, draw_index):
             return "<html><body><h1>Тип турнирной сетки не найден</h1></body></html>", 404
 
         #   Генерация HTML из данных БД
-        html_content = xml_manager.generator.generate_elimination_html(tournament_data, xml_type_info)
+        html_content = xml_manager.html_generator.generate_elimination_html(tournament_data, xml_type_info)
 
         return Response(html_content, mimetype='text/html; charset=utf-8')
 
@@ -857,7 +857,7 @@ def get_court_vs_html(tournament_id, court_id):
                 player['photo_url'] = photo_map[player_id]
 
         # Генерация HTML из данных БД
-        html_content = xml_manager.generator.generate_court_vs_html(court_data, tournament_data)
+        html_content = xml_manager.html_generator.generate_court_vs_html(court_data, tournament_data)
 
         return Response(html_content, mimetype='text/html; charset=utf-8')
 
@@ -1018,17 +1018,17 @@ def get_live_xml_data(tournament_id, xml_type_id):
             court_data = get_court_data_from_db(tournament_id, str(court_id))
             
             if court_data and "error" not in court_data:
-                xml_content = xml_manager.generator.generate_court_score_xml(court_data, tournament_data)
+                xml_content = xml_manager.xml_generator.generate_court_score_xml(court_data, tournament_data)
             else:
                 xml_content = "<!-- Данные корта не найдены в БД -->"
         
         elif xml_type_info["type"] == "tournament_table":
             #   Используем данные из БД (tournament_data уже содержит актуальные draw_data)
-            xml_content = xml_manager.generator.generate_tournament_table_xml(tournament_data, xml_type_info)
+            xml_content = xml_manager.xml_generator.generate_tournament_table_xml(tournament_data, xml_type_info)
             
         elif xml_type_info["type"] == "schedule":
             #   Используем данные расписания из БД
-            xml_content = xml_manager.generator.generate_schedule_xml(tournament_data)
+            xml_content = xml_manager.xml_generator.generate_schedule_xml(tournament_data)
 
         return Response(xml_content, mimetype='application/xml; charset=utf-8')
         
@@ -1164,7 +1164,7 @@ def serve_xml_file(filename):
                             court_id = parts[2]
                             court_data = api.get_court_scoreboard(court_id)
                             if court_data and "error" not in court_data:
-                                xml_content = xml_manager.generator.generate_court_score_xml(court_data, tournament_data)
+                                xml_content = xml_manager.xml_generator.generate_court_score_xml(court_data, tournament_data)
                                 
                                 # Сохраняем обновленный файл
                                 filepath = f'xml_files/{filename}'
@@ -1189,7 +1189,7 @@ def serve_xml_file(filename):
                                         if fresh_data:
                                             tournament_data["draw_data"][str(class_id)]["elimination"] = fresh_data
                                     
-                                    xml_content = xml_manager.generator.generate_tournament_table_xml(tournament_data, xml_type_info)
+                                    xml_content = xml_manager.xml_generator.generate_tournament_table_xml(tournament_data, xml_type_info)
                                     
                                     filepath = f'xml_files/{filename}'
                                     with open(filepath, 'w', encoding='utf-8') as f:
@@ -1491,7 +1491,7 @@ def get_live_schedule_html(tournament_id):
             return "<html><body><h1>Турнир не найден</h1></body></html>", 404
         
         #   Генерация HTML из данных БД
-        html_content = xml_manager.generator.generate_schedule_html(tournament_data, target_date)
+        html_content = xml_manager.html_generator.generate_schedule_html(tournament_data, target_date)
         
         return Response(html_content, mimetype='text/html; charset=utf-8')
         
@@ -1511,7 +1511,7 @@ def get_live_schedule_html_addreality(tournament_id):
             return "<html><body><h1>Турнир не найден</h1></body></html>", 404
         
         #   Генерация HTML из данных БД
-        html_content = xml_manager.generator.generate_schedule_html_addreality(tournament_data, target_date)
+        html_content = xml_manager.html_generator.generate_schedule_html_addreality(tournament_data, target_date)
         
         return Response(html_content, mimetype='text/html; charset=utf-8')
         
@@ -1565,7 +1565,7 @@ def get_live_court_html(tournament_id, court_id):
             return "<html><body><h1>Ошибка получения данных корта из БД</h1></body></html>", 500
 
         # Генерация HTML из данных БД
-        html_content = xml_manager.generator.generate_court_scoreboard_html(court_data, tournament_data)
+        html_content = xml_manager.html_generator.generate_court_scoreboard_html(court_data, tournament_data)
 
         return Response(html_content, mimetype='text/html; charset=utf-8')
 
@@ -1589,7 +1589,7 @@ def get_live_court_score_html(tournament_id, court_id):
             return "<html><body><h1>Ошибка получения данных корта из БД</h1></body></html>", 500
 
         # Генерация HTML из данных БД
-        html_content = xml_manager.generator.generate_court_fullscreen_scoreboard_html(court_data, tournament_data)
+        html_content = xml_manager.html_generator.generate_court_fullscreen_scoreboard_html(court_data, tournament_data)
 
         return Response(html_content, mimetype='text/html; charset=utf-8')
 
@@ -1637,7 +1637,7 @@ def get_next_match_html(tournament_id, court_id):
             return []
 
         id_url = execute_db_transaction_with_retry(get_photo_urls_for_next)
-        html_content = xml_manager.generator.generate_next_match_page_html(court_data, id_url, tournament_data)
+        html_content = xml_manager.html_generator.generate_next_match_page_html(court_data, id_url, tournament_data)
 
         return Response(html_content, mimetype='text/html; charset=utf-8')
 
@@ -1681,7 +1681,7 @@ def get_vs_page_html________________(tournament_id, court_id):
             return []
 
         id_url = execute_db_transaction_with_retry(get_photo_urls_for_next)
-        html_content = xml_manager.generator.generate_vs_page_html(court_data, id_url, tournament_data)
+        html_content = xml_manager.html_generator.generate_vs_page_html(court_data, id_url, tournament_data)
 
         return Response(html_content, mimetype='text/html; charset=utf-8')
 
@@ -1712,7 +1712,7 @@ def get_introduction_page_html(participant_id):
 
         participant_info = execute_db_transaction_with_retry(get_info_for_introduction)
         # Генерация HTML из данных БД
-        html_content = xml_manager.generator.generate_introduction_page_html(participant_info)
+        html_content = xml_manager.html_generator.generate_introduction_page_html(participant_info)
 
         return Response(html_content, mimetype='text/html; charset=utf-8')
 
@@ -1757,7 +1757,7 @@ def get_winner_page_html(tournament_id, court_id):
         id_url = execute_db_transaction_with_retry(get_photo_urls_for_next)
 
         # Генерация HTML из данных БД
-        html_content = xml_manager.generator.generate_winner_page_html(court_data, id_url, tournament_data)
+        html_content = xml_manager.html_generator.generate_winner_page_html(court_data, id_url, tournament_data)
 
         return Response(html_content, mimetype='text/html; charset=utf-8')
 
@@ -1793,7 +1793,7 @@ def get_live_round_robin_html(tournament_id, class_id, draw_index):
             return "<html><body><h1>Тип групповой таблицы не найден</h1></body></html>", 404
         
         #   Генерация HTML из данных БД
-        html_content = xml_manager.generator.generate_round_robin_html(tournament_data, xml_type_info)
+        html_content = xml_manager.html_generator.generate_round_robin_html(tournament_data, xml_type_info)
 
         return Response(html_content, mimetype='text/html; charset=utf-8')
 
@@ -2008,7 +2008,7 @@ class AutoRefreshService:
                         self.cycle_interval = max(base_interval // 2, 5)  # Минимум 5 секунд
                         self.tables_update_frequency = max(base_interval // self.cycle_interval, 1)
                         self.schedule_update_frequency = max((base_interval * 2) // self.cycle_interval, 1)
-                        logger.info(f"Интервалы обновлены: {old_base}s→{self.base_interval}s, цикл={self.cycle_interval}s")
+                        logger.info(f"Интервалы обновлены: {old_base}s->{self.base_interval}s, цикл={self.cycle_interval}s")
 
                     # Логирование начала цикла
                     actions = []

@@ -1,400 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Модуль генерации XML файлов для vMix
-Создает XML файлы на основе данных турниров rankedin.com
+Модуль генерации HTML страниц для vMix
+Отделен от xml_generator.py для улучшения структуры кода
 """
 
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
-from datetime import datetime
-from zoneinfo import ZoneInfo
 from typing import Dict, List, Any, Optional
 import logging
 from markupsafe import escape
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 
-class XMLGenerator:
-    """Генератор XML файлов для vMix"""
 
+class HTMLGenerator:
+    """Генератор HTML страниц для vMix"""
+    
     def __init__(self):
-        self.encoding = 'utf-8'
-
-    def _prettify_xml(self, elem: ET.Element) -> str:
-        """Форматирует XML для читаемости"""
-        rough_string = ET.tostring(elem, encoding='unicode')
-        reparsed = minidom.parseString(rough_string)
-        return reparsed.toprettyxml(indent="  ")
-
-    def generate_tournament_table_xml(self, tournament_data: Dict, xml_type_info: Dict) -> str:
-        """
-        Генерирует XML для турнирной таблицы
-        Поддерживает групповые этапы и игры на выбывание
-        """
-        root = ET.Element("templateData")
-        
-        # Метаинформация
-        metadata = tournament_data.get("metadata", {})
-        tournament = ET.SubElement(root, "tournament")
-        ET.SubElement(tournament, "id").text = str(tournament_data.get("tournament_id", ""))
-        ET.SubElement(tournament, "name").text = metadata.get("name", "Неизвестный турнир")
-        ET.SubElement(tournament, "sport").text = self._get_sport_name(metadata.get("sport", 5))
-        ET.SubElement(tournament, "country").text = self._get_country_name(metadata.get("country"))
-        if metadata.get("featureImage"):
-            ET.SubElement(tournament, "banner").text = metadata["featureImage"]
-
-        # Информация о классе
-        class_id = xml_type_info.get("class_id")
-        draw_type = xml_type_info.get("draw_type")
-        draw_index = xml_type_info.get("draw_index", 0)
-
-        class_data = tournament_data.get("draw_data", {}).get(str(class_id), {})
-        class_info_elem = ET.SubElement(root, "class")
-        ET.SubElement(class_info_elem, "id").text = str(class_id)
-        ET.SubElement(class_info_elem, "name").text = class_data.get("class_info", {}).get("Name", f"Категория {class_id}")
-        ET.SubElement(class_info_elem, "type").text = draw_type
-
-        # Данные турнирной таблицы
-        if draw_type == "round_robin":
-            self._add_round_robin_data(root, class_data, draw_index)
-        elif draw_type == "elimination":
-            self._add_elimination_data(root, class_data, draw_index)
-
-        ET.SubElement(root, "generated").text = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-
-        return self._prettify_xml(root)
-
-    def _get_sport_name(self, sport_id: int) -> str:
-        """Возвращает название спорта по ID"""
-        sports = {
-            1: "Tennis",
-            2: "Squash", 
-            3: "Badminton",
-            4: "Table Tennis",
-            5: "Padel",
-            6: "Beach Tennis",
-            7: "Pickle Ball"
-        }
-        return sports.get(sport_id, "Unknown Sport")
-
-    def _get_country_name(self, country_id: Optional[int]) -> str:
-        """Возвращает название страны по ID """
-        if not country_id:
-            return ""
-        
-        # Некоторые популярные страны
-        countries = {
-            1: "United States",
-            7: "Canada", 
-            33: "France",
-            49: "Germany",
-            146: "Russia",
-            34: "Spain",
-            39: "Italy",
-            44: "United Kingdom"
-        }
-        return countries.get(country_id, f"Country_{country_id}")
-
-    def _add_round_robin_data(self, root: ET.Element, class_data: Dict, draw_index: int):
-        """Добавляет данные группового этапа """
-        try:
-            # Проверяем входные данные
-            if not class_data or not isinstance(class_data, dict):
-                logger.error("class_data отсутствует или имеет неверный формат")
-                self._add_error_xml(root, "Отсутствуют данные класса")
-                return
-
-            round_robin_data = class_data.get("round_robin", [])
-            if not round_robin_data or not isinstance(round_robin_data, list):
-                logger.warning("Нет данных round_robin или неверный формат")
-                self._add_error_xml(root, "Отсутствуют данные групповых турниров")
-                return
-
-            if draw_index >= len(round_robin_data):
-                logger.warning(f"Индекс {draw_index} превышает количество групповых данных ({len(round_robin_data)})")
-                self._add_error_xml(root, f"Индекс группы {draw_index} вне диапазона")
-                return
-
-            rr_data = round_robin_data[draw_index]
-            if not rr_data or not isinstance(rr_data, dict):
-                logger.warning(f"Данные группы {draw_index} отсутствуют или имеют неверный формат")
-                self._add_error_xml(root, f"Неверные данные группы {draw_index}")
-                return
-
-            if "RoundRobin" not in rr_data:
-                logger.warning("Нет данных RoundRobin в групповых данных")
-                self._add_error_xml(root, "Отсутствует структура RoundRobin")
-                return
-
-            group_data = rr_data["RoundRobin"]
-            if not group_data or not isinstance(group_data, dict):
-                logger.warning("Данные RoundRobin отсутствуют или имеют неверный формат")
-                self._add_error_xml(root, "Неверная структура RoundRobin")
-                return
-
-            # Создаем DataTab вместо group
-            data_tab = ET.SubElement(root, "DataTab")
-            matches = ET.SubElement(data_tab, "matches")
-
-            # Базовая информация о группе
-            group_name = group_data.get("Name", "Группа")
-            ET.SubElement(matches, "classes").text = str(group_name)
-            ET.SubElement(matches, "type").text = "Групповой турнир"
-
-            # Собираем участников из Pool данных
-            participants_list = []
-
-            try:
-                # Извлекаем участников из Pool структуры
-                pool_data = group_data.get("Pool", [])
-                if not pool_data or not isinstance(pool_data, list):
-                    logger.warning("Нет данных Pool или неверный формат")
-                    ET.SubElement(matches, "error").text = "Отсутствуют данные участников"
-                    return
-
-                for row_index, row in enumerate(pool_data):
-                    if not isinstance(row, list):
-                        continue
-
-                    for cell_index, cell in enumerate(row):
-                        if not isinstance(cell, dict):
-                            continue
-
-                        if cell.get("CellType") == "ParticipantCell" and cell.get("ParticipantCell"):
-                            participant_cell = cell["ParticipantCell"]
-                            if not isinstance(participant_cell, dict):
-                                continue
-
-                            if participant_cell.get("Players") and isinstance(participant_cell["Players"], list):
-                                participant_info = {
-                                    "index": participant_cell.get("Index", 0),
-                                    "seed": participant_cell.get("Seed", ""),
-                                    "players": []
-                                }
-
-                                # Игроки в паре
-                                for player in participant_cell["Players"]:
-                                    if isinstance(player, dict):
-                                        participant_info["players"].append({
-                                            "id": str(player.get("Id", "")),
-                                            "name": str(player.get("Name", "")),
-                                            "rankedin_id": str(player.get("RankedinId", "")),
-                                            "country": str(player.get("CountryShort", "")),
-                                            "rating_begin": player.get("RatingBegin", 0) or 0,
-                                            "rating_end": player.get("RatingEnd", 0) or 0
-                                        })
-
-                                if participant_info["players"]:  # Добавляем только если есть игроки
-                                    participants_list.append(participant_info)
-
-                # Добавляем информацию об участниках в плоском формате
-                for i, participant in enumerate(participants_list, 1):
-                    try:
-                        #    continue
-                            
-                        # Первый игрок
-                        if len(participant["players"]) > 0:
-                            player1 = participant["players"][0]
-                            if isinstance(player1, dict):
-                                player1_name = player1.get("name", "")
-                                if player1_name:
-                                    ET.SubElement(matches, f"id{i}PlayerName1").text = str(player1_name)
-
-                        # Второй игрок
-                        if len(participant["players"]) > 1:
-                            player2 = participant["players"][1]
-                            if isinstance(player2, dict):
-                                player2_name = player2.get("name", "")
-                                if player2_name:
-                                    ET.SubElement(matches, f"id{i}PlayerName2").text = str(player2_name)
-
-                        # Названия команд
-                        if len(participant["players"]) >= 2:
-                            name1 = participant["players"][0].get("name", "") if isinstance(participant["players"][0], dict) else ""
-                            name2 = participant["players"][1].get("name", "") if isinstance(participant["players"][1], dict) else ""
-
-                            if name1 and name2:
-                                team_name = f"{name1}/{name2}"
-
-                                # Создаем короткое название
-                                try:
-                                    parts1 = name1.split()
-                                    parts2 = name2.split()
-                                    if len(parts1) >= 2 and len(parts2) >= 2:
-                                        short_team_name = f"{parts1[0][0]}.{parts1[-1]}/{parts2[0][0]}.{parts2[-1]}"
-                                    else:
-                                        short_team_name = f"{name1}/{name2}"
-                                except (IndexError, AttributeError):
-                                    short_team_name = f"{name1}/{name2}"
-
-                                ET.SubElement(matches, f"id{i}Team_name").text = team_name
-                                ET.SubElement(matches, f"id{i}ShortTeam_name").text = short_team_name
-
-                        elif len(participant["players"]) == 1:
-                            name1 = participant["players"][0].get("name", "") if isinstance(participant["players"][0], dict) else ""
-                            if name1:
-                                try:
-                                    parts1 = name1.split()
-                                    if len(parts1) >= 2:
-                                        short_name = f"{parts1[0][0]}.{parts1[-1]}"
-                                    else:
-                                        short_name = name1
-                                except (IndexError, AttributeError):
-                                    short_name = name1
-
-                                ET.SubElement(matches, f"id{i}Team_name").text = name1
-                                ET.SubElement(matches, f"id{i}ShortTeam_name").text = short_name
-
-                    except Exception as e:
-                        logger.error(f"Ошибка обработки участника {i}: {e}")
-                        continue
-
-                # Обрабатываем матчи из Pool структуры
-                matches_data = []
-                try:
-                    for row_index, row in enumerate(pool_data):
-                        if not isinstance(row, list):
-                            continue
-
-                        for cell_index, cell in enumerate(row):
-                            if not isinstance(cell, dict):
-                                continue
-
-                            if cell.get("CellType") == "MatchCell" and cell.get("MatchCell"):
-                                match_cell = cell["MatchCell"]
-                                if not isinstance(match_cell, dict):
-                                    continue
-                                    
-                                match_results = match_cell.get("MatchResults", {})
-                                if not isinstance(match_results, dict):
-                                    match_results = {}
-
-                                # Определяем участников матча по позиции в таблице
-                                participant1_index = row_index
-                                participant2_index = cell_index
-
-                                if participant1_index != participant2_index:  # Избегаем матчей сами с собой
-                                    match_info = {
-                                        "participant1": participant1_index,
-                                        "participant2": participant2_index,
-                                        "match_id": str(match_cell.get("MatchId", "")),
-                                        "challenge_id": str(match_cell.get("ChallengeId", "")),
-                                        "state": int(match_cell.get("State", 0)),
-                                        "court": str(match_cell.get("Court", "")),
-                                        "date": str(match_cell.get("Date", "")),
-                                        "is_played": bool(match_results.get("IsPlayed", False)),
-                                        "match_results": match_results
-                                    }
-                                    matches_data.append(match_info)
-
-                except Exception as e:
-                    logger.error(f"Ошибка обработки матчей: {e}")
-
-                # Добавляем информацию о матчах в плоском формате
-                for match in matches_data:
-                    try:
-                        if not isinstance(match, dict):
-                            continue 
-                        p1 = match.get("participant1", 0)
-                        p2 = match.get("participant2", 0)
-                        match_prefix = f"id{p1}vs{p2}Match"
-                        ET.SubElement(matches, f"{match_prefix}_state").text = str(match.get("state", 0))
-                        ET.SubElement(matches, f"{match_prefix}_court").text = str(match.get("court", ""))
-                        ET.SubElement(matches, f"{match_prefix}_date").text = str(match.get("date", ""))
-                        ET.SubElement(matches, f"{match_prefix}_is_played").text = str(match.get("is_played", False))
-
-                        # Счет матча
-                        match_results = match.get("match_results", {})
-                        if isinstance(match_results, dict) and match_results.get("HasScore") and match_results.get("Score"):
-                            score_data = match_results["Score"]
-                            if isinstance(score_data, dict):
-                                first_score = int(score_data.get("FirstParticipantScore", 0))
-                                second_score = int(score_data.get("SecondParticipantScore", 0))
-
-                                ET.SubElement(matches, f"{match_prefix}_first_second_score").text = f"{first_score}-{second_score}"
-
-                                winner = "first" if score_data.get("IsFirstParticipantWinner") else "second"
-                                ET.SubElement(matches, f"{match_prefix}_winner").text = winner
-
-                                # Детальный счет по сетам
-                                detailed_scoring = score_data.get("DetailedScoring", [])
-                                if isinstance(detailed_scoring, list):
-                                    for set_index, set_data in enumerate(detailed_scoring, 1):
-                                        if isinstance(set_data, dict):
-                                            set_first = int(set_data.get("FirstParticipantScore", 0))
-                                            set_second = int(set_data.get("SecondParticipantScore", 0))
-                                            set_winner = "first" if set_data.get("IsFirstParticipantWinner") else "second"
-
-                                            ET.SubElement(matches, f"{match_prefix}_set{set_index}_first_second_score").text = f"{set_first}-{set_second}"
-                                            ET.SubElement(matches, f"{match_prefix}_set{set_index}_winner").text = set_winner
-                        else:
-                            # Если нет счета
-                            if (matches.find(f"id{p2}ShortTeam_name")).text == 'Bye':
-                                ET.SubElement(matches, f"{match_prefix}_first_second_score").text = "●"
-                            else:
-                                ET.SubElement(matches, f"{match_prefix}_first_second_score").text = "-"
-                            ET.SubElement(matches, f"{match_prefix}_winner").text = ""
-
-                    except Exception as e:
-                        logger.error(f"Ошибка обработки матча {match.get('match_id', 'unknown')}: {e}")
-                        continue
-
-                standings_data = group_data.get("Standings", [])
-                if isinstance(standings_data, list):
-                    try:
-                        for standing in standings_data:
-                            if not isinstance(standing, dict):
-                                continue
-
-                            position = int(standing.get("Standing", 0))
-                            if position <= 0:
-                                continue
-
-                            # Находим соответствующего участника по ID
-                            participant_id = str(standing.get("ParticipantId", ""))
-
-                            # Имена игроков из standings
-                            team_names = []
-                            if standing.get("DoublesPlayer1Model") and isinstance(standing["DoublesPlayer1Model"], dict):
-                                name1 = standing["DoublesPlayer1Model"].get("Name", "")
-                                if name1:
-                                    team_names.append(name1)
-                            if standing.get("DoublesPlayer2Model") and isinstance(standing["DoublesPlayer2Model"], dict):
-                                name2 = standing["DoublesPlayer2Model"].get("Name", "")
-                                if name2:
-                                    team_names.append(name2)
-
-                            team_name = " / ".join(team_names)
-
-                            # Статистика позиции
-                            prefix = f"P{position}"
-                            ET.SubElement(matches, f"{prefix}_participant_id").text = participant_id
-                            ET.SubElement(matches, f"{prefix}_team_name").text = team_name
-                            ET.SubElement(matches, f"{prefix}_match_points").text = str(standing.get("MatchPoints", 0))
-                            ET.SubElement(matches, f"{prefix}_wins").text = str(standing.get("Wins", 0))
-                            ET.SubElement(matches, f"{prefix}_losses").text = str(standing.get("Losses", 0))
-                            ET.SubElement(matches, f"{prefix}_draws").text = str(standing.get("Draws", 0))
-                            ET.SubElement(matches, f"{prefix}_games_won").text = str(standing.get("GamesWon", 0))
-                            ET.SubElement(matches, f"{prefix}_games_lost").text = str(standing.get("GamesLost", 0))
-                            ET.SubElement(matches, f"{prefix}_points_scored").text = str(standing.get("ScoredPoints", 0))
-                            ET.SubElement(matches, f"{prefix}_points_conceded").text = str(standing.get("ConcededPoints", 0))
-                            ET.SubElement(matches, f"{prefix}_points_difference").text = str(standing.get("PointsDifference", 0))
-                            ET.SubElement(matches, f"{prefix}_played").text = str(standing.get("Played", 0))
-
-                    except Exception as e:
-                        logger.error(f"Ошибка обработки турнирной таблицы: {e}")
-
-            except Exception as e:
-                logger.error(f"Ошибка извлечения участников: {e}")
-                self._add_error_xml(root, f"Ошибка обработки участников: {str(e)}")
-
-        except Exception as e:
-            logger.error(f"Критическая ошибка в _add_round_robin_data: {e}")
-            import traceback
-            logger.error(f"Traceback: {traceback.format_exc()}")
-            self._add_error_xml(root, f"Критическая ошибка: {str(e)}")
-
+        self.auto_reload_interval = 30000  # миллисекунды
 
     def _get_game_score_display(self, detailed_result: List[Dict], set_score: int, team: str) -> str:
         """Возвращает счет гейма если есть, иначе счет сетов"""
@@ -1267,163 +891,6 @@ class XMLGenerator:
 
 
 
-    def _add_elimination_data(self, root: ET.Element, class_data: Dict, draw_index: int):
-        """Добавляет данные игр на выбывание в плоском формате с обработкой Bye и Walkover"""
-        elimination_data = class_data.get("elimination", [])
-        if draw_index < len(elimination_data):
-            elim_data = elimination_data[draw_index]
-            
-            if "Elimination" in elim_data:
-                bracket_data = elim_data["Elimination"]
-                
-                # Создаем плоский формат вместо иерархического
-                participants = ET.SubElement(root, "participants")
-
-                # Определяем места
-                places_start = bracket_data.get("PlacesStartPos", 1)
-                places_end = bracket_data.get("PlacesEndPos", 1)
-                places_text = f"{places_start}-{places_end}" if places_start != places_end else str(places_start)
-                ET.SubElement(participants, "places").text = places_text
-
-                # Добавляем информацию о классе
-                class_name = class_data.get("class_info", {}).get("Name", f"Категория {draw_index}")
-                ET.SubElement(participants, "class_name").text = class_name
-
-                if bracket_data.get("FirstRoundParticipantCells"):
-                    for i, participant_data in enumerate(bracket_data["FirstRoundParticipantCells"], 1):
-                        # Формируем название команды
-                        team_names = []
-                        if participant_data.get("FirstPlayer", {}).get("Name"):
-                            team_names.append(participant_data["FirstPlayer"]["Name"])
-                        if participant_data.get("SecondPlayer", {}).get("Name"):
-                            team_names.append(participant_data["SecondPlayer"]["Name"])
-                        team_name = "/".join(team_names) if team_names else "Bye"
-                        
-                        # Создаем сокращенное название
-                        short_name = self._create_short_name(team_name) if team_name != "Bye" else "Bye"
-                        
-                        ET.SubElement(participants, f"round_0_team_{i}_name").text = team_name
-                        ET.SubElement(participants, f"round_0_team_{i}_ShortName").text = short_name
-
-                # 2. Обрабатываем матчи по раундам
-                if bracket_data.get("DrawData"):
-                    # Группируем матчи по номеру раунда из данных
-                    matches_by_round = {}
-                    
-                    for round_matches in bracket_data["DrawData"]:
-                        for match_data in round_matches:
-                            if match_data:
-                                # Получаем номер раунда из данных матча
-                                round_number = match_data.get("Round", 1)
-                                if round_number not in matches_by_round:
-                                    matches_by_round[round_number] = []
-                                matches_by_round[round_number].append(match_data)
-
-                    # Обрабатываем матчи сгруппированные по раундам
-                    for round_number in sorted(matches_by_round.keys()):
-                        round_matches = matches_by_round[round_number]
-
-                        match_counter = 1
-                        for match_data in round_matches:
-                            match_view_model = match_data.get("MatchViewModel", {})
-                            prefix = f"round_{round_number}_{match_counter}"
-
-                            # Корт
-                            ET.SubElement(participants, f"{prefix}_court").text = match_data.get("CourtName", "")
-
-                            # Статус матча
-                            is_played = match_view_model.get("IsPlayed", False)
-                            has_score = match_view_model.get("HasScore", False)
-                            cancellation_status = match_data.get("CancellationStatus", "")
-                            winner_id = match_data.get("WinnerParticipantId")
-                            
-                            ET.SubElement(participants, f"{prefix}_is_played").text = str(is_played)
-                            ET.SubElement(participants, f"{prefix}_has_score").text = str(has_score)
-                            ET.SubElement(participants, f"{prefix}_cancellation_status").text = str(cancellation_status)
-
-                            # ОБРАБОТКА РАЗЛИЧНЫХ СЦЕНАРИЕВ
-                            if is_played and has_score:
-                                # 1. Обычный сыгранный матч со счетом
-                                if winner_id:
-                                    winning_team = self._find_winner_team_name(match_data, winner_id)
-                                    ET.SubElement(participants, f"{prefix}_team").text = winning_team
-                                    short_name = self._create_short_name(winning_team)
-                                    ET.SubElement(participants, f"{prefix}_Shortteam").text = short_name
-
-                                    # Имена игроков победившей команды
-                                    first_player_name, second_player_name = self._get_winner_player_names(match_data, winner_id)
-                                    ET.SubElement(participants, f"{prefix}_player1_name").text = first_player_name
-                                    ET.SubElement(participants, f"{prefix}_player2_name").text = second_player_name
-
-                                # Счет
-                                score_data = match_view_model.get("Score", {})
-                                score_summary = self._format_score_summary(score_data)
-                                sets_summary = self._format_sets_summary(score_data)
-
-                                ET.SubElement(participants, f"{prefix}_score").text = score_summary
-                                ET.SubElement(participants, f"{prefix}_sets_summary").text = sets_summary
-                                ET.SubElement(participants, f"{prefix}_match_type").text = "normal"
-
-                            elif is_played and not has_score:
-                                if winner_id:
-                                    winning_team = self._find_winner_team_name(match_data, winner_id)
-                                    ET.SubElement(participants, f"{prefix}_team").text = winning_team
-                                    short_name = self._create_short_name(winning_team)
-                                    ET.SubElement(participants, f"{prefix}_Shortteam").text = short_name
-
-                                    # Имена игроков победившей команды
-                                    first_player_name, second_player_name = self._get_winner_player_names(match_data, winner_id)
-                                    ET.SubElement(participants, f"{prefix}_player1_name").text = first_player_name
-                                    ET.SubElement(participants, f"{prefix}_player2_name").text = second_player_name
-
-                                    # Указываем что это walkover
-                                    if "W.O." in cancellation_status.upper() or "WALKOVER" in cancellation_status.upper():
-                                        ET.SubElement(participants, f"{prefix}_score").text = "W.O."
-                                        ET.SubElement(participants, f"{prefix}_sets_summary").text = "Walkover"
-                                        ET.SubElement(participants, f"{prefix}_match_type").text = "walkover"
-                                    else:
-                                        ET.SubElement(participants, f"{prefix}_score").text = "●"
-                                        ET.SubElement(participants, f"{prefix}_sets_summary").text = "Без игры"
-                                        ET.SubElement(participants, f"{prefix}_match_type").text = "forfeit"
-                                else:
-                                    # Нет информации о победителе
-                                    ET.SubElement(participants, f"{prefix}_team").text = ""
-                                    ET.SubElement(participants, f"{prefix}_score").text = "W.O."
-                                    ET.SubElement(participants, f"{prefix}_sets_summary").text = ""
-                                    ET.SubElement(participants, f"{prefix}_match_type").text = "walkover"
-
-                            elif not is_played and not has_score:
-                                # 3. Матч не сыгран - проверяем на Bye
-                                bye_winner = self._check_bye_advancement(match_data)
-
-                                if bye_winner:
-                                    # Один из участников Bye - автоматически проходит другой
-                                    ET.SubElement(participants, f"{prefix}_team").text = bye_winner["team_name"]
-                                    short_name = self._create_short_name(bye_winner["team_name"])
-                                    ET.SubElement(participants, f"{prefix}_Shortteam").text = short_name
-                                    ET.SubElement(participants, f"{prefix}_player1_name").text = bye_winner["first_player"]
-                                    ET.SubElement(participants, f"{prefix}_player2_name").text = bye_winner["second_player"]
-                                    ET.SubElement(participants, f"{prefix}_score").text = "●"
-                                    ET.SubElement(participants, f"{prefix}_sets_summary").text = "Проходит без игры"
-                                    ET.SubElement(participants, f"{prefix}_match_type").text = "bye"
-                                else:
-                                    # Обычный несыгранный матч
-                                    ET.SubElement(participants, f"{prefix}_team").text = ""
-                                    ET.SubElement(participants, f"{prefix}_player1_name").text = ""
-                                    ET.SubElement(participants, f"{prefix}_score").text = ""
-                                    ET.SubElement(participants, f"{prefix}_sets_summary").text = ""
-                                    ET.SubElement(participants, f"{prefix}_match_type").text = ""
-
-                            else:
-                                # 4. Другие случаи - пустые поля
-                                ET.SubElement(participants, f"{prefix}_team").text = ""
-                                ET.SubElement(participants, f"{prefix}_player1_name").text = ""
-                                ET.SubElement(participants, f"{prefix}_score").text = ""
-                                ET.SubElement(participants, f"{prefix}_sets_summary").text = ""
-                                ET.SubElement(participants, f"{prefix}_match_type").text = "unknown"
-
-                            match_counter += 1
-
     def _check_bye_advancement(self, match_data: Dict) -> Optional[Dict]:
         """Проверяет есть ли в матче Bye и возвращает информацию о проходящей команде"""
         challenger_data = match_data.get("ChallengerParticipant", {})
@@ -1886,138 +1353,1471 @@ class XMLGenerator:
         
         return self._prettify_xml(root)
 
-    def _add_error_xml(self, root: ET.Element, error_message: str):
-        """Добавляет информацию об ошибке в XML"""
-        error_elem = ET.SubElement(root, "error")
-        ET.SubElement(error_elem, "message").text = str(error_message)
-        ET.SubElement(error_elem, "timestamp").text = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        ET.SubElement(error_elem, "type").text = "data_processing_error"
+    def generate_schedule_html(self, tournament_data: Dict, target_date: str = None) -> str:
+        """Генерирует HTML для расписания матчей с новым дизайном из Figma"""
+        # Метаинформация о турнире
+        metadata = tournament_data.get("metadata", {})
+        tournament_name = metadata.get("name", "Неизвестный турнир")
+        # Получаем расписание
+        court_usage = tournament_data.get("court_usage")
 
+        if not court_usage or not isinstance(court_usage, list):
+            return self._generate_empty_schedule_html(tournament_name, "Данные расписания не загружены")
 
+        # Получаем информацию о кортах из tournaments.courts
+        courts_info = tournament_data.get("courts", [])
+        court_names_map = {}
+        for court in courts_info:
+            if isinstance(court, dict) and court.get("Item1") and court.get("Item2"):
+                court_id = str(court["Item1"])
+                court_name = court["Item2"]
+                court_names_map[court_id] = court_name
 
+        from datetime import datetime as dt
+        if not target_date:
+            tz_yekat = ZoneInfo("Asia/Yekaterinburg")
+            now_yekat = datetime.now(tz=tz_yekat)
+            target_date = dt.now().strftime("%d.%m.%Y")
+            #target_date = dt(year=2025, month=10, day=25).strftime("%d.%m.%Y") #для тестов
 
-class XMLFileManager:
-    """Менеджер XML и HTML файлов"""
-    
-    def __init__(self, output_dir: str = "xml_files"):
-        self.output_dir = output_dir
-        from api.html_generator import HTMLGenerator
-        
-        self.xml_generator = XMLGenerator()
-        self.html_generator = HTMLGenerator()
-        
-        import os
-        os.makedirs(output_dir, exist_ok=True)
-    
-    def generate_and_save(self, xml_type_info: Dict, tournament_data: Dict, 
-                         court_data: Dict = None) -> Dict:
-        xml_type = xml_type_info.get("type")
-        
-        if xml_type == "tournament_table":
-            xml_content = self.xml_generator.generate_tournament_table_xml(tournament_data, xml_type_info)
-        elif xml_type == "schedule":
-            xml_content = self.xml_generator.generate_schedule_xml(tournament_data)
-        elif xml_type == "court_score":
-            xml_content = self.xml_generator.generate_court_score_xml(court_data, tournament_data)
-        else:
-            raise ValueError(f"Неизвестный тип XML: {xml_type}")
-        
-        filename = self._get_filename(xml_type_info, tournament_data)
-        filepath = f"{self.output_dir}/{filename}"
-        
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write(xml_content)
-        
-        import os
-        file_stats = os.stat(filepath)
-        
-        return {
-            "id": xml_type_info["id"],
-            "name": xml_type_info["name"],
-            "filename": filename,
-            "url": f"/xml/{filename}",
-            "size": self._format_file_size(file_stats.st_size),
-            "created": datetime.now().isoformat(),
-            "type": xml_type
-        }
+        # Группируем матчи по кортам и фильтруем по дате
+        courts_matches = {}
+        all_matches = []
 
-    def _get_filename(self, xml_type_info: Dict, tournament_data: Dict) -> str:
-        tournament_id = tournament_data.get("tournament_id", "unknown")
-        xml_type = xml_type_info.get("type")
-        
-        if xml_type == "court_score":
-            court_id = xml_type_info.get("court_id", "")
-            court_name = xml_type_info.get("court_name", f"court_{court_id}")
-            safe_name = "".join(c for c in court_name if c.isalnum() or c in "._-").replace(" ", "_")
-            return f"{tournament_id}_court_{court_id}_{safe_name}.xml"
-        elif xml_type == "tournament_table":
-            class_id = xml_type_info.get("class_id", "")
-            draw_type = xml_type_info.get("draw_type", "")
-            draw_index = xml_type_info.get("draw_index", 0)
-            if draw_type == "round_robin":
-                group_name = xml_type_info.get("group_name", f"group_{draw_index}")
-                safe_group = "".join(c for c in group_name if c.isalnum() or c in "._-").replace(" ", "_")
-                return f"{tournament_id}_table_{class_id}_rr_{safe_group}.xml"
-            else:
-                stage_name = xml_type_info.get("stage_name", f"stage_{draw_index}")
-                safe_stage = "".join(c for c in stage_name if c.isalnum() or c in "._-").replace(" ", "_")
-                return f"{tournament_id}_table_{class_id}_elim_{safe_stage}.xml"
-        elif xml_type == "schedule":
-            return f"{tournament_id}_schedule.xml"
-        else:
-            xml_id = xml_type_info.get("id", "unknown")
-            return f"{tournament_id}_{xml_type}_{xml_id}.xml"
-    
-    def _format_file_size(self, size_bytes: int) -> str:
-        if size_bytes < 1024:
-            return f"{size_bytes} B"
-        elif size_bytes < 1024 * 1024:
-            return f"{size_bytes / 1024:.1f} KB"
-        else:
-            return f"{size_bytes / (1024 * 1024):.1f} MB"
-    
-    def generate_all_tournament_xml(self, tournament_data: Dict, courts_data: List[Dict] = None) -> List[Dict]:
-        from api.rankedin_api import RankedinAPI
-        api = RankedinAPI()
-        xml_types = api.get_xml_data_types(tournament_data)
-        generated_files = []
-        
-        for xml_type_info in xml_types:
-            try:
-                xml_type = xml_type_info.get("type")
-                if xml_type == "court_score":
-                    court_id = xml_type_info.get("court_id")
-                    if courts_data:
-                        court_data = next((c for c in courts_data if str(c.get("court_id")) == str(court_id)), None)
-                        if court_data:
-                            file_info = self.generate_and_save(xml_type_info, tournament_data, court_data)
-                            generated_files.append(file_info)
-                else:
-                    file_info = self.generate_and_save(xml_type_info, tournament_data)
-                    generated_files.append(file_info)
-            except Exception as e:
-                logger.error(f"Ошибка генерации XML {xml_type_info.get('name')}: {e}")
+        for match in court_usage:
+            if not isinstance(match, dict):
                 continue
+
+            match_date = match.get("MatchDate", "")
+            if match_date:
+                try:
+                    dt_obj = dt.fromisoformat(match_date.replace('T', ' ').replace('Z', ''))
+                    match_date_formatted = dt_obj.strftime("%d.%m.%Y")
+
+                    # Фильтруем только матчи на нужную дату
+                    if match_date_formatted != target_date:
+                        continue
+
+                    court_id = str(match.get("CourtId", ""))
+                    court_name = court_names_map.get(court_id, f"Корт {court_id}")
+
+                    # Добавляем время начала для сортировки
+                    match["start_time"] = dt_obj.strftime("%H:%M")
+                    match["date_formatted"] = match_date_formatted
+                    match["court_name"] = court_name
+                    match["datetime_obj"] = dt_obj
+
+                    all_matches.append(match)
+
+                    if court_name not in courts_matches:
+                        courts_matches[court_name] = []
+                    courts_matches[court_name].append(match)
+
+                except Exception as e:
+                    continue
+
+        if not courts_matches:
+            return self._generate_empty_schedule_html(tournament_name, f"Нет матчей на {target_date}")
+
+        # Сортируем матчи в каждом корте по времени и присваиваем номера
+        for court_name in courts_matches:
+            courts_matches[court_name].sort(key=lambda x: x.get("datetime_obj"))
+            for i, match in enumerate(courts_matches[court_name], 1):
+                match["episode_number"] = i
+
+        # Фильтруем матчи - оставляем последние 3 завершённых + все активные и будущие
+        filtered_courts_matches = {}
+        for court_name, matches in courts_matches.items():
+            finished = []
+            active_and_future = []
+
+            for match in matches:
+                status = self._get_match_status(match)
+                if status == "finished":
+                    finished.append(match)
+                else:
+                    active_and_future.append(match)
+
+            # Берём последние 3 завершённых + все активные и будущие
+            filtered_matches = finished[-3:] + active_and_future
+            filtered_courts_matches[court_name] = filtered_matches
+
+        courts_matches = filtered_courts_matches
+
+        # Собираем все оставшиеся матчи для временных слотов
+        all_remaining_matches = []
+        for matches in courts_matches.values():
+            all_remaining_matches.extend(matches)
+
+        # Создаем уникальные временные слоты только для оставшихся матчей
+        time_slots = sorted(list(set([m["start_time"] for m in all_remaining_matches])))
+
+        # Генерируем HTML
+        html_content = f'''<!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Расписание матчей - {tournament_name}</title>
+        <link rel="stylesheet" href="/static/css/schedule_new.css">
+        <script>
+            setInterval(function() {{
+                location.reload();
+            }}, 30000);
+        </script>
+    </head>
+    <body>
+        <div class="schedule-container">
+            <div class="main-grid">
+                <div class="time-scale">'''
+
+        # Временные слоты
+        for time_slot in time_slots:
+            html_content += f'''
+                    <div class="time-slot">{time_slot}</div>'''
+
+        html_content += '''
+                </div>
+                
+                <div class="courts-container">
+                    <div class="courts-header">'''
+
+        # Заголовки кортов
+        for court_name in sorted(courts_matches.keys()):
+            html_content += f'''
+                        <div class="court-header">
+                            <h3>{court_name}</h3>
+                        </div>'''
+
+        html_content += '''
+                    </div>
+                    
+                    <div class="matches-grid">'''
+
+        # Столбцы кортов с матчами
+        for court_name in sorted(courts_matches.keys()):
+            matches = courts_matches[court_name]
+
+            html_content += '''
+                        <div class="court-column">'''
+
+            for match in matches:
+                match_status = self._get_match_status(match)
+                status_class = self._get_status_class(match_status)
+
+                challenger_name = match.get("ChallengerName", "TBD")
+                challenged_name = match.get("ChallengedName", "TBD")
+                episode_number = match.get("episode_number", 1)
+
+                # Результаты матча
+                challenger_result = match.get("ChallengerResult", "0")
+                challenged_result = match.get("ChallengedResult", "0")
+
+                if not challenger_result:
+                    challenger_result = "0"
+                if not challenged_result:
+                    challenged_result = "0"
+
+                # Проверка на Won W.O.
+                challenger_wo = ""
+                challenged_wo = ""
+
+                if challenger_result == "Won W.O.":
+                    challenger_wo = "Won W.O."
+                    challenger_result = ""
+                if challenged_result == "Won W.O.":
+                    challenged_wo = "Won W.O."
+                    challenged_result = ""
+
+                html_content += f'''
+                            <div class="match-item {status_class}">
+                                <div class="match-content">
+                                    <div class="match-number">{episode_number}</div>
+                                    <div class="match-teams-wrapper">
+                                        <div class="match-team">
+                                            <div class="match-team-name">{challenger_name}</div>
+                                            {"<div class='match-team-wo'>Won W.O.</div>" if challenger_wo else ""}
+                                            {"<div class='match-team-score'>" + challenger_result + "</div>" if challenger_result else ""}
+                                        </div>
+                                        <div class="match-team">
+                                            <div class="match-team-name">{challenged_name}</div>
+                                            {"<div class='match-team-wo'>Won W.O.</div>" if challenged_wo else ""}
+                                            {"<div class='match-team-score'>" + challenged_result + "</div>" if challenged_result else ""}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>'''
+
+            html_content += '''
+                        </div>'''
+
+        html_content += '''
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>'''
+
+        return html_content
+
+
+    def generate_schedule_html_new(self, tournament_data: Dict, target_date: str = None) -> str:
+        """Генерирует HTML для расписания матчей с новым дизайном 3.12.2025"""
+        # Метаинформация о турнире
+        metadata = tournament_data.get("metadata", {})
+        tournament_name = metadata.get("name", "Неизвестный турнир")
+        # Получаем расписание
+        court_usage = tournament_data.get("court_usage")
+
+        if not court_usage or not isinstance(court_usage, list):
+            return self._generate_empty_schedule_html(tournament_name, "Данные расписания не загружены")
+
+        # Получаем информацию о кортах из tournaments.courts
+        courts_info = tournament_data.get("courts", [])
+        court_names_map = {}
+        for court in courts_info:
+            if isinstance(court, dict) and court.get("Item1") and court.get("Item2"):
+                court_id = str(court["Item1"])
+                court_name = court["Item2"]
+                court_names_map[court_id] = court_name
+
+        from datetime import datetime as dt
+        if not target_date:
+            target_date = dt.now().strftime("%d.%m.%Y")
+            #target_date = dt(year=2025, month=10, day=25).strftime("%d.%m.%Y") # для тестов
+
+        # Группируем матчи по кортам и фильтруем по дате
+        courts_matches = {}
+        all_matches = []
+
+        for match in court_usage:
+
+            if not isinstance(match, dict):
+                continue
+
+            match_date = match.get("MatchDate", "")
+            if match_date:
+                try:
+                    dt_obj = dt.fromisoformat(match_date.replace('T', ' ').replace('Z', ''))
+                    match_date_formatted = dt_obj.strftime("%d.%m.%Y")
+
+                    # Фильтруем только матчи на нужную дату
+                    if match_date_formatted != target_date:
+                        continue
+
+                    court_id = str(match.get("CourtId", ""))
+                    court_name = court_names_map.get(court_id, f"Корт {court_id}")
+
+                    # Добавляем время начала для сортировки
+                    match["start_time"] = dt_obj.strftime("%H:%M")
+                    match["date_formatted"] = match_date_formatted
+                    match["court_name"] = court_name
+                    match["datetime_obj"] = dt_obj
+
+                    all_matches.append(match)
+
+                    if court_name not in courts_matches:
+                        courts_matches[court_name] = []
+                    courts_matches[court_name].append(match)
+
+                except Exception as e:
+                    continue
+
+        if not courts_matches:
+            return self._generate_empty_schedule_html(tournament_name, f"Нет матчей на {target_date}")
+
+        # Сортируем матчи в каждом корте по времени и присваиваем номера
+        for court_name in courts_matches:
+            courts_matches[court_name].sort(key=lambda x: x.get("datetime_obj"))
+            for i, match in enumerate(courts_matches[court_name], 1):
+                match["episode_number"] = i
+
+        # Создаем уникальные временные слоты
+        time_slots = sorted(list(set([m["start_time"] for m in all_matches])))
+
+        # Генерируем HTML
+        html_content = f'''<!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Расписание матчей - {tournament_name}</title>
+        <link rel="stylesheet" href="/static/css/schedule_new.css">
+        <script>
+            setInterval(function() {{
+                location.reload();
+            }}, 30000);
+        </script>
+    </head>
+    <body>
+        <div class="schedule-container">
+            <div class="main-grid">
+                <div class="time-scale">'''
+
+        # Временные слоты
+        for time_slot in time_slots:
+            html_content += f'''
+                    <div class="time-slot">{time_slot}</div>'''
+
+        html_content += '''
+                </div>
+                
+                <div class="courts-container">
+                    <div class="courts-header">'''
+
+        # Заголовки кортов
+        for court_name in sorted(courts_matches.keys()):
+            html_content += f'''
+                        <div class="court-header">
+                            <h3>{court_name}</h3>
+                        </div>'''
+
+        html_content += '''
+                    </div>
+                    
+                    <div class="matches-grid">'''
+
+        # Столбцы кортов с матчами
+        for court_name in sorted(courts_matches.keys()):
+            matches = courts_matches[court_name]
+
+            html_content += '''
+                        <div class="court-column">'''
+
+            for match in matches:
+                match_status = self._get_match_status(match)
+                status_class = self._get_status_class(match_status)
+
+                challenger_name = match.get("ChallengerName", "TBD")
+                challenged_name = match.get("ChallengedName", "TBD")
+                episode_number = match.get("episode_number", 1)
+
+                # Результаты матча
+                challenger_result = match.get("ChallengerResult", "0")
+                challenged_result = match.get("ChallengedResult", "0")
+
+                if not challenger_result:
+                    challenger_result = "0"
+                if not challenged_result:
+                    challenged_result = "0"
+
+                # Проверка на Won W.O.
+                challenger_wo = ""
+                challenged_wo = ""
+
+                if challenger_result == "Won W.O.":
+                    challenger_wo = "W.O."
+                    challenger_result = ""
+                if challenged_result == "Won W.O.":
+                    challenged_wo = "W.O."
+                    challenged_result = ""
+
+
+                html_content += f'''
+                        <div class="match-item {status_class}">
+                            <div class="match-content">
+                                <div class="match-number">{episode_number}</div>
+                                <div class="match-teams-wrapper">
+                                    <div class="match-team">
+                                        <div class="match-team-name">{challenger_name}</div>
+                                        {"<div class='match-team-wo'>Won W.O.</div>" if challenger_wo else ""}
+                                        {"<div class='match-team-score'>" + challenger_result + "</div>" if challenger_result else ""}
+                                    </div>
+                                    <div class="match-team">
+                                        <div class="match-team-name">{challenged_name}</div>
+                                        {"<div class='match-team-wo'>Won W.O.</div>" if challenged_wo else ""}
+                                        {"<div class='match-team-score'>" + challenged_result + "</div>" if challenged_result else ""}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>'''
+
+            html_content += '''
+                        </div>'''
+
+        html_content += '''
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>'''
+
+        return html_content
+
+
+
+    def generate_schedule_html_addreality(self, tournament_data: Dict, target_date: str = None) -> str:
+        """Генерирует HTML для расписания матчей с новым дизайном 3.12.2025"""
+        # Метаинформация о турнире
+        metadata = tournament_data.get("metadata", {})
+        tournament_name = metadata.get("name", "Неизвестный турнир")
+        # Получаем расписание
+        court_usage = tournament_data.get("court_usage")
+
+        if not court_usage or not isinstance(court_usage, list):
+            return self._generate_empty_schedule_html(tournament_name, "Данные расписания не загружены")
+
+        # Получаем информацию о кортах из tournaments.courts
+        courts_info = tournament_data.get("courts", [])
+        court_names_map = {}
+        for court in courts_info:
+            if isinstance(court, dict) and court.get("Item1") and court.get("Item2"):
+                court_id = str(court["Item1"])
+                court_name = court["Item2"]
+                court_names_map[court_id] = court_name
+
+        from datetime import datetime as dt
+        if not target_date:
+            target_date = dt.now().strftime("%d.%m.%Y")
+            #target_date = dt(year=2025, month=10, day=25).strftime("%d.%m.%Y") # для тестов
+
+        # Группируем матчи по кортам и фильтруем по дате
+        courts_matches = {}
+        all_matches = []
+
+        for match in court_usage:
+
+            if not isinstance(match, dict):
+                continue
+
+            match_date = match.get("MatchDate", "")
+            if match_date:
+                try:
+                    dt_obj = dt.fromisoformat(match_date.replace('T', ' ').replace('Z', ''))
+                    match_date_formatted = dt_obj.strftime("%d.%m.%Y")
+
+                    # Фильтруем только матчи на нужную дату
+                    if match_date_formatted != target_date:
+                        continue
+
+                    court_id = str(match.get("CourtId", ""))
+                    court_name = court_names_map.get(court_id, f"Корт {court_id}")
+
+                    # Добавляем время начала для сортировки
+                    match["start_time"] = dt_obj.strftime("%H:%M")
+                    match["date_formatted"] = match_date_formatted
+                    match["court_name"] = court_name
+                    match["datetime_obj"] = dt_obj
+
+                    all_matches.append(match)
+
+                    if court_name not in courts_matches:
+                        courts_matches[court_name] = []
+                    courts_matches[court_name].append(match)
+
+                except Exception as e:
+                    continue
+
+        if not courts_matches:
+            return self._generate_empty_schedule_html(tournament_name, f"Нет матчей на {target_date}")
+
+        # Сортируем матчи в каждом корте по времени и присваиваем номера
+        for court_name in courts_matches:
+            courts_matches[court_name].sort(key=lambda x: x.get("datetime_obj"))
+            for i, match in enumerate(courts_matches[court_name], 1):
+                match["episode_number"] = i
+
+        # Создаем уникальные временные слоты
+        time_slots = sorted(list(set([m["start_time"] for m in all_matches])))
+
+        # Генерируем HTML
+        html_content = f'''<!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Расписание матчей -Addreality говно {tournament_name}</title>
+        <link rel="stylesheet" href="/static/css/schedule_addreality.css">
+        <script>
+            setInterval(function() {{
+                location.reload();
+            }}, 30000);
+        </script>
+    </head>
+    <body>
+        <div class="schedule-container">
+            <div class="main-grid">
+                <div class="time-scale">'''
+
+        # Временные слоты
+        for time_slot in time_slots:
+            html_content += f'''
+                    <div class="time-slot">{time_slot}</div>'''
+
+        html_content += '''
+                </div>
+                
+                <div class="courts-container">
+                    <div class="courts-header">'''
+
+        # Заголовки кортов
+        for court_name in sorted(courts_matches.keys()):
+            html_content += f'''
+                        <div class="court-header">
+                            <h3>{court_name}</h3>
+                        </div>'''
+
+        html_content += '''
+                    </div>
+                    
+                    <div class="matches-grid">'''
+
+        # Столбцы кортов с матчами
+        for court_name in sorted(courts_matches.keys()):
+            matches = courts_matches[court_name]
+
+            html_content += '''
+                        <div class="court-column">'''
+
+            for match in matches:
+                match_status = self._get_match_status(match)
+                status_class = self._get_status_class(match_status)
+
+                challenger_name = match.get("ChallengerName", "TBD")
+                challenged_name = match.get("ChallengedName", "TBD")
+                episode_number = match.get("episode_number", 1)
+
+                # Результаты матча
+                challenger_result = match.get("ChallengerResult", "0")
+                challenged_result = match.get("ChallengedResult", "0")
+
+                if not challenger_result:
+                    challenger_result = "0"
+                if not challenged_result:
+                    challenged_result = "0"
+
+                # Проверка на Won W.O.
+                challenger_wo = ""
+                challenged_wo = ""
+
+                if challenger_result == "Won W.O.":
+                    challenger_wo = "W.O."
+                    challenger_result = ""
+                if challenged_result == "Won W.O.":
+                    challenged_wo = "W.O."
+                    challenged_result = ""
+
+
+                html_content += f'''
+                        <div class="match-item {status_class}">
+                            <div class="match-content">
+                                <div class="match-number">{episode_number}</div>
+                                <div class="match-teams-wrapper">
+                                    <div class="match-team">
+                                        <div class="match-team-name">{challenger_name}</div>
+                                        {"<div class='match-team-wo'>Won W.O.</div>" if challenger_wo else ""}
+                                        {"<div class='match-team-score'>" + challenger_result + "</div>" if challenger_result else ""}
+                                    </div>
+                                    <div class="match-team">
+                                        <div class="match-team-name">{challenged_name}</div>
+                                        {"<div class='match-team-wo'>Won W.O.</div>" if challenged_wo else ""}
+                                        {"<div class='match-team-score'>" + challenged_result + "</div>" if challenged_result else ""}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>'''
+
+            html_content += '''
+                        </div>'''
+
+        html_content += '''
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>'''
+
+        return html_content
+
+    def _generate_empty_schedule_html(self, tournament_name: str, message: str) -> str:
+        """Генерирует пустую HTML страницу расписания"""
+        return f'''<!DOCTYPE html>
+                <html lang="ru">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Расписание матчей - {tournament_name}</title>
+                    <link rel="stylesheet" href="/static/css/schedule.css">
+                            <script>
+                                setInterval(function() {{
+                                    location.reload();
+                                }}, 30000);
+                            </script>
+                </head>
+                <body>
+                    <div class="schedule-container">
+                        <div class="header">
+                            <h1 class="tournament-title">{tournament_name}</h1>
+                        </div>
+                        <div class="empty-message">
+                            <p>{message}</p>
+                        </div>
+                    </div>
+                </body>
+                </html>'''
+
+    def _generate_time_slots(self, matches: list) -> list:
+        """Генерирует временные слоты на основе матчей"""
+        if not matches:
+            return ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"]
         
-        return generated_files
+        from datetime import datetime as dt, timedelta
+        # Находим минимальное и максимальное время
+        times = []
+        for match in matches:
+            if match.get("datetime_obj"):
+                times.append(match["datetime_obj"])
+
+        logger.info(f"time -------- {times}")
+        if not times:
+            return ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"]
+        
+        min_time = min(times)
+        max_time = max(times)
+        
+        # Вычисляем общий диапазон в часах
+        total_hours = (max_time - min_time).total_seconds() / 3600
+        
+        # Определяем оптимальный интервал в зависимости от диапазона
+        if total_hours <= 2:
+            interval_minutes = 15  # для коротких турниров
+        elif total_hours <= 4:
+            interval_minutes = 20  # для средних турниров
+        elif total_hours <= 8:
+            interval_minutes = 30  # для длинных турниров
+        else:
+            interval_minutes = 60  # для очень длинных турниров
+        
+        # Создаем слоты с динамическим интервалом
+        time_slots = []
+        # Начинаем за 30 минут до первого матча
+        start_time = min_time - timedelta(minutes=30)
+        start_time = start_time.replace(minute=(start_time.minute // interval_minutes) * interval_minutes, second=0, microsecond=0)
+        
+        # Заканчиваем через 30 минут после последнего матча
+        end_time = max_time + timedelta(minutes=30)
+        
+        current_time = start_time
+        while current_time <= end_time:
+            time_slots.append(current_time.strftime("%H:%M"))
+            current_time += timedelta(minutes=interval_minutes)
+        return time_slots
     
-    def cleanup_old_files(self, max_age_hours: int = 24):
-        import os, time
-        current_time = time.time()
-        cutoff_time = current_time - (max_age_hours * 3600)
-        removed_count = 0
+    def _calculate_time_position(self, match: dict, time_slots: list) -> int:
+        """Вычисляет позицию матча по времени в пикселях с улучшенным расчетом"""
+        if not match.get("datetime_obj") or not time_slots:
+            return 0
+        
+        from datetime import datetime as dt
+        
+        match_time = match["datetime_obj"]
         
         try:
-            for filename in os.listdir(self.output_dir):
-                if filename.endswith('.xml'):
-                    filepath = os.path.join(self.output_dir, filename)
-                    file_time = os.path.getmtime(filepath)
-                    if file_time < cutoff_time:
-                        os.remove(filepath)
-                        removed_count += 1
-        except Exception as e:
-            logger.error(f"Ошибка очистки старых файлов: {e}")
+            base_time_str = time_slots[0]
+            base_time = dt.strptime(f"{match_time.date()} {base_time_str}", "%Y-%m-%d %H:%M")
+        except:
+            return 0
         
-        if removed_count > 0:
-            logger.info(f"Удалено {removed_count} старых XML файлов")
-        return removed_count
+        # Вычисляем разность в минутах
+        time_diff_minutes = (match_time - base_time).total_seconds() / 60
+        
+        slot_height = 80
+        
+        # Определяем интервал между слотами на основе их количества
+        if len(time_slots) <= 1:
+            minutes_per_slot = 30
+        else:
+            # Вычисляем интервал между слотами из временной шкалы
+            try:
+                first_time = dt.strptime(f"{match_time.date()} {time_slots[0]}", "%Y-%m-%d %H:%M")
+                second_time = dt.strptime(f"{match_time.date()} {time_slots[1]}", "%Y-%m-%d %H:%M")
+                minutes_per_slot = (second_time - first_time).total_seconds() / 60
+            except:
+                minutes_per_slot = 30
+        # Пиксели на минуту
+        pixels_per_minute = slot_height / minutes_per_slot
+        position = int(time_diff_minutes * pixels_per_minute)
+        return max(0, position)
+    
+    def _get_match_status(self, match: Dict) -> str:
+        """Определяет статус матча"""
+        challenger_result = match.get("ChallengerResult", "")
+        challenged_result = match.get("ChallengedResult", "")
+        
+        if challenger_result and challenged_result:
+            return "finished"
+        # Проверяем время матча для определения активности
+        from datetime import datetime as dt
+        try:
+            match_date = match.get("MatchDate", "")
+            if match_date:
+                dt_obj = dt.fromisoformat(match_date.replace('T', ' ').replace('Z', ''))
+                now = dt.now()
+                duration = match.get("Duration", 30)  # минуты
+                
+                if dt_obj <= now <= dt_obj.replace(minute=dt_obj.minute + duration):
+                    return "active"
+                elif dt_obj > now:
+                    return "future"
+                else:
+                    return "finished"
+        except:
+            pass
+        return "future"
+    
+    def _get_status_class(self, status: str) -> str:
+        """Возвращает CSS класс для статуса"""
+        return {
+            "finished": "match-finished",
+            "active": "match-active", 
+            "future": "match-future"
+        }.get(status, "match-future")
+    
+    def _get_group_class(self, group_name: str) -> str:
+        """Возвращает CSS класс для группы на основе хеша названия"""
+        if not group_name:
+            return "match-group-1"
+        # Создаем хеш от названия группы для стабильного распределения цветов
+        hash_value = sum(ord(c) for c in group_name.upper())
+        color_number = (hash_value % 7) + 1
+        
+        return f"match-group-{color_number}"
+
+    def generate_and_save_schedule_html(self, tournament_data: Dict, target_date: str = None) -> Dict:
+        """Генерирует и сохраняет HTML файл расписания"""
+        
+        # Генерация HTML
+        html_content = self.generator.generate_schedule_html(tournament_data, target_date)
+        
+        # Определяем дату для имени файла
+        from datetime import datetime as dt
+        if not target_date:
+            target_date = dt.now().strftime("%d.%m.%Y")
+        
+        # Сохранение файла
+        safe_date = target_date.replace(".", "_")
+        filename = f"{tournament_data.get('tournament_id', 'unknown')}_schedule_{safe_date}.html"
+        filepath = f"{self.output_dir}/{filename}"
+        
+        try:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+        except Exception as e:
+            logger.error(f"Ошибка сохранения файла {filepath}: {e}")
+            raise
+        
+        # Информация о файле
+        import os
+        if os.path.exists(filepath):
+            file_stats = os.stat(filepath)
+        else:
+            logger.error(f"Файл не найден после создания: {filepath}")
+            raise FileNotFoundError(f"Файл не создался: {filepath}")
+        
+        file_info = {
+            "id": f"schedule_html_{safe_date}",
+            "name": f"Расписание матчей HTML - {target_date}",
+            "filename": filename,
+            "url": f"/html/{filename}",
+            "size": self._format_file_size(file_stats.st_size),
+            "created": datetime.now().isoformat(),
+            "type": "html_schedule",
+            "target_date": target_date
+        }
+
+        return file_info
+
+    def generate_elimination_html(self, tournament_data: Dict, xml_type_info: Dict) -> str:
+        """Генерирует HTML для турнирной сетки на выбывание (elimination)"""
+        # Получаем данные elimination
+        import re
+        
+        class_id = xml_type_info.get("class_id")
+        draw_index = xml_type_info.get("draw_index", 0)
+        
+        class_data = tournament_data.get("draw_data", {}).get(str(class_id), {})
+        elimination_data = class_data.get("elimination", [])
+        
+        if draw_index >= len(elimination_data):
+            return self._generate_empty_elimination_html("Нет данных турнирной сетки")
+        
+        elim_data = elimination_data[draw_index]
+        if not elim_data or "Elimination" not in elim_data:
+            return self._generate_empty_elimination_html("Неверные данные турнирной сетки")
+        
+        bracket_data = elim_data["Elimination"]
+        # Название турнира и класса
+        metadata = tournament_data.get("metadata", {})
+        tournament_name = metadata.get("name", "Турнир")
+        class_name = xml_type_info.get("class_name", "Категория")
+        stage_name = xml_type_info.get("stage_name", "Плей-офф")
+        
+        # Анализируем структуру турнира для определения количества раундов
+        rounds_data = self._analyze_elimination_structure(bracket_data)
+
+        html_content = f'''<!DOCTYPE html>
+                            <html lang="ru">
+                            <head>
+                                <meta charset="UTF-8">
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                <title>{class_name} - {stage_name} TEST </title>
+                                <link rel="stylesheet" href="/static/css/elimination.css">
+                                                        <script>
+                                                            setInterval(function() {{
+                                                                location.reload();
+                                                            }}, 30000);
+                                                        </script>
+                            </head>
+                            <body>
+                                <div class="elimination-container">
+                                    <div class="round-column">
+                                    '''
+        
+        # Генерируем колонки для каждого раунда
+        for round_index, round_info in enumerate(rounds_data):
+                                  
+            if round_index == 0:
+                first_round_content = self._generate_first_round(bracket_data)
+            else:
+                # Победители
+                html_content += f'''    '''
+                
+                if (len(rounds_data)-1) == round_index: 
+                    # Финальный раунд - используем универсальную функцию
+                    full_results = self._generate_match_pairs_from_api(round_index, round_info['matches'])
+                    
+                    html_content += f'''<div class="bracket-grid">'''
+                    
+                    if (len(rounds_data)-1) == 1: html_content += f'''<div class="places">{stage_name}</div> '''
+                    
+                    for match in full_results:
+                        html_content += f'''
+                            <div class="container">
+                                <div class="row row-top">
+                                    <div class="names">
+                                        <span class="name-main {match['secondary1']}">{match['team_1_name']}</span>
+                                    </div>
+                                    <div class="score">
+                                        <span class="set-score">{match['sets1']}</span>
+                                    </div>
+                                    <div class="rank rank-top">
+                                        <span class="rank-number">{match['score'].split('-')[0]}</span>
+                                    </div>
+                                </div>
+                                <div class="row row-bottom">
+                                    <div class="names">
+                                        <span class="name-main {match['secondary2']}">{match['team_2_name']}</span>
+                                    </div>
+                                    <div class="score">
+                                        <span class="set-score">{match['sets2']}</span>
+                                    </div>
+                                    <div class="rank rank-bottom">
+                                        <span class="rank-number">{match['score'].split('-')[1]}</span>
+                                    </div>
+                                </div>
+                            </div>'''
+                    html_content += '</div>'
+
+                else: # Последующие раунды Используем универсальную функцию для формирования пар
+                    full_results = self._generate_match_pairs_from_api(round_index, round_info['matches'])
+
+                    html_content += f'''<div class="bracket-grid">'''
+                    if round_index == 1: html_content += f'''<div class="places">{stage_name}</div>'''
+                    
+                    for match in full_results:
+                            html_content += f'''
+    <div class="container">
+        <div class="row row-top">
+            <div class="names">
+                <span class="name-main {match['secondary1']}">{match['team_1_name']}</span>
+            </div>
+            <div class="score">
+                <span class="set-score">{match['sets1']}</span>
+            </div>
+            <div class="rank rank-top">
+                <span class="rank-number">{match['score'].split('-')[0]}</span>
+            </div>
+        </div>
+        <div class="row row-bottom">
+            <div class="names">
+                <span class="name-main {match['secondary2']}">{match['team_2_name']}</span>
+            </div>
+            <div class="score">
+                <span class="set-score">{match['sets2']}</span>
+            </div>
+            <div class="rank rank-bottom">
+                <span class="rank-number">{match['score'].split('-')[1]}</span>
+            </div>
+        </div>
+    </div>'''                
+                    html_content += f'''</div>'''
+        html_content += '''</div> '''
+        
+        html_content += '''
+        </div>
+    </div>
+</body>
+</html>'''
+        
+        return html_content
+
+    def _analyze_elimination_structure(self, bracket_data: Dict) -> List[Dict]:
+        """Анализирует структуру elimination для определения раундов"""
+        rounds_data = []
+        
+        # Первый раунд - участники
+        first_round_participants = bracket_data.get("FirstRoundParticipantCells", [])
+        if first_round_participants:
+            rounds_data.append({
+                'title': 'Команды',
+                'matches': first_round_participants,
+                'type': 'participants'
+            })
+        
+        # Анализируем матчи по раундам
+        if bracket_data.get("DrawData"):
+            matches_by_round = {}
+            
+            for round_matches in bracket_data["DrawData"]:
+                for match_data in round_matches:
+                    if match_data:
+                        round_number = match_data.get("Round", 1)
+                        if round_number not in matches_by_round:
+                            matches_by_round[round_number] = []
+                        matches_by_round[round_number].append(match_data)
+            
+            # Определяем названия раундов
+            sorted_rounds = sorted(matches_by_round.keys())
+            round_names = self._generate_round_names(len(sorted_rounds))
+            
+            for i, round_number in enumerate(sorted_rounds):
+                rounds_data.append({
+                    'title': round_names[i] if i < len(round_names) else f'Раунд {round_number}',
+                    'matches': matches_by_round[round_number],
+                    'type': 'matches',
+                    'round_number': round_number
+                })
+        
+        return rounds_data
+
+    def _generate_round_names(self, num_rounds: int) -> List[str]:
+        """Генерирует названия раундов в зависимости от их количества"""
+        if num_rounds == 1:
+            return ['Финал']
+        elif num_rounds == 2:
+            return ['Полуфинал', 'Финал']
+        elif num_rounds == 3:
+            return ['Четвертьфинал', 'Полуфинал', 'Финал']
+        elif num_rounds == 4:
+            return ['1/8 финала', 'Четвертьфинал', 'Полуфинал', 'Финал']
+        elif num_rounds == 5:
+            return ['1/16 финала', '1/8 финала', 'Четвертьфинал', 'Полуфинал', 'Финал']
+        else:
+            # Для большего количества раундов
+            names = []
+            for i in range(num_rounds - 3):
+                names.append(f'Раунд {i + 1}')
+            names.extend(['Четвертьфинал', 'Полуфинал', 'Финал'])
+            return names
+
+    def _generate_first_round(self, bracket_data: Dict):
+        """для первого раунда (участники)"""
+
+        participants = bracket_data.get("FirstRoundParticipantCells", [])
+        first_round = {}
+        for i, participant_data in enumerate(participants, 1):
+            # Формируем название команды
+            team_names = []
+            if participant_data.get("FirstPlayer", {}).get("Name"):
+                team_names.append(participant_data["FirstPlayer"]["Name"])
+            if participant_data.get("SecondPlayer", {}).get("Name"):
+                team_names.append(participant_data["SecondPlayer"]["Name"])
+            
+            team_name = "/".join(team_names) if team_names else "TBD"
+            short_name = self._create_short_name(team_name) if team_name != "TBD" else "TBD"
+            Id = participant_data.get("EventParticipantId")
+            
+            # Проверяем, является ли это Bye
+            is_bye = team_name.upper() == "BYE" or not team_names
+            css_class = "bye-team" if is_bye else "match"
+            
+            first_round[i] = { 'class': css_class, 'team-name': short_name, 'sets-info': '', 'match-score': '', 'Id': Id}
+
+        return first_round
+
+    def _generate_match_pairs_from_api(self, round_index: int, matches: List[Dict]) -> List[Dict]:
+        """Универсальная функция для формирования пар матчей из API данных"""
+        match_pairs = []
+        
+        for match_data in matches:
+            match_view_model = match_data.get("MatchViewModel", {})
+            is_played = match_view_model.get("IsPlayed", False)
+            has_score = match_view_model.get("HasScore", False)
+            cancellation_status = match_data.get("CancellationStatus", "")
+            winner_id = match_data.get("WinnerParticipantId")
+            
+            # Получаем данные участников
+            challenger_data = match_data.get("ChallengerParticipant", {})
+            challenged_data = match_data.get("ChallengedParticipant", {})
+            
+            # Формируем имена команд
+            team1_name = self._get_team_name_from_players(
+                challenger_data.get("FirstPlayer", {}),
+                challenger_data.get("SecondPlayer", {})
+            )
+            team2_name = self._get_team_name_from_players(
+                challenged_data.get("FirstPlayer", {}),
+                challenged_data.get("SecondPlayer", {})
+            )
+            
+            team1_id = challenger_data.get("EventParticipantId")
+            team2_id = challenged_data.get("EventParticipantId")
+            
+            # Базовая структура матча
+            match_info = {
+                'team_1_name': self._create_short_name(team1_name) if team1_name else 'TBD',
+                'team_2_name': self._create_short_name(team2_name) if team2_name else 'TBD',
+                'team_1_id': team1_id,
+                'team_2_id': team2_id,
+                'status': 'Запланирован',
+                'score': '0-0',
+                'sets1': '',
+                'sets2': '',
+                'secondary1': '',
+                'secondary2': ''
+            }
+            
+            if is_played and has_score:
+                # Сыгранный матч с результатом
+                match_info['status'] = 'Сыгран'
+                
+                # Определяем победителя и проигравшего
+                if winner_id == team1_id:
+                    match_info['secondary1'] = ''
+                    match_info['secondary2'] = 'lost'
+                elif winner_id == team2_id:
+                    match_info['secondary1'] = 'lost'
+                    match_info['secondary2'] = ''
+                
+                # Получаем счет
+                score_data = match_view_model.get("Score", {})
+                match_info['score'] = self._format_score_summary(score_data)
+                sets_summary = self._format_sets_summary(score_data)
+                
+                # Парсим сеты
+                import re
+                sets1 = [int(x) for x in re.findall(r'\((\d+)-', sets_summary)] #-----------------------------
+                sets2 = [int(x) for x in re.findall(r'-(\d+)\)', sets_summary)]
+                match_info['sets1'] = ' '.join(map(str, sets1))
+                match_info['sets2'] = ' '.join(map(str, sets2))
+                
+            elif is_played and not has_score:
+                # Walkover
+                match_info['status'] = 'Walkover'
+                if winner_id == team1_id:
+                    match_info['secondary2'] = 'lost'
+                    match_info['score'] = '1-0'
+                    match_info['sets2'] = 'WO'
+                elif winner_id == team2_id:
+                    match_info['secondary1'] = 'lost'
+                    match_info['score'] = '0-1'
+                    match_info['sets1'] = 'WO'
+                    
+            elif not is_played and not has_score:
+                # Проверяем на Bye
+                bye_winner = self._check_bye_advancement(match_data)
+                if bye_winner:
+                    match_info['status'] = 'Bye'
+                    if bye_winner.get("participant_id") == team1_id:
+                        match_info['team_2_name'] = 'BYE'
+                        match_info['secondary1'] = 'lost'
+                    elif bye_winner.get("participant_id") == team2_id:
+                        match_info['team_1_name'] = 'BYE'
+                        match_info['secondary2'] = 'lost'
+            
+            match_pairs.append(match_info)
+        
+        return match_pairs
+
+    def _generate_empty_elimination_html(self, message: str) -> str:
+        """Генерирует пустую HTML страницу elimination"""
+        return f'''<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Турнирная сетка</title>
+    <link rel="stylesheet" href="/static/css/elimination.css">
+                            <script>
+                                setInterval(function() {{
+                                    location.reload();
+                                }}, 30000);
+                            </script>
+</head>
+<body>
+    <div class="elimination-container">
+        <div class="empty-message">
+            <p>{message}</p>
+        </div>
+    </div>
+</body>
+</html>'''
+
+
+
+    def generate_round_robin_html(self, tournament_data: Dict, xml_type_info: Dict) -> str:
+        """Генерирует HTML для групповой турнирной таблицы (round robin)"""
+        
+        # Получаем данные round robin
+        class_id = xml_type_info.get("class_id")
+        draw_index = xml_type_info.get("draw_index", 0)
+        
+        class_data = tournament_data.get("draw_data", {}).get(str(class_id), {})
+        round_robin_data = class_data.get("round_robin", [])
+        
+        if draw_index >= len(round_robin_data):
+            return self._generate_empty_round_robin_html("Нет данных групповой таблицы")
+        
+        rr_data = round_robin_data[draw_index]
+        if not rr_data or "RoundRobin" not in rr_data:
+            return self._generate_empty_round_robin_html("Неверные данные групповой таблицы")
+        
+        group_data = rr_data["RoundRobin"]
+        
+        # Название турнира и класса
+        metadata = tournament_data.get("metadata", {})
+        tournament_name = metadata.get("name", "Турнир")
+        class_name = (xml_type_info.get("class_name", "Категория")).upper()
+        group_name = (xml_type_info.get("group_name", "Группа")).upper()
+        
+        # Получаем участников и матчи
+        participants = self._extract_rr_participants(group_data)
+        
+        matches_matrix = self._extract_rr_matches_matrix(group_data, len(participants))
+        
+        standings = self._extract_rr_standings(group_data)
+        
+        html_content = f'''<!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{class_name} - {group_name}</title>
+        <link rel="stylesheet" href="/static/css/round_robin.css">
+        <script>
+            window.onload = function() {{
+                window.scrollTo(0, 0); // Эта функция сработает после каждой загрузки
+            }};
+
+            setInterval(function() {{
+                location.reload();
+            }}, 30000);
+        </script>
+    </head>
+    <body>
+        <div class="round-robin-container">            
+                <div class="round-robin-table">
+                    <div class="table-title">
+                        <div class="table-header">
+                            <div class="cell-num"></div>
+                            <div class="cell-gpp">{class_name[class_name.find(",")+1:]  } - {group_name} </div>
+                        </div>
+                        '''
+        
+        for i in range(1, len(participants) + 1):
+            html_content += f'''
+                                <div class="team-number-header">
+                                        <div class="team-number">{i}</div>
+                                </div>
+                            '''
+        
+        html_content += '''
+                            <div class="points-header">
+                                <div class="points"> ОЧКИ</div>
+                            </div>
+                            <div class="points-header">
+                                <div class="points"> МЕСТО</div>
+                            </div>
+                        </div>
+                    '''
+        
+        # Строки таблицы
+        for i, participant in enumerate(participants):
+            place = self._get_participant_place(participant, standings)
+            points = self._get_participant_points(participant, standings)
+            upper_short_name = (participant.get("short_name", " ")).upper()
+            html_content += f'''
+                        <div class="team-row">
+                            <div class="team-number-cell">
+                                <div class="team-num">{i + 1}</div>
+                                <div class="team-name-cell">{upper_short_name} </div>
+                            </div>
+                            '''
+            
+            # Ячейки результатов матчей
+            for j in range(len(participants)):
+                if i == j:
+                    # Диагональная ячейка
+                    html_content += f'''<div class="diagonal-cell"></div>'''
+                else:
+                    match_result = matches_matrix.get(f"{i}_{j}", {})
+                    result_class = self._get_match_result_class(match_result)
+                    
+                    if match_result.get("is_bye"):
+                        html_content += '<div class="match-cell-bye-cell">●</div>'
+                    elif match_result.get("has_result"):
+                        score = match_result.get("score", "-")
+                        sets = match_result.get("sets", "")
+                        html_content += f'''
+                            <div class="match-cell">
+                                <div class="match-score">{score}</div>
+                                <div class="match-sets">{sets}</div>
+                            </div>'''
+                    else:
+                        html_content += '<div class="match-cell-empty-cell"></div>'
+            
+            html_content += f'''
+                            <div class="points-cell">
+                                <div class="points-z">{points}</div>
+                            </div>
+                            <div class="place-cell">
+                                <div class="place-z">{place}</div>
+                            </div>
+                        </div>
+                            '''
+        
+        html_content += '''
+                    </div>
+                </div>
+
+        </div>
+    </body>
+    </html>'''
+
+        return html_content
+
+    def _extract_rr_participants(self, group_data: Dict) -> List[Dict]:
+        """Извлекает участников из групповых данных"""
+        participants = []
+        pool_data = group_data.get("Pool", [])
+        
+        for row_index, row in enumerate(pool_data):
+            if not isinstance(row, list):
+                continue
+                
+            for cell_index, cell in enumerate(row):
+                if not isinstance(cell, dict):
+                    continue
+                    
+                if cell.get("CellType") == "ParticipantCell" and cell.get("ParticipantCell"):
+                    participant_cell = cell["ParticipantCell"]
+                    
+                    if participant_cell.get("Players") and isinstance(participant_cell["Players"], list):
+                        team_names = []
+                        player_ids = []
+                        for player in participant_cell["Players"]:
+                            if isinstance(player, dict) and player.get("Name"):
+                                team_names.append(player["Name"])
+                                if player.get("Id"):
+                                    player_ids.append(str(player["Id"]))
+
+                        if team_names:
+                            full_name = "/".join(team_names)
+                            short_name = self._create_short_name(full_name) if full_name != "Bye" else "Bye"
+                            
+                            participants.append({
+                                "index": participant_cell.get("Index", len(participants)),
+                                "participant_id": participant_cell.get("ParticipantId"),  # Добавляем ParticipantId
+                                "full_name": full_name,
+                                "short_name": short_name,
+                                "is_bye": full_name.upper() == "BYE",
+                                "player_ids": player_ids  # Массив ID игроков
+                            })
+
+        # Берем только первую половину
+        if len(participants) > 0:
+            half_count = len(participants) // 2
+            if half_count > 0:
+                participants = participants[:half_count]
+        
+        return participants
+
+    def _extract_rr_matches_matrix(self, group_data: Dict, num_participants: int) -> Dict:
+        """Извлекает матчи в формате матрицы"""
+        matches_matrix = {}
+        pool_data = group_data.get("Pool", [])
+        
+        for row_index, row in enumerate(pool_data):
+            if not isinstance(row, list):
+                continue
+    
+            for cell_index, cell in enumerate(row):
+                if not isinstance(cell, dict):
+                    continue
+                    
+                if cell.get("CellType") == "MatchCell" and cell.get("MatchCell"):
+                    match_cell = cell["MatchCell"]
+                    match_results = match_cell.get("MatchResults", {})
+                    
+                    if row_index != cell_index:  # Не диагональные элементы
+                        match_key = f"{row_index-1}_{cell_index-1}"
+                        
+                        match_info = {
+                            "has_result": bool(match_results.get("IsPlayed", False)),
+                            "is_bye": False,
+                            "score": "",
+                            "sets": ""
+                        }
+                        
+                        if match_results.get("HasScore") and match_results.get("Score"):
+                            score_data = match_results["Score"]
+                            first_score = score_data.get("FirstParticipantScore", 0)
+                            second_score = score_data.get("SecondParticipantScore", 0)
+                            
+                            match_info["score"] = f"{first_score}-{second_score}"
+                            
+                            # Форматируем сеты
+                            detailed_scoring = score_data.get("DetailedScoring", [])
+                            if detailed_scoring:
+                                sets_parts = []
+                                for set_data in detailed_scoring:
+                                    set_first = set_data.get("FirstParticipantScore", 0)
+                                    set_second = set_data.get("SecondParticipantScore", 0)
+                                    sets_parts.append(f"{set_first}-{set_second}")
+                                match_info["sets"] = " ".join(sets_parts)
+                        else:
+                            cancellation_status = match_results.get('CancellationStatus') or '' # вернет пустую если None
+                            if 'Won' in cancellation_status:
+                                match_info["score"] = 'Won'
+                            elif 'Lost' in cancellation_status:
+                                match_info["score"] = 'Lost'
+                        matches_matrix[match_key] = match_info
+        
+        return matches_matrix
+
+    def _extract_rr_standings(self, group_data: Dict) -> List[Dict]:
+        """Извлекает турнирную таблицу"""
+        standings_data = group_data.get("Standings", [])
+        standings = []
+        fake_id_counter = 1000
+        for standing in standings_data:
+            if isinstance(standing, dict):
+                # Собираем ID игроков из standings
+                
+                player_ids = []
+                # Обработка первого игрока
+                player1 = standing.get('DoublesPlayer1Model')
+                if isinstance(player1, dict) and player1.get('Id'):
+                    player_ids.append(str(player1['Id']))
+                else:
+                    player_ids.append(str(fake_id_counter))
+                    fake_id_counter += 1
+
+                # Обработка второго игрока
+                player2 = standing.get('DoublesPlayer2Model')
+                if isinstance(player2, dict) and player2.get('Id'):
+                    player_ids.append(str(player2['Id']))
+                else:
+                    player_ids.append(str(fake_id_counter))
+                    fake_id_counter += 1
+                    
+                
+                standings.append({
+                    "participant_id": str(standing.get("ParticipantId", "")),
+                    "standing": standing.get("Standing", 0),
+                    "wins": standing.get("Wins", 0),
+                    "match_points": standing.get("MatchPoints", 0),
+                    "player_ids": player_ids  # Массив ID игроков
+                })
+        
+        return standings
+
+    def _get_participant_place(self, participant: Dict, standings: List[Dict]) -> int:
+        """Получает место участника по сопоставлению ParticipantId или player_ids"""
+        
+        # Сначала пробуем сопоставить по ParticipantId
+        participant_id = participant.get("participant_id")
+        if participant_id:
+            for standing in standings:
+                if str(standing.get("participant_id", "")) == str(participant_id):
+                    return standing.get("standing", 0)
+        
+        # Если не найдено, пробуем сопоставить по player_ids
+        participant_player_ids = set(participant.get("player_ids", []))
+        if participant_player_ids:
+            for standing in standings:
+                standing_player_ids = set(standing.get("player_ids", []))
+                # Проверяем пересечение множеств ID игроков
+                if participant_player_ids & standing_player_ids:  # Если есть общие элементы
+                    return standing.get("standing", 0)
+        
+        # Fallback - по index 
+        participant_index = participant.get("index", 0)
+        for standing in standings:
+            if int(standing.get("participant_id", -1)) == participant_index:
+                return standing.get("standing", 0)
+        
+        return 0
+
+    def _get_participant_points(self, participant: Dict, standings: List[Dict]) -> int:
+        """Получает очки участника по сопоставлению ParticipantId или player_ids"""
+        
+        # Сначала пробуем сопоставить по ParticipantId
+        participant_id = participant.get("participant_id")
+        if participant_id:
+            for standing in standings:
+                if str(standing.get("participant_id", "")) == str(participant_id):
+                    return standing.get("match_points", 0)  # Используем match_points вместо wins
+        
+        # Если не найдено, пробуем сопоставить по player_ids
+        participant_player_ids = set(participant.get("player_ids", []))
+        if participant_player_ids:
+            for standing in standings:
+                standing_player_ids = set(standing.get("player_ids", []))
+                # Проверяем пересечение множеств ID игроков
+                if participant_player_ids & standing_player_ids:  # Если есть общие элементы
+                    return standing.get("match_points", 0)
+        
+        # Fallback - по index 
+        participant_index = participant.get("index", 0)
+        for standing in standings:
+            if int(standing.get("participant_id", -1)) == participant_index:
+                return standing.get("match_points", 0)
+        
+        return 0
+
+    def _get_match_result_class(self, match_result: Dict) -> str:
+        """Возвращает CSS класс для результата матча"""
+        if match_result.get("is_bye"):
+            return "bye"
+        elif match_result.get("has_result"):
+            return "played"
+        else:
+            return "empty"
+
+    def _generate_empty_round_robin_html(self, message: str) -> str:
+        """Генерирует пустую HTML страницу round robin"""
+        return f'''<!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Групповая таблица</title>
+        <link rel="stylesheet" href="/static/css/round_robin.css">
+        <script>
+            setInterval(function() {{
+                location.reload();
+            }}, 30000);
+        </script>
+    </head>
+    <body>
+        <div class="round-robin-container">
+            <div class="empty-message">
+                <p>{message}</p>
+            </div>
+        </div>
+    </body>
+    </html>'''
