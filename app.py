@@ -378,78 +378,6 @@ def robots_txt():
     from flask import send_from_directory
     return send_from_directory('static', 'robots.txt')
         
-@app.route('/simple')
-def simple_html_page():
-    """Главная страница"""
-    try:
-        # Простая HTML страница с информацией
-        html_content = '''
-        <!DOCTYPE html>
-        <html lang="ru">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>vMixRanker v2.0</title>
-            <style>
-                body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
-                .info { background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; }
-                .api-list { background: #f5f5f5; padding: 15px; border-radius: 8px; }
-                code { background: #ffeb3b; padding: 2px 4px; border-radius: 3px; }
-            </style>
-        </head>
-        <body>
-            <h1>vMixRanker v2.5</h1>
-            <div class="info">
-                <h3>Система интеграции турниров rankedin.com с vMix</h3>
-                <p><strong>Статус:</strong>Работает</p>
-                <p><strong>Версия:</strong> 2.5.0</p>
-                <p><strong>Время запуска:</strong> ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '''</p>
-            </div>
-            
-            <h3>API Endpoints:</h3>
-            <div class="api-list">
-                <p><strong>Турниры:</strong></p>
-                <ul>
-                    <li><code>POST /api/tournament/&lt;id&gt;</code> - Загрузка турнира</li>
-                    <li><code>GET /api/tournaments</code> - Список турниров</li>
-                    <li><code>DELETE /api/tournament/&lt;id&gt;</code> - Удаление турнира</li>
-                </ul>
-                
-                <p><strong>Корты:</strong></p>
-                <ul>
-                    <li><code>GET /api/tournament/&lt;id&gt;/courts</code> - Данные кортов</li>
-                </ul>
-                
-                <p><strong>XML Generation:</strong></p>
-                <ul>
-                    <li><code>GET /api/tournament/&lt;id&gt;/xml-types</code> - Доступные типы XML</li>
-                    <li><code>GET /api/xml/&lt;tournament_id&gt;/&lt;type_id&gt;</code> - Генерация XML</li>
-                    <li><code>GET /api/xml-live/&lt;tournament_id&gt;/&lt;type_id&gt;</code> - Live XML данные</li>
-                    <li><code>POST /api/xml/&lt;id&gt;/all</code> - Генерация всех XML</li>
-                </ul>
-                
-                <p><strong>Система:</strong></p>
-                <ul>
-                    <li><code>GET /api/status</code> - Статус системы</li>
-                    <li><code>GET /api/refresh</code> - Обновление данных</li>
-                    <li><code>GET/POST /api/settings</code> - Настройки</li>
-                </ul>
-            </div>
-            
-            <h3>Использование с vMix:</h3>
-            <div class="info">
-                <p><strong>Статичные файлы:</strong> <code>http://localhost:5000/xml/filename.xml</code></p>
-                <p><strong>Live данные:</strong> <code>http://localhost:5000/api/xml-live/tournament_id/xml_type</code></p>
-                <p><strong>Интерфейс:</strong> Скопируйте HTML код из артефакта в templates/index.html</p>
-            </div>
-        </body>
-        </html>
-        '''
-        return html_content
-    except Exception as e:
-        logger.error(f"Ошибка главной страницы: {e}")
-        return f"<h1>vMixRanker v2.0</h1><p>Ошибка: {e}</p>"
-
 @app.route('/api/html-live/elimination/<tournament_id>/<class_id>/<int:draw_index>')
 def get_live_elimination_html(tournament_id, class_id, draw_index):
     """Получение актуального HTML турнирной сетки из БД"""
@@ -1645,49 +1573,6 @@ def get_next_match_html(tournament_id, court_id):
         logger.error(f"Ошибка получения live HTML для корта {court_id}: {e}")
         return f"<html><body><h1>Ошибка: {str(e)}</h1></body></html>", 500
 
-
-@app.route('/api/html-live/<tournament_id>/<court_id>/vs_old')
-def get_vs_page_html________________(tournament_id, court_id):
-    """Получение vs страницы HTML"""
-    try:
-        #   Получение данных турнира из БД
-        tournament_data = get_tournament_data_from_db(tournament_id)
-        if not tournament_data:
-            return "<html><body><h1>Турнир не найден</h1></body></html>", 404
-
-        #   Получение данных корта из БД
-        court_data = get_court_data_from_db(tournament_id, str(court_id))
-        if not court_data or "error" in court_data:
-            return "<html><body><h1>Ошибка получения данных корта из БД</h1></body></html>", 500
-
-        team1_players = court_data.get("current_first_participant", court_data.get("first_participant", []))
-        team2_players = court_data.get("current_second_participant", court_data.get("second_participant", []))
-        team1_ids = [p.get("id") for p in team1_players if p.get("id", "")]
-        team2_ids = [p.get("id") for p in team2_players if p.get("id", "")]
-
-        def get_photo_urls_for_next(conn):
-            ids = team1_ids + team2_ids
-            if ids:
-                cursor = conn.cursor()
-                cursor.execute(f'''
-                    SELECT p.id, p.photo_url
-                    FROM participants as p
-                    WHERE id IN ({','.join('?' for _ in ids)});
-                ''', tuple(ids))
-                column_names = [description[0] for description in cursor.description]
-                results = cursor.fetchall()
-
-                return [dict(zip(column_names, row_tuple)) for row_tuple in results]
-            return []
-
-        id_url = execute_db_transaction_with_retry(get_photo_urls_for_next)
-        html_content = xml_manager.html_generator.generate_vs_page_html(court_data, id_url, tournament_data)
-
-        return Response(html_content, mimetype='text/html; charset=utf-8')
-
-    except Exception as e:
-        logger.error(f"Ошибка получения live HTML для корта {court_id}: {e}")
-        return f"<html><body><h1>Ошибка: {str(e)}</h1></body></html>", 500
 
 @app.route('/api/html-live/participant/<participant_id>/introduction')
 def get_introduction_page_html(participant_id):
