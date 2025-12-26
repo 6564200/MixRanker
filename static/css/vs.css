@@ -121,7 +121,7 @@ body {
 /* Score section - НАД ФОТО */
 .score-section {
     position: absolute;
-    bottom: 80px;
+    bottom: 70px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
