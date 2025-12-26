@@ -612,6 +612,9 @@ function renderCourts() {
                             ${getCourtStatusText(court)}
                         </span>
                         ${court.sport ? `<small class="text-muted">${court.sport}</small>` : ''}
+                    <small class="text-muted">
+                        <i class="fas fa-sync me-1"></i> ${formatTime(new Date())}
+                    </small>						
                     </div>
                 </div>
                 
@@ -697,22 +700,28 @@ function renderCourts() {
                 ` : ''}
                 
                 <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-muted">
-                        <i class="fas fa-sync me-1"></i>Обновлено: ${formatTime(new Date())}
-                    </small>
+
 					<div class="d-flex gap-1">
 						${hasCurrentMatch || hasNextMatch ? `
+<button class="btn btn-sm btn-outline-info" onclick="openCourtINTRO(this.dataset.tournamentId, '${court.court_id}')" data-tournament-id="${currentTournamentId}" title="HTML VS">
+    <i class="fas fa-users me-1"></i>INTRO
+</button>
+
 
 <button class="btn btn-sm btn-outline-primary" onclick="openCourtVS(this.dataset.tournamentId, '${court.court_id}')" data-tournament-id="${currentTournamentId}" title="HTML VS">
     <i class="fas fa-users me-1"></i>VS
 </button>
 							<button class="btn btn-sm btn-warning" onclick="openCourtHTML('${currentTournamentId}', '${court.court_id}')" title="HTML Scoreboard">
-								<i class="fas fa-tv"></i>
+								<i class="fa-solid fa-address-card"></i>SM
 							</button>
+<button class="btn btn-sm btn-warning" onclick="openCourtHTML_BIG('${currentTournamentId}', '${court.court_id}')" title="HTML Scoreboard BIG">
+	<i class="fa-regular fa-address-card"></i>BIG
+</button>
+
+<button class="btn btn-sm btn-outline-danger" onclick="openCourtWIN(this.dataset.tournamentId, '${court.court_id}')" data-tournament-id="${currentTournamentId}" title="HTML VS">
+    <i class="fas fa-users me-1"></i>VIN
+</button>
 						` : ''}
-						<button class="btn btn-sm btn-outline-info" onclick="refreshSingleCourt('${court.court_id}')">
-							<i class="fas fa-sync-alt"></i>
-						</button>
 					</div>
                 </div>
             </div>
@@ -878,7 +887,21 @@ function openCourtVS(tournamentId, courtId) {
     window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
 }
 
+function openCourtHTML_BIG(tournamentId, courtId) {
+   
+    const liveUrl = `/api/html-live/${tournamentId}/${courtId}/score`;
+    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+}
 
+function openCourtWIN(tournamentId, courtId) {
+    const liveUrl = `/api/html-live/${tournamentId}/${courtId}/winner`;
+    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+}
+
+function openCourtINTRO(tournamentId, courtId) {
+    const liveUrl = `/api/html-live/${tournamentId}/${courtId}/introduction`;
+    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+}
 
 // generateScheduleHTML с календариком
 function generateScheduleHTML() {
@@ -1064,7 +1087,7 @@ function confirmDatePicker() {
 
 function openCourtHTML(tournamentId, courtId) {
     const liveUrl = `/api/html-live/${tournamentId}/${courtId}`;
-    window.open(liveUrl, '_blank', 'width=390,height=90,resizable=no,scrollbars=no,menubar=no,toolbar=no');
+    window.open(liveUrl, '_blank', 'width=490,height=120,resizable=no,scrollbars=no,menubar=no,toolbar=no');
 }
 
 function getXMLTypeIcon(type) {
