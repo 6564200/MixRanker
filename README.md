@@ -2,7 +2,7 @@ Install
 
     sudo apt update && sudo apt upgrade -y
 
-    sudo apt install python3 python3-venv python3-pip nginx git ufw htop mc fail2ban -y
+    sudo apt install python3 python3-venv python3-pip nginx git ufw htop mc fail2ban unzip -y
 
 CLONE
 
@@ -11,6 +11,9 @@ CLONE
 sudo chown -R *user:*user MixRanker
 
     cd MixRanker
+
+FLAGS
+    '''cd /var/www/MixRanker/static/flags && unzip 4x3.zip'''
 
 VENV
 
@@ -36,7 +39,7 @@ TEST
     cd /var/www/MixRanker && source venv/bin/activate
 
     flask run --host=0.0.0.0
-http://<ip>:5000
+http://0.0.0.0:5000
 
 WSGI
 sudo nano /etc/systemd/system/mixranker.service
