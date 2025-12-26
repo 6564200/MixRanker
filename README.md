@@ -13,7 +13,7 @@ sudo chown -R *user:*user MixRanker
     cd MixRanker
 
 FLAGS
-    '''cd /var/www/MixRanker/static/flags && unzip 4x3.zip'''
+    `cd /var/www/MixRanker/static/flags && unzip 4x3.zip
 
 VENV
 
