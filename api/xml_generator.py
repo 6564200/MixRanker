@@ -1189,11 +1189,12 @@ class XMLGenerator:
         return html_content
 
     def generate_winner_page_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
-        """Генерирует HTML страницу победителей текущего корта"""
+        #Генерирует HTML страницу победителей текущего корта
         court_name = court_data.get("court_name", "Court")
         match_state = court_data.get("current_match_state", "free")
 
         current_participants = court_data.get("current_first_participant") or court_data.get("first_participant", [])
+        
         if not match_state == 'finished' or not current_participants or not id_url:
             html_content = f'''<!DOCTYPE html>
                         <html lang="en">
@@ -1264,11 +1265,11 @@ class XMLGenerator:
             </body>
             </html>'''
         return html_content
-
-
+        
+        
 
     def _add_elimination_data(self, root: ET.Element, class_data: Dict, draw_index: int):
-        """Добавляет данные игр на выбывание в плоском формате с обработкой Bye и Walkover"""
+        #Добавляет данные игр на выбывание в плоском формате с обработкой Bye и Walkover
         elimination_data = class_data.get("elimination", [])
         if draw_index < len(elimination_data):
             elim_data = elimination_data[draw_index]
