@@ -39,7 +39,8 @@ from api import (
     require_auth, register_auth_routes,
     AutoRefreshService,
     enrich_court_data_with_photos, get_participant_info, get_photo_urls_for_ids,
-    get_sport_name, get_xml_type_description, get_update_frequency, get_uptime
+    get_sport_name, get_xml_type_description, get_update_frequency, get_uptime,
+    save_tournament_matches, get_tournament_matches
 )
 from api.xml_generator import XMLFileManager
 
@@ -292,6 +293,34 @@ def reload_tournament_schedule(tournament_id):
         execute_with_retry(save)
 
         return jsonify({"success": True, "matches_count": len(court_usage) if isinstance(court_usage, list) else 0})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# === API: МАТЧИ ===
+@app.route('/api/tournament/<tournament_id>/matches', methods=['GET'])
+def get_matches(tournament_id):
+    """Получение матчей турнира"""
+    try:
+        matches_data = get_tournament_matches(tournament_id)
+        if not matches_data:
+            return jsonify({"Matches": [], "AreMatchesPublished": False, "IsSchedulePublished": False})
+        return jsonify(matches_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/tournament/<tournament_id>/matches/reload', methods=['POST'])
+def reload_tournament_matches(tournament_id):
+    """Перезагрузка матчей турнира"""
+    try:
+        matches_data = api.get_tournament_matches(tournament_id)
+        if not matches_data:
+            return jsonify({"error": "Не удалось получить матчи"}), 400
+        
+        save_tournament_matches(tournament_id, matches_data)
+        matches_count = len(matches_data.get("Matches", []))
+        return jsonify({"success": True, "matches_count": matches_count})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -582,6 +611,7 @@ def get_live_round_robin_html(tournament_id, class_id, draw_index):
         html = xml_manager.html_generator.generate_round_robin_html(tournament_data, xml_type_info)
         return Response(html, mimetype='text/html; charset=utf-8')
     except Exception as e:
+        logger.error(f"Ошибка round-robin HTML: {e}")
         return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
 
 
@@ -603,6 +633,7 @@ def get_live_elimination_html(tournament_id, class_id, draw_index):
         html = xml_manager.html_generator.generate_elimination_html(tournament_data, xml_type_info)
         return Response(html, mimetype='text/html; charset=utf-8')
     except Exception as e:
+        logger.error(f"Ошибка elimination HTML: {e}")
         return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
 
 # === API: НАСТРОЙКИ И СТАТУС ===
