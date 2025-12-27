@@ -9,29 +9,21 @@
     font-weight: medium;
 }
 
-
 body {
     margin: 0;
     padding: 0px;
-    background-color: #AED557 ;
+    background-color: #AED557;
     font-family: 'Onest';
     zoom: 40%;
     background: transparent;
-	overflow: hidden; 
+    overflow: hidden;
 }
-
-
-/* Исходные стили из Figma (огромные размеры сохранены) */
 
 .bg_table, .table-wrapper {
     width: 3448px;
-    /* height: 807px; */
     position: relative;
-	padding: 0;
-
+    padding: 0;
 }
-
-/* --- Хедер Таблицы --- */
 
 .bg_head_tab {
     position: relative;
@@ -40,14 +32,13 @@ body {
     background: linear-gradient(180deg, #AED557 0%, #84C100 100%);
     border-radius: 10px;
     display: flex;
-    justify-content: flex-end; /* Выравнивает колонки справа */
+    justify-content: flex-end;
     align-items: center;
-    padding-right: 0px; /* Небольшой отступ для примера */
+    padding-right: 0px;
     box-sizing: border-box;
 }
 
 .text_set, .text_set_itog {
-    /* Общие стили текста заголовка */
     font-family: 'Onest', sans-serif;
     font-weight: 700;
     font-size: 80px;
@@ -57,31 +48,38 @@ body {
     text-align: center;
     color: #080609;
     height: 100%;
-    justify-content: center; /* Центрируем текст внутри блока */
+    justify-content: center;
+    /* Анимация для плавного появления/скрытия */
+    transition: width 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
 }
 
-/* Ширина колонок для сетов и итога (адаптировано под макет) */
-.text_set { width: 425px; } 
-.text_set:first-child { width: 477px; } /* Первый заголовок чуть шире */
+/* Ширина колонок для сетов и итога */
+.text_set { width: 425px; }
+.text_set:first-child { width: 477px; }
 .text_set_itog { width: 425px; }
 
+/* Скрытие пустых заголовков сетов */
+.text_set.hidden {
+    width: 0;
+    opacity: 0;
+    overflow: hidden;
+    padding: 0;
+}
 
 /* --- Строки Команд --- */
-
 .bg_team1, .bg_team2 {
     position: relative;
     width: 3448px;
     height: 316px;
     background: linear-gradient(180deg, #202020 0%, #070707 100%);
     display: flex;
-    justify-content: space-between; /* Растягивает название команды и счетчики по ширине */
+    justify-content: space-between;
     box-sizing: border-box;
-
 }
 
 .bg_team1 {
     border-radius: 10px 10px 0px 0px;
-    margin-top: 0px; /* Чтобы наложиться на нижний край хедера */
+    margin-top: 0px;
     padding-top: 0px;
 }
 
@@ -90,7 +88,10 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-	text-transform: uppercase;
+    text-transform: uppercase;
+    /* Расширяется когда сеты скрыты */
+    transition: width 0.3s ease;
+    flex-shrink: 0;
 }
 
 .player_name1, .player_name2 {
@@ -100,29 +101,44 @@ body {
     line-height: 102px;
     letter-spacing: -0.04em;
     color: #FFFFFF;
-	padding-left: 120px;
-	letter-spacing: 1px;
+    padding-left: 120px;
+    letter-spacing: 1px;
 }
 
 /* Контейнеры счетов */
 .set_play1, .set_play2 {
-    width: 1700px;
     display: flex;
-    justify-content: space-around;
+    justify-content: flex-end;
     align-items: center;
+    flex-grow: 1;
 }
 
 .text_set_score, .text_set_itog_score {
     width: 425px;
     font-family: 'Onest', sans-serif;
     font-weight: 700;
-    font-size: 200px; /* Огромный размер шрифта для счета */
+    font-size: 200px;
     line-height: 255px;
     display: flex;
     align-items: center;
     text-align: center;
     justify-content: center;
     color: #FFFFFF;
+    /* Анимация для плавного появления/скрытия */
+    transition: width 0.3s ease, opacity 0.3s ease;
+    flex-shrink: 0;
+}
+
+/* Скрытие пустых ячеек счёта сетов */
+.text_set_score.hidden {
+    width: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+/* Итоговый счёт всегда виден */
+.text_set_itog_score {
+    min-width: 425px;
 }
 
 /* Разделительная линия */
@@ -130,4 +146,29 @@ body {
     width: 3448px;
     height: 13px;
     background: #AED557;
+}
+
+/* === AJAX обновление === */
+.fade-update {
+    transition: opacity 0.15s ease-in-out;
+}
+
+.updating {
+    opacity: 0.7;
+}
+
+/* === No Match состояние === */
+#no-match-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+#no-match-content .team-name {
+    font-family: 'Onest', sans-serif;
+    font-weight: 700;
+    font-size: 120px;
+    color: #FFFFFF;
+    text-align: center;
 }
