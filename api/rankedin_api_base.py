@@ -89,3 +89,7 @@ class RankedinAPI:
 
     def get_all_courts_data(self, court_ids: List[str]) -> List[Dict]:
         return [d for cid in court_ids if (d := self.get_court_scoreboard(str(cid))) and "error" not in d]
+
+    def get_tournament_matches(self, tournament_id: str) -> Optional[Dict]:
+        """Получение всех матчей турнира с результатами"""
+        return self._get("/tournament/GetMatchesSectionAsync", {"Id": tournament_id})

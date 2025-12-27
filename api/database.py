@@ -126,6 +126,15 @@ def init_database():
                 FOREIGN KEY (tournament_id) REFERENCES tournaments(id)
             );
             
+            CREATE TABLE IF NOT EXISTS tournament_matches (
+                tournament_id TEXT PRIMARY KEY,
+                matches_data TEXT,
+                are_matches_published INTEGER DEFAULT 0,
+                is_schedule_published INTEGER DEFAULT 0,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (tournament_id) REFERENCES tournaments(id)
+            );
+            
             CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
@@ -401,3 +410,46 @@ def save_settings(settings: Dict):
             ''', (key, json.dumps(value)))
 
     execute_with_retry(transaction)
+
+
+def save_tournament_matches(tournament_id: str, matches_data: Dict):
+    """Сохранение матчей турнира"""
+    def transaction(conn):
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT OR REPLACE INTO tournament_matches 
+            (tournament_id, matches_data, are_matches_published, is_schedule_published, updated_at)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ''', (
+            tournament_id,
+            json.dumps(matches_data.get("Matches", [])),
+            1 if matches_data.get("AreMatchesPublished") else 0,
+            1 if matches_data.get("IsSchedulePublished") else 0
+        ))
+    execute_with_retry(transaction)
+
+
+def get_tournament_matches(tournament_id: str) -> Optional[Dict]:
+    """Получение матчей турнира из БД"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT matches_data, are_matches_published, is_schedule_published, updated_at
+            FROM tournament_matches WHERE tournament_id = ?
+        ''', (tournament_id,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if not row:
+            return None
+            
+        return {
+            "Matches": _safe_json_loads(row[0], []),
+            "AreMatchesPublished": bool(row[1]),
+            "IsSchedulePublished": bool(row[2]),
+            "updated_at": row[3]
+        }
+    except Exception as e:
+        logger.error(f"Ошибка получения матчей турнира {tournament_id}: {e}")
+        return None

@@ -49,6 +49,7 @@ class ScheduleGenerator(HTMLBaseGenerator):
         if filter_matches:
             courts_matches = self._filter_matches(courts_matches)
 
+        # time_slots только из отфильтрованных матчей
         time_slots = sorted({m["start_time"] for matches in courts_matches.values() for m in matches})
 
         return self._render_schedule_html(tournament_name, courts_matches, time_slots, css_file)
@@ -103,38 +104,56 @@ class ScheduleGenerator(HTMLBaseGenerator):
                 match["episode_number"] = i
 
     def _filter_matches(self, courts_matches: Dict) -> Dict:
-        """Фильтрует матчи: последние 3 завершённых + все активные и будущие"""
+        """Фильтрует матчи: последние 3 с результатами + все без результатов"""
         filtered = {}
         for court_name, matches in courts_matches.items():
-            finished = [m for m in matches if self.get_match_status(m) == "finished"]
-            active_future = [m for m in matches if self.get_match_status(m) != "finished"]
-            filtered[court_name] = finished[-3:] + active_future
+            # Матчи с результатами (реально сыгранные)
+            with_results = [m for m in matches if m.get("ChallengerResult") or m.get("ChallengedResult")]
+            # Матчи без результатов (ещё не сыграны)
+            without_results = [m for m in matches if not m.get("ChallengerResult") and not m.get("ChallengedResult")]
+            # Последние 3 сыгранных + все несыгранные
+            filtered[court_name] = with_results[-3:] + without_results
         return filtered
 
     def _render_schedule_html(self, tournament_name: str, courts_matches: Dict, time_slots: List, css_file: str) -> str:
-        """Рендерит HTML расписания"""
+        """Рендерит HTML расписания с CSS Grid привязкой к времени"""
         sorted_courts = sorted(courts_matches.keys())
+        
+        # Создаём маппинг время -> номер строки (1-indexed для CSS Grid)
+        time_to_row = {time: idx + 1 for idx, time in enumerate(time_slots)}
 
-        html = f'''{self.html_head(f"Расписание матчей - {tournament_name}", css_file)}
+        html = f'''{self.html_head(f"Расписание матчей - {tournament_name}", css_file, 30000)}
 <body>
     <div class="schedule-container">
         <div class="main-grid">
-            <div class="time-scale">{''.join(f'<div class="time-slot">{t}</div>' for t in time_slots)}</div>
+            <div class="time-scale" style="display: grid; grid-template-rows: repeat({len(time_slots)}, 86px); gap: 16px; padding-top: 64px;">'''
+        
+        for time_slot in time_slots:
+            html += f'<div class="time-slot">{time_slot}</div>'
+        
+        html += '''</div>
             <div class="courts-container">
-                <div class="courts-header">{''.join(f'<div class="court-header"><h3>{c}</h3></div>' for c in sorted_courts)}</div>
-                <div class="matches-grid">'''
-
+                <div class="courts-header">'''
+        
         for court_name in sorted_courts:
-            html += '<div class="court-column">'
+            html += f'<div class="court-header"><h3>{court_name}</h3></div>'
+        
+        html += f'''</div>
+                <div class="matches-grid" style="display: grid; grid-template-rows: repeat({len(time_slots)}, 86px); grid-template-columns: repeat({len(sorted_courts)}, 534px); gap: 16px;">'''
+
+        # Размещаем матчи по сетке
+        for col_idx, court_name in enumerate(sorted_courts):
             for match in courts_matches[court_name]:
-                html += self._render_match_item(match)
-            html += '</div>'
+                start_time = match.get("start_time")
+                row = time_to_row.get(start_time, 1)
+                col = col_idx + 1
+                html += self._render_match_item_grid(match, row, col)
 
         html += '''</div></div></div></div></body></html>'''
         return html
 
-    def _render_match_item(self, match: Dict) -> str:
-        """Рендерит один элемент матча"""
+    def _render_match_item_grid(self, match: Dict, row: int, col: int) -> str:
+        """Рендерит матч с CSS Grid позиционированием"""
         status_class = self.get_status_class(self.get_match_status(match))
         challenger = match.get("ChallengerName", "TBD")
         challenged = match.get("ChallengedName", "TBD")
@@ -153,14 +172,14 @@ class ScheduleGenerator(HTMLBaseGenerator):
 
         def team_html(name, wo, result):
             wo_div = "<div class='match-team-wo'>Won W.O.</div>" if wo else ""
-            result_div = f"<div class='match-team-score'>{result}</div>" if result else ""
+            score_div = f"<div class='match-team-score'>{result}</div>" if result else ""
             return f'''<div class="match-team">
                 <div class="match-team-name">{name}</div>
-                {wo_div}{result_div}
+                {wo_div}{score_div}
             </div>'''
 
         return f'''
-            <div class="match-item {status_class}">
+            <div class="match-item {status_class}" style="grid-row: {row}; grid-column: {col};">
                 <div class="match-content">
                     <div class="match-number">{episode}</div>
                     <div class="match-teams-wrapper">

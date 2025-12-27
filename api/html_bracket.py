@@ -163,57 +163,95 @@ class TournamentBracketGenerator(HTMLBaseGenerator):
 
         return matches_matrix
 
-    def _parse_match_cell(self, cell: Dict) -> Dict:
+    def _parse_match_cell(self, match_cell: Dict) -> Dict:
         """Парсит ячейку матча"""
-        is_bye = cell.get("IsBye", False)
-        has_result = cell.get("HasResult", False)
+        match_results = match_cell.get("MatchResults", {})
+        match_info = {
+            "has_result": bool(match_results.get("IsPlayed", False)),
+            "is_bye": False,
+            "score": "",
+            "sets": ""
+        }
 
-        score = ""
-        sets = ""
-        if has_result and cell.get("Score"):
-            s = cell["Score"]
-            first = s.get("FirstParticipantScore", 0)
-            second = s.get("SecondParticipantScore", 0)
-            score = f"{first}-{second}"
+        if match_results.get("HasScore") and match_results.get("Score"):
+            score_data = match_results["Score"]
+            first_score = score_data.get("FirstParticipantScore", 0)
+            second_score = score_data.get("SecondParticipantScore", 0)
+            match_info["score"] = f"{first_score}-{second_score}"
 
-            detailed = s.get("DetailedScoring", [])
-            if detailed:
-                sets = " ".join(f"{d.get('FirstParticipantScore', 0)}-{d.get('SecondParticipantScore', 0)}" for d in detailed)
+            detailed_scoring = score_data.get("DetailedScoring", [])
+            if detailed_scoring:
+                sets_parts = [f"{s.get('FirstParticipantScore', 0)}-{s.get('SecondParticipantScore', 0)}" 
+                              for s in detailed_scoring]
+                match_info["sets"] = " ".join(sets_parts)
+        else:
+            cancellation = match_results.get('CancellationStatus') or ''
+            if 'Won' in cancellation:
+                match_info["score"] = 'Won'
+            elif 'Lost' in cancellation:
+                match_info["score"] = 'Lost'
 
-        return {"is_bye": is_bye, "has_result": has_result, "score": score, "sets": sets}
+        return match_info
 
     def _extract_rr_standings(self, group_data: Dict) -> List[Dict]:
-        """Извлекает таблицу результатов"""
+        """Извлекает турнирную таблицу"""
+        standings_data = group_data.get("Standings", [])
         standings = []
-        for row in group_data.get("Pool", []):
-            if not isinstance(row, list):
+        fake_id_counter = 1000
+
+        for standing in standings_data:
+            if not isinstance(standing, dict):
                 continue
-            for cell in row:
-                if not isinstance(cell, dict):
-                    continue
-                if cell.get("CellType") == "StandingCell" and cell.get("StandingCell"):
-                    s = cell["StandingCell"]
-                    standings.append({
-                        "participant_id": s.get("ParticipantId"),
-                        "place": s.get("Place", 0),
-                        "points": s.get("Points", 0)
-                    })
+
+            player_ids = []
+            for key in ['DoublesPlayer1Model', 'DoublesPlayer2Model']:
+                player = standing.get(key)
+                if isinstance(player, dict) and player.get('Id'):
+                    player_ids.append(str(player['Id']))
+                else:
+                    player_ids.append(str(fake_id_counter))
+                    fake_id_counter += 1
+
+            standings.append({
+                "participant_id": str(standing.get("ParticipantId", "")),
+                "standing": standing.get("Standing", 0),
+                "wins": standing.get("Wins", 0),
+                "match_points": standing.get("MatchPoints", 0),
+                "player_ids": player_ids
+            })
+
         return standings
 
     def _get_participant_place(self, participant: Dict, standings: List[Dict]) -> int:
         """Получает место участника"""
-        pid = participant.get("participant_id")
-        for s in standings:
-            if s.get("participant_id") == pid:
-                return s.get("place", 0)
+        participant_id = participant.get("participant_id")
+        if participant_id:
+            for standing in standings:
+                if str(standing.get("participant_id", "")) == str(participant_id):
+                    return standing.get("standing", 0)
+
+        participant_player_ids = set(participant.get("player_ids", []))
+        if participant_player_ids:
+            for standing in standings:
+                if participant_player_ids & set(standing.get("player_ids", [])):
+                    return standing.get("standing", 0)
+
         return 0
 
     def _get_participant_points(self, participant: Dict, standings: List[Dict]) -> int:
         """Получает очки участника"""
-        pid = participant.get("participant_id")
-        for s in standings:
-            if s.get("participant_id") == pid:
-                return s.get("points", 0)
+        participant_id = participant.get("participant_id")
+        if participant_id:
+            for standing in standings:
+                if str(standing.get("participant_id", "")) == str(participant_id):
+                    return standing.get("match_points", 0)
+
+        participant_player_ids = set(participant.get("player_ids", []))
+        if participant_player_ids:
+            for standing in standings:
+                if participant_player_ids & set(standing.get("player_ids", [])):
+                    return standing.get("match_points", 0)
+
         return 0
 
     def _generate_empty_round_robin_html(self, message: str) -> str:
@@ -247,11 +285,10 @@ class TournamentBracketGenerator(HTMLBaseGenerator):
 
     def _render_elimination_html(self, class_name: str, stage_name: str, rounds: List[Dict]) -> str:
         """Рендерит HTML elimination сетки"""
-        html = f'''{self.html_head(f"{class_name} - {stage_name}", "elimination.css")}
+        html = f'''{self.html_head(f"{class_name} - {stage_name}", "elimination.css", 30000)}
 <body>
-    <div class="bracket-container">
-        <div class="header"><h2>{class_name} - {stage_name}</h2></div>
-        <div class="bracket">'''
+    <div class="elimination-container">
+        <div class="round-column">'''
 
         for round_idx, round_info in enumerate(rounds):
             if round_info.get('type') == 'participants':

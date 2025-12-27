@@ -20,7 +20,8 @@ from .database import (
     get_db_connection, execute_with_retry, init_database,
     get_tournament_data, get_court_data, save_courts_data,
     save_xml_file_info, get_active_tournament_ids,
-    get_court_ids_for_tournament, get_settings, save_settings
+    get_court_ids_for_tournament, get_settings, save_settings,
+    save_tournament_matches, get_tournament_matches
 )
 
 # Аутентификация
@@ -58,6 +59,7 @@ __all__ = [
     'get_tournament_data', 'get_court_data', 'save_courts_data',
     'save_xml_file_info', 'get_active_tournament_ids',
     'get_court_ids_for_tournament', 'get_settings', 'save_settings',
+    'save_tournament_matches', 'get_tournament_matches',
     'require_auth', 'check_user_credentials', 'register_auth_routes',
     'AutoRefreshService',
     'get_photo_urls_for_ids', 'extract_player_ids',

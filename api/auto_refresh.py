@@ -36,6 +36,7 @@ class AutoRefreshService:
         self.courts_update_frequency = 1
         self.tables_update_frequency = 2
         self.schedule_update_frequency = 4
+        self.matches_update_frequency = 4  # Обновление матчей каждые 4 цикла
 
         self._initialized = True
         self.app = None
@@ -109,6 +110,12 @@ class AutoRefreshService:
             count = self._update_tournament_schedules(tournament_ids)
             if count > 0:
                 logger.info(f"РАСПИСАНИЕ: обновлено {count} за {time.time() - start:.1f}с")
+
+        if self.cycle_counter % self.matches_update_frequency == 0:
+            start = time.time()
+            count = self._update_tournament_matches(tournament_ids)
+            if count > 0:
+                logger.info(f"МАТЧИ: обновлено {count} за {time.time() - start:.1f}с")
 
     def _get_settings_and_tournaments(self) -> Tuple[bool, int, List[str]]:
         """Получает настройки и список турниров"""
@@ -287,5 +294,33 @@ class AutoRefreshService:
 
             except Exception as e:
                 logger.error(f"Ошибка обновления расписания турнира {tid}: {e}")
+
+        return updated
+
+    def _update_tournament_matches(self, tournament_ids: List[str]) -> int:
+        """Обновление матчей турниров"""
+        updated = 0
+        for tid in tournament_ids:
+            try:
+                matches_data = self.api.get_tournament_matches(tid)
+                if matches_data and matches_data.get("Matches"):
+                    def save_matches(conn):
+                        cursor = conn.cursor()
+                        cursor.execute('''
+                            INSERT OR REPLACE INTO tournament_matches 
+                            (tournament_id, matches_data, are_matches_published, is_schedule_published, updated_at)
+                            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                        ''', (
+                            tid,
+                            json.dumps(matches_data.get("Matches", [])),
+                            1 if matches_data.get("AreMatchesPublished") else 0,
+                            1 if matches_data.get("IsSchedulePublished") else 0
+                        ))
+
+                    execute_with_retry(save_matches)
+                    updated += 1
+
+            except Exception as e:
+                logger.error(f"Ошибка обновления матчей турнира {tid}: {e}")
 
         return updated
