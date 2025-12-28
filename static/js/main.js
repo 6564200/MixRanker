@@ -1332,9 +1332,15 @@ async function loadSettings() {
         }
         if (document.getElementById('debugMode')) {
             document.getElementById('debugMode').checked = settings.debugMode || false;
+				if (document.getElementById('finishedMatchesCount')) {
+					document.getElementById('finishedMatchesCount').value = settings.finishedMatchesCount || 3;
+				}
         }
         if (document.getElementById('themeSelect')) {
             document.getElementById('themeSelect').value = settings.theme || 'light';
+        }
+        if (document.getElementById('finishedMatchesCount')) {
+            document.getElementById('finishedMatchesCount').value = settings.finishedMatchesCount || 3;
         }
 
         if (document.getElementById('refreshInterval')) {
@@ -1357,6 +1363,9 @@ async function loadSettings() {
 				}
 				if (document.getElementById('debugMode')) {
 					document.getElementById('debugMode').checked = settings.debugMode || false;
+				if (document.getElementById('finishedMatchesCount')) {
+					document.getElementById('finishedMatchesCount').value = settings.finishedMatchesCount || 3;
+				}
 				}
             } catch (error) {
                 console.error('Ошибка из localStorage:', error);
@@ -1379,6 +1388,9 @@ function loadSettings() {
             }
             if (document.getElementById('debugMode')) {
                 document.getElementById('debugMode').checked = settings.debugMode || false;
+            }
+            if (document.getElementById('finishedMatchesCount')) {
+                document.getElementById('finishedMatchesCount').value = settings.finishedMatchesCount || 3;
             }
         } catch (error) {
             console.error('Ошибка загрузки настроек:', error);
@@ -1420,6 +1432,7 @@ async function saveSettingsWithAuth() {
         autoRefresh: document.getElementById('autoRefreshEnabled').checked,
         debugMode: document.getElementById('debugMode').checked,
         theme: document.getElementById('themeSelect').value,
+        finishedMatchesCount: parseInt(document.getElementById('finishedMatchesCount').value) || 3,
         lastSaved: new Date().toISOString()
     };
     
