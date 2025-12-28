@@ -21,6 +21,22 @@ body {
     position: relative;
 }
 
+/* Класс для скрытия элементов при обновлении */
+.hide-for-refresh {
+    animation: fadeOut 0.4s ease-out forwards !important;
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+
 .schedule-container {
     width: 100%;
     height: 100%;
@@ -33,6 +49,9 @@ body {
     text-align: center;
     margin-bottom: 10px;
     padding-bottom: 20px;
+    opacity: 0;
+    animation: fadeIn 0.4s ease-out forwards;
+    animation-delay: 0.05s;
 }
 
 .tournament-title {
@@ -56,6 +75,9 @@ body {
     height: calc(100% - 200px);
     gap: 20px;
     width: 100%;
+    max-height: 1960px;
+    overflow: hidden;
+    position: relative;
 }
 
 .time-scale {
@@ -64,10 +86,13 @@ body {
     flex-direction: column;
     gap: 16px;
     padding-top: 64px;
+    max-height: 1880px;
+    overflow: hidden;
 }
 
 .time-slot {
     height: 86px;
+    min-height: 86px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -77,19 +102,56 @@ body {
     font-size: 30px;
     font-weight: 700;
     line-height: 38px;
+    opacity: 0;
+    transform: translateX(-30px);
+    animation: slideInLeft 0.4s ease-out forwards;
 }
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Задержка для каждого time-slot */
+.time-slot:nth-child(1) { animation-delay: 0.1s; }
+.time-slot:nth-child(2) { animation-delay: 0.15s; }
+.time-slot:nth-child(3) { animation-delay: 0.2s; }
+.time-slot:nth-child(4) { animation-delay: 0.25s; }
+.time-slot:nth-child(5) { animation-delay: 0.3s; }
+.time-slot:nth-child(6) { animation-delay: 0.35s; }
+.time-slot:nth-child(7) { animation-delay: 0.4s; }
+.time-slot:nth-child(8) { animation-delay: 0.45s; }
+.time-slot:nth-child(9) { animation-delay: 0.5s; }
+.time-slot:nth-child(10) { animation-delay: 0.55s; }
+.time-slot:nth-child(11) { animation-delay: 0.6s; }
+.time-slot:nth-child(12) { animation-delay: 0.65s; }
+.time-slot:nth-child(13) { animation-delay: 0.7s; }
+.time-slot:nth-child(14) { animation-delay: 0.75s; }
+.time-slot:nth-child(15) { animation-delay: 0.8s; }
+.time-slot:nth-child(16) { animation-delay: 0.85s; }
+.time-slot:nth-child(17) { animation-delay: 0.9s; }
+.time-slot:nth-child(18) { animation-delay: 0.95s; }
 
 .courts-container {
     flex: 1;
     display: flex;
     flex-direction: column;
     position: relative;
+    max-height: 1960px;
+    overflow: hidden;
 }
 
 .courts-header {
     display: flex;
     margin-bottom: 16px;
     gap: 16px;
+    opacity: 1;
 }
 
 .court-header {
@@ -120,6 +182,8 @@ body {
     position: relative;
     display: flex;
     gap: 16px;
+    max-height: 1880px;
+    overflow: hidden;
 }
 
 .court-column {
@@ -136,12 +200,102 @@ body {
     height: 86px;
     display: flex;
     position: relative;
-    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.5s ease-out forwards;
 }
 
-.match-item:hover {
-    transform: scale(1.02);
-    z-index: 10;
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Анимация для завершённых матчей - конечная opacity 0.85 */
+@keyframes fadeInUpFinished {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 0.85;
+        transform: translateY(0);
+    }
+}
+
+.match-item.match-finished {
+    animation: fadeInUpFinished 0.5s ease-out forwards;
+}
+
+/* Задержка анимации для матчей по строкам */
+.match-item.row-1 { animation-delay: 0.2s; }
+.match-item.row-2 { animation-delay: 0.25s; }
+.match-item.row-3 { animation-delay: 0.3s; }
+.match-item.row-4 { animation-delay: 0.35s; }
+.match-item.row-5 { animation-delay: 0.4s; }
+.match-item.row-6 { animation-delay: 0.45s; }
+.match-item.row-7 { animation-delay: 0.5s; }
+.match-item.row-8 { animation-delay: 0.55s; }
+.match-item.row-9 { animation-delay: 0.6s; }
+.match-item.row-10 { animation-delay: 0.65s; }
+.match-item.row-11 { animation-delay: 0.7s; }
+.match-item.row-12 { animation-delay: 0.75s; }
+.match-item.row-13 { animation-delay: 0.8s; }
+.match-item.row-14 { animation-delay: 0.85s; }
+.match-item.row-15 { animation-delay: 0.9s; }
+.match-item.row-16 { animation-delay: 0.95s; }
+.match-item.row-17 { animation-delay: 1.0s; }
+.match-item.row-18 { animation-delay: 1.05s; }
+
+/* Стили для нового контейнера, который будет добавляться при обновлении */
+.refresh-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    animation: fadeInOverlay 0.4s ease-out forwards;
+}
+
+@keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.refresh-message {
+    font-size: 48px;
+    color: #CCCCCC;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    animation: pulseMessage 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseMessage {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* Пульсация для активного матча */
+.match-active {
+    animation: fadeInUp 0.5s ease-out forwards, pulse 2s ease-in-out infinite 1s;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(174, 213, 87, 0);
+    }
+    50% {
+        box-shadow: 0 0 20px 5px rgba(174, 213, 87, 0.4);
+    }
 }
 
 .match-number {
@@ -174,7 +328,6 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-	
 }
 
 .match-team {
@@ -183,15 +336,15 @@ body {
     align-items: center;
     background: linear-gradient(180deg, #202020 0%, #070707 100%);
     position: relative;
-	border-radius: 5px 5px 5px 5px;
+    border-radius: 5px 10px 10px 10px;
 }
 
 .match-team:first-child {
-    border-radius: 5px 0 0 0;
+    border-radius: 10px 10px 0px 10px;
 }
 
 .match-team:last-child {
-    border-radius: 0 0 0 5px;
+    border-radius: 10px 0px 10px 10px;
 }
 
 .match-team-name {
@@ -201,8 +354,7 @@ body {
     line-height: 28px;
     padding-left: 59px;
     color: #8F8F8F;
-	
-	text-transform: uppercase;
+    text-transform: uppercase;
 }
 
 .match-team-score {
@@ -241,8 +393,12 @@ body {
     color: #8F8F8F;
 }
 
+.match-finished.match-item {
+    /* opacity применяется после анимации через animation-fill-mode */
+}
+
 .match-active .match-team {
-    background: linear-gradient(180deg, #202020 0%, #070707 100%);
+    background: linear-gradient(180deg, #2a2a2a 0%, #0f0f0f 100%);
 }
 
 .match-active .match-team-name {
@@ -273,6 +429,12 @@ body {
 .empty-message {
     text-align: center;
     margin-top: 200px;
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .empty-message p {
