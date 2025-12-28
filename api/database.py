@@ -229,6 +229,12 @@ def get_tournament_data(tournament_id: str) -> Optional[Dict]:
             FROM tournament_schedule WHERE tournament_id = ?
         ''', (tournament_id,))
         schedule_row = cursor.fetchone()
+
+        cursor.execute('''
+            SELECT matches_data, are_matches_published, is_schedule_published 
+            FROM tournament_matches WHERE tournament_id = ?
+        ''', (tournament_id,))
+        matches_row = cursor.fetchone()
         conn.close()
 
         data = {
@@ -243,6 +249,13 @@ def get_tournament_data(tournament_id: str) -> Optional[Dict]:
         if schedule_row:
             data["court_planner"] = _safe_json_loads(schedule_row[0])
             data["court_usage"] = _safe_json_loads(schedule_row[1])
+
+        if matches_row:
+            data["matches_data"] = {
+                "Matches": _safe_json_loads(matches_row[0], []),
+                "AreMatchesPublished": bool(matches_row[1]),
+                "IsSchedulePublished": bool(matches_row[2])
+            }
 
         return data
 
@@ -386,7 +399,8 @@ def get_settings() -> Dict:
             "refreshInterval": 30,
             "autoRefresh": True,
             "debugMode": False,
-            "theme": "light"
+            "theme": "light",
+            "finishedMatchesCount": 3  # Количество последних сыгранных матчей в расписании
         }
         
         for key, value in defaults.items():

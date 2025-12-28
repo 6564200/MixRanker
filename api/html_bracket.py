@@ -49,22 +49,37 @@ class TournamentBracketGenerator(HTMLBaseGenerator):
         # Добавляем скрипт скролла
         head = head.replace("</head>", "<script>window.onload=function(){window.scrollTo(0,0);};</script></head>")
 
+        num_participants = len(participants)
+        
+        # Динамические размеры
+        col_width = 175  # ширина колонки матча
+        team_cell_width = 770  # ширина ячейки с номером и именем
+        points_col_width = 175  # ширина колонки очков/места
+        row_height = 83
+        header_height = 64
+        gap = 2
+        
+        # Общая ширина таблицы
+        table_width = team_cell_width + (num_participants * col_width) + (2 * points_col_width)
+        # Общая высота таблицы
+        table_height = header_height + (num_participants * (row_height + gap))
+
         # Заголовок таблицы
-        display_name = class_name[class_name.find(",") + 1:] if "," in class_name else class_name
-        num_cols = ''.join(f'<div class="team-number-header"><div class="team-number">{i}</div></div>' for i in range(1, len(participants) + 1))
+        display_name = class_name[class_name.find(",") + 1:].strip() if "," in class_name else class_name
+        num_cols = ''.join(f'<div class="team-number-header" style="width:{col_width}px;"><div class="team-number" style="width:{col_width}px;">{i}</div></div>' for i in range(1, num_participants + 1))
 
         html = f'''{head}
-<body>
+<body style="width:{table_width}px; height:{table_height}px;">
     <div class="round-robin-container">
-        <div class="round-robin-table">
-            <div class="table-title">
-                <div class="table-header">
+        <div class="round-robin-table" style="width:{table_width}px; height:{table_height}px;">
+            <div class="table-title" style="width:{table_width}px;">
+                <div class="table-header" style="width:{team_cell_width}px;">
                     <div class="cell-num"></div>
                     <div class="cell-gpp">{display_name} - {group_name}</div>
                 </div>
                 {num_cols}
-                <div class="points-header"><div class="points">ОЧКИ</div></div>
-                <div class="points-header"><div class="points">МЕСТО</div></div>
+                <div class="points-header" style="width:{points_col_width}px;"><div class="points" style="width:{points_col_width}px;">ОЧКИ</div></div>
+                <div class="points-header" style="width:{points_col_width}px;"><div class="points" style="width:{points_col_width}px;">МЕСТО</div></div>
             </div>'''
 
         for i, participant in enumerate(participants):
@@ -74,36 +89,37 @@ class TournamentBracketGenerator(HTMLBaseGenerator):
 
             # Ячейки матчей
             cells = []
-            for j in range(len(participants)):
+            for j in range(num_participants):
                 if i == j:
-                    cells.append('<div class="diagonal-cell"></div>')
+                    cells.append(f'<div class="diagonal-cell" style="width:{col_width}px;"></div>')
                 else:
                     match_result = matches_matrix.get(f"{i}_{j}", {})
-                    cells.append(self._render_rr_match_cell(match_result))
+                    cells.append(self._render_rr_match_cell(match_result, col_width))
 
-            html += f'''<div class="team-row">
-                <div class="team-number-cell">
+            html += f'''<div class="team-row" style="width:{table_width}px;">
+                <div class="team-number-cell" style="width:{team_cell_width}px;">
                     <div class="team-num">{i + 1}</div>
                     <div class="team-name-cell">{short_name}</div>
                 </div>
                 {''.join(cells)}
-                <div class="points-cell"><div class="points-z">{points}</div></div>
-                <div class="place-cell"><div class="place-z">{place}</div></div>
+                <div class="points-cell" style="width:{points_col_width}px;"><div class="points-z" style="width:{points_col_width}px;">{points}</div></div>
+                <div class="place-cell" style="width:{points_col_width}px;"><div class="place-z" style="width:{points_col_width}px;">{place}</div></div>
             </div>'''
 
-        html += '''</div></div></div></body></html>'''
+        html += '''</div></div></body></html>'''
         return html
 
-    def _render_rr_match_cell(self, match_result: Dict) -> str:
+    def _render_rr_match_cell(self, match_result: Dict, col_width: int = 175) -> str:
         """Рендерит ячейку матча round robin"""
+        style = f'style="width:{col_width}px;"'
         if match_result.get("is_bye"):
-            return '<div class="match-cell-bye-cell">●</div>'
+            return f'<div class="match-cell-bye-cell" {style}>●</div>'
         if match_result.get("has_result"):
-            return f'''<div class="match-cell">
+            return f'''<div class="match-cell" {style}>
                 <div class="match-score">{match_result.get("score", "-")}</div>
                 <div class="match-sets">{match_result.get("sets", "")}</div>
             </div>'''
-        return '<div class="match-cell-empty-cell"></div>'
+        return f'<div class="match-cell-empty-cell" {style}></div>'
 
     def _extract_rr_participants(self, group_data: Dict) -> List[Dict]:
         """Извлекает участников из групповых данных"""

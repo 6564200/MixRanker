@@ -58,14 +58,17 @@ class HTMLGenerator:
 
     # === Schedule методы ===
 
-    def generate_schedule_html(self, tournament_data: Dict, target_date: str = None) -> str:
-        return self._schedule.generate_schedule_html(tournament_data, target_date)
+    def generate_schedule_html(self, tournament_data: Dict, target_date: str = None, settings: Dict = None) -> str:
+        return self._schedule.generate_schedule_html(tournament_data, target_date, settings)
 
-    def generate_schedule_html_new(self, tournament_data: Dict, target_date: str = None) -> str:
-        return self._schedule.generate_schedule_html_new(tournament_data, target_date)
+    def generate_schedule_html_new(self, tournament_data: Dict, target_date: str = None, settings: Dict = None) -> str:
+        return self._schedule.generate_schedule_html_new(tournament_data, target_date, settings)
 
-    def generate_schedule_html_addreality(self, tournament_data: Dict, target_date: str = None) -> str:
-        return self._schedule.generate_schedule_html_addreality(tournament_data, target_date)
+    def generate_schedule_html_addreality(self, tournament_data: Dict, target_date: str = None, settings: Dict = None) -> str:
+        return self._schedule.generate_schedule_html_addreality(tournament_data, target_date, settings)
+
+    def get_schedule_data(self, tournament_data: Dict, target_date: str = None, settings: Dict = None) -> Dict:
+        return self._schedule.get_schedule_data(tournament_data, target_date, settings)
 
     # === Bracket методы ===
 

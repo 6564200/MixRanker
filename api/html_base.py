@@ -31,7 +31,11 @@ class HTMLBaseGenerator:
     @staticmethod
     def get_match_status(match: Dict) -> str:
         """Определяет статус матча"""
-        if match.get("ChallengerResult") and match.get("ChallengedResult"):
+        # Finished только если есть результат
+        challenger_result = match.get("ChallengerResult")
+        challenged_result = match.get("ChallengedResult")
+        
+        if challenger_result or challenged_result:
             return "finished"
 
         match_date = match.get("MatchDate", "")
@@ -43,9 +47,15 @@ class HTMLBaseGenerator:
             now = datetime.now()
             duration = match.get("Duration", 30)
 
-            if dt_obj <= now <= dt_obj.replace(minute=dt_obj.minute + duration):
+            match_end = dt_obj.replace(minute=dt_obj.minute + duration)
+            
+            if dt_obj <= now <= match_end:
                 return "active"
-            return "finished" if dt_obj < now else "future"
+            elif now > match_end:
+                # Время прошло, но результата нет - всё ещё active (идёт игра)
+                return "active"
+            else:
+                return "future"
         except Exception:
             return "future"
 
@@ -98,8 +108,9 @@ class HTMLBaseGenerator:
 
     @classmethod
     def html_head(cls, title: str, css_file: str, reload_interval: int = None) -> str:
-        """Генерирует стандартный HTML head"""
-        interval = reload_interval or cls.RELOAD_INTERVAL
+        """Генерирует стандартный HTML head. reload_interval=0 отключает auto-reload"""
+        interval = reload_interval if reload_interval is not None else cls.RELOAD_INTERVAL
+        reload_script = f'<script>setInterval(function(){{ location.reload(); }}, {interval});</script>' if interval > 0 else ''
         return f'''<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -107,7 +118,7 @@ class HTMLBaseGenerator:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
     <link rel="stylesheet" href="/static/css/{css_file}">
-    <script>setInterval(function(){{ location.reload(); }}, {interval});</script>
+    {reload_script}
 </head>'''
 
     @classmethod
