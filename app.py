@@ -91,6 +91,9 @@ def load_tournament(tournament_id):
 
         metadata = tournament_data.get("metadata", {})
         participants = tournament_data.get("participants", [])
+        
+        # Загружаем матчи
+        matches_data = api.get_tournament_matches(tournament_id)
 
         def save_transaction(conn):
             cursor = conn.cursor()
@@ -110,6 +113,19 @@ def load_tournament(tournament_id):
                 VALUES (?, ?, ?, CURRENT_TIMESTAMP)
             ''', (tournament_id, json.dumps(tournament_data.get("court_planner", {})),
                   json.dumps(tournament_data.get("court_usage", {}))))
+            
+            # Сохраняем матчи
+            if matches_data:
+                cursor.execute('''
+                    INSERT OR REPLACE INTO tournament_matches 
+                    (tournament_id, matches_data, are_matches_published, is_schedule_published, updated_at)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ''', (
+                    tournament_id,
+                    json.dumps(matches_data.get("Matches", [])),
+                    1 if matches_data.get("AreMatchesPublished") else 0,
+                    1 if matches_data.get("IsSchedulePublished") else 0
+                ))
 
             if participants:
                 cursor.executemany('''
@@ -572,10 +588,45 @@ def get_live_schedule_html(tournament_id):
             return "<html><body><h1>Турнир не найден</h1></body></html>", 404
 
         target_date = request.args.get('date')
-        html = xml_manager.html_generator.generate_schedule_html(tournament_data, target_date)
+        from api import get_settings
+        settings = get_settings()
+        html = xml_manager.html_generator.generate_schedule_html(tournament_data, target_date, settings)
         return Response(html, mimetype='text/html; charset=utf-8')
     except Exception as e:
         return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
+
+
+@app.route('/api/schedule/<tournament_id>/data')
+def get_schedule_data(tournament_id):
+    """JSON данные расписания для AJAX обновлений"""
+    try:
+        tournament_data = get_tournament_data(tournament_id)
+        if not tournament_data:
+            return jsonify({"error": "Турнир не найден"}), 404
+
+        target_date = request.args.get('date')
+        from api import get_settings
+        settings = get_settings()
+        
+        # Получаем данные расписания
+        schedule_data = xml_manager.html_generator.get_schedule_data(tournament_data, target_date, settings)
+        
+        # Генерируем hash для определения изменений
+        import hashlib
+        data_str = json.dumps(schedule_data, sort_keys=True, default=str)
+        version = hashlib.md5(data_str.encode()).hexdigest()[:12]
+        
+        return jsonify({
+            "version": version,
+            "tournament_name": schedule_data.get("tournament_name", ""),
+            "target_date": schedule_data.get("target_date", ""),
+            "time_slots": schedule_data.get("time_slots", []),
+            "courts": schedule_data.get("courts", []),
+            "matches": schedule_data.get("matches", [])
+        })
+    except Exception as e:
+        logger.error(f"Ошибка получения данных расписания: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/api/html-live/schedule/<tournament_id>/addreality')
@@ -587,7 +638,9 @@ def get_live_schedule_html_addreality(tournament_id):
             return "<html><body><h1>Турнир не найден</h1></body></html>", 404
 
         target_date = request.args.get('date')
-        html = xml_manager.html_generator.generate_schedule_html_addreality(tournament_data, target_date)
+        from api import get_settings
+        settings = get_settings()
+        html = xml_manager.html_generator.generate_schedule_html_addreality(tournament_data, target_date, settings)
         return Response(html, mimetype='text/html; charset=utf-8')
     except Exception as e:
         return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
