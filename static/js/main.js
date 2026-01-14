@@ -339,6 +339,11 @@ function updateTournamentSelects() {
         tournaments.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
 }
 
+// === ЗАГРУЗКА ФОТО УЧАСТНИКОВ ===
+
+// Кэш участников для поиска
+let allParticipants = [];
+
 function openUploadModal() {
     document.getElementById('uploadOverlay').style.display = 'flex';
 }
@@ -346,170 +351,198 @@ function openUploadModal() {
 function closeUploadModal() {
     document.getElementById('uploadOverlay').style.display = 'none';
     document.getElementById('participantList').innerHTML = '';
-    document.getElementById('uploadFormArea').style.display = 'none';
-    document.getElementById('noSelectionMessage').style.display = 'block';
+    document.getElementById('uploadFormArea').classList.add('d-none');
+    document.getElementById('uploadFormArea').classList.remove('d-flex');
+    document.getElementById('noSelectionMessage').style.display = 'flex';
     document.getElementById('previewArea').innerHTML = '';
+    document.getElementById('editorControls').classList.add('d-none');
     document.getElementById('photoFile').value = '';
+    document.getElementById('participantSearch').value = '';
+    photoEditor.destroy();
+    allParticipants = [];
 }
 
 async function fetchParticipants(tournamentId) {
     try {
         openUploadModal();
-        const response = await fetch(`/api/tournament/${tournamentId}/participants`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error('Ошибка при загрузке данных: ' + response.statusText);
-        }
-
-        const participants = await response.json();
-        renderParticipantsList(participants);
+        document.getElementById('participantList').innerHTML = '<div class="text-center p-3"><div class="spinner-border spinner-border-sm"></div></div>';
+        
+        const response = await fetch(`/api/tournament/${tournamentId}/participants`);
+        if (!response.ok) throw new Error('Ошибка загрузки');
+        
+        allParticipants = await response.json();
+        renderParticipantsList(allParticipants);
     } catch (error) {
         console.error("Ошибка:", error);
-        showAlert('Ошибка загрузки списка участников', 'danger');
-        document.getElementById('participantList').innerHTML =
-            `<div class="p-3 text-danger">Не удалось загрузить участников. ${error.message}</div>`;
+        showAlert('Ошибка загрузки участников', 'danger');
+        document.getElementById('participantList').innerHTML = '<div class="text-danger p-2">Ошибка загрузки</div>';
     }
+}
+
+function filterParticipants() {
+    const query = document.getElementById('participantSearch').value.toLowerCase();
+    const filtered = allParticipants.filter(p => 
+        `${p.first_name} ${p.last_name}`.toLowerCase().includes(query)
+    );
+    renderParticipantsList(filtered);
 }
 
 function renderParticipantsList(participants) {
-    const participantList = document.getElementById('participantList');
+    const list = document.getElementById('participantList');
+    
     if (participants.length === 0) {
-        participantList.innerHTML = '<div class="p-3">Участников не найдено.</div>';
+        list.innerHTML = '<div class="text-muted p-2">Не найдено</div>';
         return;
     }
+    
+    list.innerHTML = participants.map(p => `
+        <div class="participant-item" data-id="${p.id}" data-photo="${p.photo_url || ''}"
+             onclick="selectParticipantById(${p.id})">
+            <span>${p.first_name} ${p.last_name}</span>
+            ${p.photo_url ? '<i class="fas fa-check-circle"></i>' : ''}
+        </div>
+    `).join('');
+}
 
-    participants.forEach(participant => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.classList.add('list-group-item', 'list-group-item-action', 'd-flex', 'flex-column',
-            'align-items-start', 'position-relative');
-        button.dataset.participantId = participant.id;
-
-        if (participant.photo_url) {
-            button.dataset.photoUrl = participant.photo_url;
-        } else {
-            button.dataset.photoUrl = '';
-        }
-
-        const nameSpan = document.createElement('span');
-        nameSpan.style.fontSize = '0.9rem';
-        nameSpan.textContent = `${participant.first_name} ${participant.last_name}`;
-        button.appendChild(nameSpan);
-
-        const idSpan = document.createElement('span');
-        idSpan.classList.add('text-muted');
-        idSpan.style.fontSize = '0.7rem';
-        idSpan.textContent = `RankedIn ID: ${participant.rankedin_id}`;
-        button.appendChild(idSpan);
-
-        if (participant.photo_url) {
-            const icon = document.createElement('i');
-            icon.classList.add('fas', 'fa-check-circle', 'text-success');
-            icon.style.position = 'absolute';
-            icon.style.right = '10px';
-            icon.style.top = '10px';
-            button.appendChild(icon);
-        }
-
-        button.addEventListener('click', () => selectParticipant(participant));
-        participantList.appendChild(button);
-    });
+function selectParticipantById(id) {
+    const participant = allParticipants.find(p => p.id === id);
+    if (participant) selectParticipant(participant);
 }
 
 function selectParticipant(participant) {
+    // Обновляем UI
     document.getElementById('selectedParticipantName').textContent = `${participant.first_name} ${participant.last_name}`;
     document.getElementById('selectedParticipantId').value = participant.id;
-    document.getElementById('uploadFormArea').style.display = 'block';
+    document.getElementById('uploadFormArea').classList.remove('d-none');
+    document.getElementById('uploadFormArea').classList.add('d-flex');
     document.getElementById('noSelectionMessage').style.display = 'none';
-
-    const selectedButton = document.querySelector(`[data-participant-id="${participant.id}"]`);
-    document.querySelectorAll('.list-group-item-action').forEach(btn => {
-            btn.classList.remove('active');
-        });
-    selectedButton.classList.add('active');
-
-    const photoUrl = selectedButton.dataset.photoUrl;
+    
+    // Подсвечиваем выбранного
+    document.querySelectorAll('.participant-item').forEach(el => el.classList.remove('active'));
+    const item = document.querySelector(`.participant-item[data-id="${participant.id}"]`);
+    if (item) item.classList.add('active');
+    
+    // Область превью
     const previewArea = document.getElementById('previewArea');
-    if (photoUrl) {
-        previewArea.innerHTML = `<img class="img-fluid" src="${photoUrl}" alt="Текущее фото">`;
+    const editorControls = document.getElementById('editorControls');
+    
+    if (participant.photo_url) {
+        // Фото есть - показываем статично
+        previewArea.innerHTML = `<img class="existing-photo" src="${participant.photo_url}?t=${Date.now()}" alt="Фото">`;
+        editorControls.classList.add('d-none');
     } else {
-        previewArea.innerHTML = '<div style="color: #FFFFFF">Фото отсутствует. Загрузите его!</div>';
+        // Фото нет - плейсхолдер
+        previewArea.innerHTML = `
+            <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                <img src="/static/images/silhouette.png" style="opacity:0.3;max-height:80%;">
+                <span class="mt-2">Выберите фото</span>
+            </div>
+        `;
+        editorControls.classList.add('d-none');
     }
+    
+    // Очищаем
+    photoEditor.destroy();
+    document.getElementById('photoFile').value = '';
+    document.getElementById('country').value = '';
+    document.getElementById('rating').value = '';
+    document.getElementById('height').value = '';
+    document.getElementById('position').value = '';
+    document.getElementById('english-name').value = '';
+}
+
+function handleFileSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    const previewArea = document.getElementById('previewArea');
+    const editorControls = document.getElementById('editorControls');
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        photoEditor.init(previewArea, e.target.result);
+        photoEditor.file = file; // Устанавливаем ПОСЛЕ init, чтобы не сбросился
+        editorControls.classList.remove('d-none');
+    };
+    reader.readAsDataURL(file);
 }
 
 async function uploadPhoto() {
-    const photoFile = document.getElementById('photoFile');
-    const selectedParticipantIdInput = document.getElementById('selectedParticipantId');
+    const participantId = document.getElementById('selectedParticipantId').value;
     const previewArea = document.getElementById('previewArea');
-
-    const countryValue = document.getElementById('country').value;
-    const ratingValue = document.getElementById('rating').value;
-    const heightValue = document.getElementById('height').value;
-    const positionValue = document.getElementById('position').value;
-    const englishValue = document.getElementById('english-name').value;
-
-    const participantId = selectedParticipantIdInput.value;
-    const files = photoFile.files;
-    if (!participantId || files.length === 0) {
+    
+    if (!participantId) {
+        showAlert('Выберите участника', 'warning');
         return;
     }
-
+    
+    // Собираем данные
     const formData = new FormData();
-    formData.append('photo', files[0]);
     formData.append('participant_id', participantId);
-    formData.append('country', countryValue);
-    formData.append('rating', ratingValue);
-    formData.append('height', heightValue);
-    formData.append('position', positionValue);
-    formData.append('english', englishValue);
-
-    previewArea.innerHTML = '<div class="spinner-border text-warning" role="status"><span class="visually-hidden">Загрузка...</span></div>';
-
+    formData.append('country', document.getElementById('country').value);
+    formData.append('rating', document.getElementById('rating').value);
+    formData.append('height', document.getElementById('height').value);
+    formData.append('position', document.getElementById('position').value);
+    formData.append('english', document.getElementById('english-name').value);
+    
+    // Если есть файл - добавляем с параметрами кропа
+    if (photoEditor.file) {
+        formData.append('photo', photoEditor.file);
+        const crop = photoEditor.getCropParams();
+        formData.append('crop_x', crop.x);
+        formData.append('crop_y', crop.y);
+        formData.append('crop_scale', crop.scale);
+        formData.append('natural_width', crop.naturalWidth);
+        formData.append('natural_height', crop.naturalHeight);
+    }
+    
+    // UI загрузки
+    const btn = document.getElementById('uploadPhotoButton');
+    const btnText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Сохранение...';
+    
     try {
         const response = await fetch('/api/participants/upload-photo', {
             method: 'POST',
             body: formData
         });
-
-        if (!response.ok) {
-            throw new Error('Ошибка обработки фото на сервере.');
-        }
-
+        
+        if (!response.ok) throw new Error('Ошибка сервера');
+        
         const result = await response.json();
-
-        if (result.success && result.preview_url) {
-            previewArea.innerHTML = `<img class="img-fluid" src="${result.preview_url}" alt="Превью фото">`;
-            photoFile.value = '';
-            document.getElementById('country').value = '';
-            document.getElementById('rating').value = '';
-            document.getElementById('height').value = '';
-            document.getElementById('position').value = '';
-            document.getElementById('english-name').value = '';
-        } else {
-            throw new Error(result.error || 'Неизвестная ошибка.');
-        }
-
-        const participantButton = document.querySelector(`[data-participant-id="${participantId}"]`);
-        if (participantButton) {
-            participantButton.dataset.photoUrl = result.preview_url;
-            if (!participantButton.querySelector('i.fa-check-circle')) {
-                const icon = document.createElement('i');
-                icon.classList.add('fas', 'fa-check-circle', 'text-success');
-                icon.style.position = 'absolute';
-                icon.style.right = '10px';
-                icon.style.top = '10px';
-                participantButton.appendChild(icon);
+        
+        if (result.success) {
+            showAlert('Сохранено', 'success');
+            
+            // Обновляем превью
+            if (result.preview_url) {
+                previewArea.innerHTML = `<img class="existing-photo" src="${result.preview_url}?t=${Date.now()}" alt="Фото">`;
+                document.getElementById('editorControls').classList.add('d-none');
+                
+                // Галочка в списке
+                const item = document.querySelector(`.participant-item[data-id="${participantId}"]`);
+                if (item && !item.querySelector('.fa-check-circle')) {
+                    item.insertAdjacentHTML('beforeend', '<i class="fas fa-check-circle"></i>');
+                }
+                
+                // Обновляем кэш
+                const p = allParticipants.find(x => x.id == participantId);
+                if (p) p.photo_url = result.preview_url;
             }
+            
+            // Очищаем редактор
+            photoEditor.file = null;
+            document.getElementById('photoFile').value = '';
+        } else {
+            throw new Error(result.error || 'Ошибка');
         }
-
     } catch (error) {
-        console.error("Ошибка загрузки фото:", error);
-        previewArea.innerHTML = `<div class="text-danger">Ошибка: ${error.message}</div>`;
+        console.error('Ошибка:', error);
+        showAlert('Ошибка: ' + error.message, 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = btnText;
     }
 }
 
@@ -595,6 +628,13 @@ function renderCourts() {
         const currentScore2 = court.current_second_participant_score || court.second_participant_score || 0;
         const currentSets = court.current_detailed_result || court.detailed_result || [];
         const currentClass = court.current_class_name || court.class_name || '';
+        const eventState = court.event_state || '';
+        
+        // Определяем статус матча для отображения
+        const isFinished = eventState.toLowerCase() === 'finished';
+        const isInProgress = eventState.toLowerCase() === 'inprogress' || eventState.toLowerCase() === 'in progress';
+        const matchLabel = isFinished ? '⏹ Завершён' : isInProgress ? '▶ Сейчас' : eventState;
+        const matchLabelClass = isFinished ? 'text-muted' : isInProgress ? 'text-success' : 'text-secondary';
         
         // Информация о следующем матче
         const hasNextMatch = court.next_first_participant && court.next_first_participant.length > 0;
@@ -602,6 +642,14 @@ function renderCourts() {
         const nextPlayers2 = court.next_second_participant || [];
         const nextClass = court.next_class_name || '';
         const nextStartTime = court.next_start_time || court.next_scheduled_time || '';
+        
+        // Формат сетов: "6-4 3-6 7-5"
+        const setsDisplay = currentSets && currentSets.length > 0 
+            ? currentSets.map(set => `${set.firstParticipantScore}-${set.secondParticipantScore}`).join(' ')
+            : '';
+        
+        // Корт свободен только если нет ни текущего, ни следующего матча
+        const isCourtFree = !hasCurrentMatch && !hasNextMatch;
         
         return `
             <div class="court-card slide-in">
@@ -611,96 +659,48 @@ function renderCourts() {
                         <span class="status-badge status-${getCourtStatus(court)}">
                             ${getCourtStatusText(court)}
                         </span>
-                        ${court.sport ? `<small class="text-muted">${court.sport}</small>` : ''}
-                    <small class="text-muted">
-                        <i class="fas fa-sync me-1"></i> ${formatTime(new Date())}
-                    </small>						
+                        <small class="text-muted"><i class="fas fa-sync me-1"></i>${formatTime(new Date())}</small>
                     </div>
                 </div>
                 
-                ${currentClass ? `
+                ${hasCurrentMatch ? `
+                    <div class="mb-2 small d-flex justify-content-between align-items-center">
+                        <span>
+                            ${currentClass ? `<span class="text-muted me-2"><i class="fas fa-trophy me-1"></i>${currentClass}</span>` : ''}
+                        </span>
+                        <span class="${matchLabelClass} fw-bold">${matchLabel}</span>
+                    </div>
                     <div class="mb-2">
-                        <small class="text-muted">
-                            <i class="fas fa-trophy me-1"></i>${currentClass}
-                        </small>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-truncate" style="max-width: 60%"><strong>${formatPlayerNames(currentPlayers1, true)}</strong></span>
+                            <span class="fw-bold">${currentScore1}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-truncate" style="max-width: 60%"><strong>${formatPlayerNames(currentPlayers2, true)}</strong></span>
+                            <span class="fw-bold">${currentScore2}</span>
+                        </div>
+                        ${setsDisplay ? `<div class="text-muted small text-end">${setsDisplay}</div>` : ''}
                     </div>
                 ` : ''}
-                
-                ${hasCurrentMatch ? `
-                    <div class="mb-3">
-                        <div class="d-flex flex-column align-items-center mb-2">
-                            <div class="text-truncate mb-1 w-100 text-center">
-                                <strong>${formatPlayerNames(currentPlayers1)}</strong>
-                            </div> 
-                            <div class="text-truncate w-100 text-center">
-                                <strong>${formatPlayerNames(currentPlayers2)}</strong>
-                            </div>
-                        </div>
-                        <div class="score-display text-center mb-2">
-                            ${currentScore1} - ${currentScore2}
-                        </div>
-                        ${currentSets && currentSets.length > 0 ? `
-                            <div class="text-center">
-                                <small class="text-muted">
-                                    Сеты: ${currentSets.map(set => 
-                                        `${set.firstParticipantScore}-${set.secondParticipantScore}`
-                                    ).join(', ')}
-                                </small>
-                            </div>
-                        ` : ''}
-                        
-                        ${court.current_is_winner_first !== null && court.current_is_winner_first !== undefined ? `
-                            <div class="text-center mt-1">
-                                <small class="badge ${court.current_is_winner_first ? 'bg-success' : 'bg-warning'}">
-                                    ${court.current_is_winner_first ? 'Победа первой команды' : 'Победа второй команды'}
-                                </small>
-                            </div>
-                        ` : ''}
-                    </div>
-                ` : `
-                    <div class="text-center text-muted py-3 mb-3">
-                        <i class="fas fa-pause-circle fa-2x mb-2 opacity-50"></i>
-                        <p class="mb-0">Корт свободен</p>
-                    </div>
-                `}
                 
                 ${hasNextMatch ? `
-                    <div class="border-top pt-3 mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <small class="text-primary fw-bold">
-                                <i class="fas fa-clock me-1"></i>Следующий матч
-                            </small>
-                            ${nextStartTime ? `
-                                <small class="text-muted">
-                                    ${formatDateTime(nextStartTime)}
-                                </small>
-                            ` : ''}
+                    <div class="${hasCurrentMatch ? 'border-top pt-2' : ''} mb-2 small">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-primary fw-bold"><i class="fas fa-clock me-1"></i>Следующий</span>
+                            ${nextStartTime ? `<span class="text-muted">${formatDateTime(nextStartTime)}</span>` : ''}
                         </div>
-                        
-                        ${nextClass ? `
-                            <div class="mb-2">
-                                <small class="text-muted">
-                                    <i class="fas fa-trophy me-1"></i>${nextClass}
-                                </small>
-                            </div>
-                        ` : ''}
-                        
-                        <div class="small">
-                            <div class="mb-1">
-                                <strong>${formatPlayerNames(nextPlayers1)}</strong>
-                            </div>
-                            <div class="text-center my-1">
-                                <span class="text-muted">vs</span>
-                            </div>
-                            <div>
-                                <strong>${formatPlayerNames(nextPlayers2)}</strong>
-                            </div>
-                        </div>
+                        ${nextClass ? `<div class="text-muted small mb-1">${nextClass}</div>` : ''}
+                        <div>${formatPlayerNames(nextPlayers1, true)} <span class="text-muted">vs</span> ${formatPlayerNames(nextPlayers2, true)}</div>
                     </div>
                 ` : ''}
                 
-                <div class="d-flex justify-content-between align-items-center">
-
+                ${isCourtFree ? `
+                    <div class="text-center text-muted py-2 mb-2">
+                        <i class="fas fa-pause-circle me-1"></i>Корт свободен
+                    </div>
+                ` : ''}
+                
+                <div class="d-flex justify-content-end">
 					<div class="d-flex gap-1">
 						${hasCurrentMatch || hasNextMatch ? `
 <button class="btn btn-sm btn-outline-info" onclick="openCourtINTRO(this.dataset.tournamentId, '${court.court_id}')" data-tournament-id="${currentTournamentId}" title="HTML VS">
@@ -716,6 +716,10 @@ function renderCourts() {
 							</button>
 <button class="btn btn-sm btn-warning" onclick="openCourtHTML_BIG('${currentTournamentId}', '${court.court_id}')" title="HTML Scoreboard BIG">
 	<i class="fa-regular fa-address-card"></i>BIG
+</button>
+
+<button class="btn btn-sm btn-success" onclick="openCourtScoreFull('${currentTournamentId}', '${court.court_id}')" title="HTML Scoreboard Full 4K">
+	<i class="fas fa-tv me-1"></i>4K
 </button>
 
 <button class="btn btn-sm btn-outline-danger" onclick="openCourtWIN(this.dataset.tournamentId, '${court.court_id}')" data-tournament-id="${currentTournamentId}" title="HTML VS">
@@ -890,6 +894,11 @@ function openCourtVS(tournamentId, courtId) {
 function openCourtHTML_BIG(tournamentId, courtId) {
    
     const liveUrl = `/api/html-live/${tournamentId}/${courtId}/score`;
+    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+}
+
+function openCourtScoreFull(tournamentId, courtId) {
+    const liveUrl = `/api/html-live/${tournamentId}/${courtId}/score_full`;
     window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
 }
 
@@ -1208,23 +1217,35 @@ function copyToClipboard(text) {
     });
 }
 
-function formatPlayerNames(players) {
-    if (!players || players.length === 0) return 'Неизвестные игроки';
+function formatPlayerNames(players, compact = false) {
+    if (!players || players.length === 0) return 'TBD';
     
     return players.map(p => {
         const firstName = (p.firstName || '').trim();
         const lastName = (p.lastName || '').trim();
         
-        if (firstName && lastName) {
-            return `${firstName} ${lastName}`;
-        } else if (firstName) {
-            return firstName;
-        } else if (lastName) {
-            return lastName;
+        if (compact) {
+            // Компактный формат: A.Фамилия
+            if (firstName && lastName) {
+                return `${firstName.charAt(0)}.${lastName}`;
+            } else if (lastName) {
+                return lastName;
+            } else if (firstName) {
+                return firstName.charAt(0);
+            }
+            return '?';
         } else {
+            // Полный формат
+            if (firstName && lastName) {
+                return `${firstName} ${lastName}`;
+            } else if (firstName) {
+                return firstName;
+            } else if (lastName) {
+                return lastName;
+            }
             return 'Игрок';
         }
-    }).filter(name => name && name !== 'Игрок').join(' / ') || 'Неизвестные игроки';
+    }).filter(name => name && name !== 'Игрок' && name !== '?').join('/') || 'TBD';
 }
 
 
@@ -1737,6 +1758,3 @@ function openEliminationHTML(tournamentId, classId, drawIndex, stageName) {
     const liveUrl = `/api/html-live/elimination/${tournamentId}/${classId}/${drawIndex}`;
     window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
 }
-
-
-
