@@ -15,6 +15,7 @@ from flask import Flask, request, jsonify, send_file, render_template, Response,
 from werkzeug.utils import secure_filename
 from typing import Dict, List, Optional
 from config import get_config
+from api.html_generator import HTMLGenerator
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -53,6 +54,7 @@ app.start_time = time.time()
 # Глобальные объекты
 api = RankedinAPI()
 xml_manager = XMLFileManager('xml_files')
+html_generator = HTMLGenerator()
 
 # Регистрация роутов аутентификации
 register_auth_routes(app)
@@ -177,6 +179,7 @@ def delete_tournament(tournament_id):
             cursor.execute('DELETE FROM courts_data WHERE tournament_id = ?', (tournament_id,))
             cursor.execute('DELETE FROM xml_files WHERE tournament_id = ?', (tournament_id,))
             cursor.execute('DELETE FROM tournament_schedule WHERE tournament_id = ?', (tournament_id,))
+            cursor.execute('DELETE FROM tournament_matches WHERE tournament_id = ?', (tournament_id,))
             cursor.execute('DELETE FROM tournaments WHERE id = ?', (tournament_id,))
         execute_with_retry(transaction)
         return jsonify({"success": True})
@@ -203,9 +206,91 @@ def get_tournament_courts(tournament_id):
         courts_data = api.get_all_courts_data(court_ids)
         if courts_data:
             save_courts_data(tournament_id, courts_data)
+            
+        # данными о следующем матче из court_usage
+        tournament_data = get_tournament_data(tournament_id)
+        if tournament_data:
+            courts_data = _enrich_courts_with_next_match(courts_data, tournament_data)
+            
         return jsonify(courts_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+def _enrich_courts_with_next_match(courts_data: list, tournament_data: dict) -> list:
+    """Добавляет информацию о следующем матче из court_usage"""
+    court_usage = tournament_data.get("court_usage", [])
+    matches_data = tournament_data.get("matches_data", {})
+    matches_list = matches_data.get("Matches", []) if isinstance(matches_data, dict) else []
+    
+    # Индекс матчей по ChallengeId для получения полных имён
+    matches_index = {m.get("Id"): m for m in matches_list}
+    
+    from datetime import datetime
+    
+    for court in courts_data:
+        if "error" in court:
+            continue
+            
+        court_id = int(court.get("court_id", 0))
+        
+        # Фильтруем матчи этого корта
+        court_matches = [m for m in court_usage if m.get("CourtId") == court_id]
+        
+        # Ищем матчи без результата, сортируем по времени
+        pending_matches = []
+        for match in court_matches:
+            has_result = match.get("ChallengerResult") or match.get("ChallengedResult")
+            if not has_result:
+                match_date_str = match.get("MatchDate", "")
+                try:
+                    match_dt = datetime.fromisoformat(match_date_str.replace('Z', ''))
+                    pending_matches.append((match_dt, match))
+                except:
+                    continue
+        
+        # Сортируем по времени
+        pending_matches.sort(key=lambda x: x[0])
+        
+        # Следующий матч = первый без результата
+        if pending_matches:
+            next_match = pending_matches[0][1]
+            challenge_id = next_match.get("ChallengeId")
+            rich_match = matches_index.get(challenge_id, {})
+            
+            court["next_first_participant"] = _extract_players(rich_match.get("Challenger", {}))
+            court["next_second_participant"] = _extract_players(rich_match.get("Challenged", {}))
+            court["next_class_name"] = next_match.get("PoolName", "") or rich_match.get("Draw", "")
+            court["next_start_time"] = next_match.get("MatchDate", "")
+    
+    return courts_data
+
+
+def _extract_players(team_data: dict) -> list:
+    """Извлекает список игроков из данных команды"""
+    if not team_data:
+        return []
+    
+    players = []
+    name = team_data.get("Name", "")
+    if name:
+        parts = name.split()
+        players.append({
+            "firstName": parts[0] if parts else "",
+            "lastName": " ".join(parts[1:]) if len(parts) > 1 else "",
+            "countryCode": team_data.get("CountryShort", "")
+        })
+    
+    name2 = team_data.get("Player2Name", "")
+    if name2:
+        parts = name2.split()
+        players.append({
+            "firstName": parts[0] if parts else "",
+            "lastName": " ".join(parts[1:]) if len(parts) > 1 else "",
+            "countryCode": team_data.get("Player2CountryShort", "")
+        })
+    
+    return players
 
 
 @app.route('/api/tournament/<tournament_id>/xml-types')
@@ -255,32 +340,102 @@ def manage_participants(tournament_id):
 
 @app.route('/api/participants/upload-photo', methods=['POST'])
 def upload_participant_photo():
-    """Загрузка фото участника"""
-    if 'photo' not in request.files:
-        return jsonify({"success": False, "error": "Нет файла"}), 400
-
-    file = request.files['photo']
+    """Загрузка и обработка фото участника"""
+    from PIL import Image
+    
     participant_id = request.form.get('participant_id')
+    if not participant_id:
+        return jsonify({"success": False, "error": "Не указан ID участника"}), 400
 
-    if file and participant_id:
-        filename = f"{secure_filename(participant_id)}.png"
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        file.save(filepath)
-
-        info = json.dumps({
-            'country': request.form.get('country'),
-            'rating': request.form.get('rating'),
-            'height': request.form.get('height'),
-            'full_name': request.form.get('english-name')
-        })
-
-        def update(conn):
-            conn.cursor().execute('UPDATE participants SET photo_url = ?, info = ? WHERE id = ?',
-                                 (f"/{UPLOAD_FOLDER}/{filename}", info, participant_id))
-        execute_with_retry(update)
-
-        return jsonify({"success": True, "preview_url": f"/{UPLOAD_FOLDER}/{filename}"})
-    return jsonify({"success": False}), 500
+    # Сохраняем дополнительную информацию
+    info = json.dumps({
+        'country': request.form.get('country', ''),
+        'rating': request.form.get('rating', ''),
+        'height': request.form.get('height', ''),
+        'position': request.form.get('position', ''),
+        'full_name': request.form.get('english', '')
+    })
+    
+    filename = f"{secure_filename(participant_id)}.png"
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    preview_url = f"/{UPLOAD_FOLDER}/{filename}"
+    
+    photo_saved = False
+    
+    # Если есть файл фото - обрабатываем
+    if 'photo' in request.files:
+        file = request.files['photo']
+        if file and file.filename:
+            try:
+                # Параметры кропа из формы
+                crop_x = float(request.form.get('crop_x', 0))
+                crop_y = float(request.form.get('crop_y', 0))
+                crop_scale = float(request.form.get('crop_scale', 1.0))
+                
+                # Целевые размеры
+                OUTPUT_WIDTH = 1500
+                OUTPUT_HEIGHT = 2048
+                
+                # Загружаем исходное изображение
+                img = Image.open(file)
+                
+                # Конвертируем в RGBA
+                if img.mode != 'RGBA':
+                    img = img.convert('RGBA')
+                
+                # Масштабируем исходное изображение
+                scaled_width = int(img.width * crop_scale)
+                scaled_height = int(img.height * crop_scale)
+                
+                if scaled_width > 0 and scaled_height > 0:
+                    img_scaled = img.resize((scaled_width, scaled_height), Image.Resampling.LANCZOS)
+                else:
+                    img_scaled = img
+                
+                # Создаём прозрачный холст выходного размера
+                canvas = Image.new('RGBA', (OUTPUT_WIDTH, OUTPUT_HEIGHT), (0, 0, 0, 0))
+                
+                # Вставляем масштабированное изображение
+                paste_x = int(crop_x)
+                paste_y = int(crop_y)
+                canvas.paste(img_scaled, (paste_x, paste_y), img_scaled)
+                
+                # Сохраняем
+                canvas.save(filepath, 'PNG', optimize=True)
+                photo_saved = True
+                logger.info(f"Фото участника {participant_id} сохранено: {filepath}")
+                
+            except Exception as e:
+                logger.error(f"Ошибка обработки изображения: {e}")
+                # Fallback: сохраняем оригинал
+                try:
+                    file.seek(0)
+                    with open(filepath, 'wb') as f:
+                        f.write(file.read())
+                    photo_saved = True
+                except Exception as e2:
+                    logger.error(f"Fallback сохранение не удалось: {e2}")
+    
+    # Обновляем БД
+    def update(conn):
+        cursor = conn.cursor()
+        if photo_saved:
+            cursor.execute(
+                'UPDATE participants SET photo_url = ?, info = ? WHERE id = ?',
+                (preview_url, info, participant_id)
+            )
+        else:
+            cursor.execute(
+                'UPDATE participants SET info = ? WHERE id = ?',
+                (info, participant_id)
+            )
+    
+    execute_with_retry(update)
+    
+    return jsonify({
+        "success": True,
+        "preview_url": preview_url if photo_saved else None
+    })
 
 
 # === API: РАСПИСАНИЕ ===
@@ -477,7 +632,7 @@ def get_live_court_html(tournament_id, court_id):
         if not court_data or "error" in court_data:
             return "<html><body><h1>Корт не найден</h1></body></html>", 500
 
-        html = xml_manager.html_generator.generate_court_scoreboard_html(
+        html = html_generator.generate_court_scoreboard_html(
             court_data, tournament_data, tournament_id, court_id
         )
         return Response(html, mimetype='text/html; charset=utf-8')
@@ -494,12 +649,70 @@ def get_live_court_score_html(tournament_id, court_id):
         if not tournament_data or not court_data:
             return "<html><body><h1>Не найдено</h1></body></html>", 404
 
-        html = xml_manager.html_generator.generate_court_fullscreen_scoreboard_html(
+        html = html_generator.generate_court_fullscreen_scoreboard_html(
             court_data, tournament_data, tournament_id, court_id
         )
         return Response(html, mimetype='text/html; charset=utf-8')
     except Exception as e:
         return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
+
+
+@app.route('/api/html-live/<tournament_id>/<court_id>/score_full')
+def get_live_court_score_full_html(tournament_id, court_id):
+    """Полноэкранный scoreboard 4K/FHD/HD с логотипами и флагами"""
+    try:
+        tournament_data = get_tournament_data(tournament_id)
+        court_data = get_court_data(tournament_id, str(court_id))
+        if not tournament_data or not court_data:
+            return "<html><body><h1>Не найдено</h1></body></html>", 404
+
+        html = html_generator.generate_scoreboard_full_html(
+            court_data, tournament_data, tournament_id, court_id
+        )
+        return Response(html, mimetype='text/html; charset=utf-8')
+    except Exception as e:
+        logger.error(f"Ошибка генерации score_full: {e}")
+        return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
+
+
+@app.route('/api/court/<tournament_id>/<court_id>/data')
+def get_court_data_api(tournament_id, court_id):
+    """JSON данные корта для AJAX обновления scoreboard"""
+    try:
+        court_data = get_court_data(tournament_id, str(court_id))
+        if not court_data:
+            return jsonify({"error": "Корт не найден"}), 404
+        
+        # Формируем данные для JS
+        first_participant = court_data.get("first_participant", [])
+        second_participant = court_data.get("second_participant", [])
+        detailed_result = court_data.get("detailed_result", [])
+        
+        # Текущий счёт
+        team1_score = court_data.get("first_participant_score", 0)
+        team2_score = court_data.get("second_participant_score", 0)
+        
+        # Проверяем геймовый счёт в последнем сете
+        if detailed_result:
+            last_set = detailed_result[-1]
+            game_score = last_set.get("gameScore", {})
+            if game_score:
+                team1_score = game_score.get("first", team1_score)
+                team2_score = game_score.get("second", team2_score)
+        
+        return jsonify({
+            "team1_players": first_participant,
+            "team2_players": second_participant,
+            "detailed_result": detailed_result,
+            "team1_score": team1_score,
+            "team2_score": team2_score,
+            "event_state": court_data.get("event_state", ""),
+            "court_name": court_data.get("court_name", ""),
+            "class_name": court_data.get("class_name", "")
+        })
+    except Exception as e:
+        logger.error(f"Ошибка получения данных корта: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/api/html-live/<tournament_id>/<court_id>/vs')
@@ -512,10 +725,99 @@ def get_court_vs_html(tournament_id, court_id):
             return "<html><body><h1>Не найдено</h1></body></html>", 404
 
         court_data = enrich_court_data_with_photos(court_data)
-        html = xml_manager.html_generator.generate_court_vs_html(court_data, tournament_data)
+        html = html_generator.generate_court_vs_html(court_data, tournament_data)
         return Response(html, mimetype='text/html; charset=utf-8')
     except Exception as e:
         return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
+
+
+@app.route('/api/html-live/<tournament_id>/<court_id>/introduction')
+def get_court_introduction_html(tournament_id, court_id):
+    """Introduction страница - представление участников матча"""
+    try:
+        tournament_data = get_tournament_data(tournament_id)
+        court_data = get_court_data(tournament_id, str(court_id))
+        if not tournament_data or not court_data:
+            return "<html><body><h1>Не найдено</h1></body></html>", 404
+
+        # Находим информацию о раунде из court_usage
+        match_info = _find_current_match_info(tournament_data, court_id, court_data)
+        
+        html = html_generator.generate_match_introduction_html(court_data, match_info)
+        return Response(html, mimetype='text/html; charset=utf-8')
+    except Exception as e:
+        logger.error(f"Ошибка генерации introduction: {e}")
+        return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
+
+
+def _find_current_match_info(tournament_data: dict, court_id: str, court_data: dict) -> dict:
+    """
+    Находит информацию о текущем матче из court_usage.
+    Приоритет:
+    1. Активный матч (идёт сейчас)
+    2. Следующий матч (ещё не начался)
+    3. Последний сыгранный (если нет будущих)
+    """
+    court_usage = tournament_data.get("court_usage", [])
+    if not court_usage:
+        return {}
+    
+    court_id_int = int(court_id) if court_id.isdigit() else 0
+    
+    from datetime import datetime
+    now = datetime.now()
+    
+    # Фильтруем матчи только для этого корта
+    court_matches = [m for m in court_usage if m.get("CourtId") == court_id_int]
+    
+    if not court_matches:
+        return {}
+    
+    active_match = None
+    next_match = None
+    last_finished = None
+    
+    for match in court_matches:
+        match_date_str = match.get("MatchDate", "")
+        if not match_date_str:
+            continue
+            
+        try:
+            match_dt = datetime.fromisoformat(match_date_str.replace('Z', ''))
+            duration = match.get("Duration", 30)
+            match_end = match_dt.replace(minute=match_dt.minute + duration)
+            
+            has_result = match.get("ChallengerResult") or match.get("ChallengedResult")
+            
+            # Активный: время начала <= сейчас <= время конца, или время прошло но нет результата
+            if match_dt <= now and (now <= match_end or not has_result):
+                if not has_result:
+                    active_match = match
+                    break  # Активный матч - приоритет
+            
+            # Следующий: время в будущем, нет результата
+            elif match_dt > now and not has_result:
+                if next_match is None or match_dt < datetime.fromisoformat(next_match.get("MatchDate", "").replace('Z', '')):
+                    next_match = match
+            
+            # Последний сыгранный: есть результат
+            elif has_result:
+                if last_finished is None or match_dt > datetime.fromisoformat(last_finished.get("MatchDate", "").replace('Z', '')):
+                    last_finished = match
+                    
+        except Exception as e:
+            logger.debug(f"Ошибка парсинга даты матча: {e}")
+            continue
+    
+    # Возвращаем по приоритету
+    if active_match:
+        return active_match
+    if next_match:
+        return next_match
+    if last_finished:
+        return last_finished
+    
+    return {}
 
 
 @app.route('/api/html-live/<tournament_id>/<court_id>/next')
@@ -538,7 +840,7 @@ def get_next_match_html(tournament_id, court_id):
                 if p.get("id") in photo_map:
                     p["photo_url"] = photo_map[p["id"]]
 
-        html = xml_manager.html_generator.generate_next_match_page_html(court_data, tournament_data)
+        html = html_generator.generate_next_match_page_html(court_data, tournament_data)
         return Response(html, mimetype='text/html; charset=utf-8')
     except Exception as e:
         return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
@@ -559,7 +861,7 @@ def get_winner_page_html(tournament_id, court_id):
         all_ids = [p.get("id") for p in court_data.get("first_participant", []) + court_data.get("second_participant", []) if p.get("id")]
         id_url = [{"id": pid, "photo_url": court_data.get("first_participant", [{}])[0].get("photo_url") or court_data.get("second_participant", [{}])[0].get("photo_url")} for pid in all_ids]
 
-        html = xml_manager.html_generator.generate_winner_page_html(court_data, id_url, tournament_data)
+        html = html_generator.generate_winner_page_html(court_data, id_url, tournament_data)
         return Response(html, mimetype='text/html; charset=utf-8')
     except Exception as e:
         return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
@@ -573,7 +875,7 @@ def get_introduction_page_html(participant_id):
         if not participant:
             return "<html><body><h1>Участник не найден</h1></body></html>", 404
 
-        html = xml_manager.html_generator.generate_introduction_page_html(participant)
+        html = html_generator.generate_introduction_page_html(participant)
         return Response(html, mimetype='text/html; charset=utf-8')
     except Exception as e:
         return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
@@ -590,7 +892,7 @@ def get_live_schedule_html(tournament_id):
         target_date = request.args.get('date')
         from api import get_settings
         settings = get_settings()
-        html = xml_manager.html_generator.generate_schedule_html(tournament_data, target_date, settings)
+        html = html_generator.generate_schedule_html(tournament_data, target_date, settings)
         return Response(html, mimetype='text/html; charset=utf-8')
     except Exception as e:
         return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
@@ -609,7 +911,7 @@ def get_schedule_data(tournament_id):
         settings = get_settings()
         
         # Получаем данные расписания
-        schedule_data = xml_manager.html_generator.get_schedule_data(tournament_data, target_date, settings)
+        schedule_data = html_generator.get_schedule_data(tournament_data, target_date, settings)
         
         # Генерируем hash для определения изменений
         import hashlib
@@ -640,7 +942,7 @@ def get_live_schedule_html_addreality(tournament_id):
         target_date = request.args.get('date')
         from api import get_settings
         settings = get_settings()
-        html = xml_manager.html_generator.generate_schedule_html_addreality(tournament_data, target_date, settings)
+        html = html_generator.generate_schedule_html_addreality(tournament_data, target_date, settings)
         return Response(html, mimetype='text/html; charset=utf-8')
     except Exception as e:
         return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
@@ -661,7 +963,7 @@ def get_live_round_robin_html(tournament_id, class_id, draw_index):
         if not xml_type_info:
             return "<html><body><h1>Таблица не найдена</h1></body></html>", 404
 
-        html = xml_manager.html_generator.generate_round_robin_html(tournament_data, xml_type_info)
+        html = html_generator.generate_round_robin_html(tournament_data, xml_type_info)
         return Response(html, mimetype='text/html; charset=utf-8')
     except Exception as e:
         logger.error(f"Ошибка round-robin HTML: {e}")
@@ -683,7 +985,7 @@ def get_live_elimination_html(tournament_id, class_id, draw_index):
         if not xml_type_info:
             return "<html><body><h1>Сетка не найдена</h1></body></html>", 404
 
-        html = xml_manager.html_generator.generate_elimination_html(tournament_data, xml_type_info)
+        html = html_generator.generate_elimination_html(tournament_data, xml_type_info)
         return Response(html, mimetype='text/html; charset=utf-8')
     except Exception as e:
         logger.error(f"Ошибка elimination HTML: {e}")
