@@ -63,7 +63,7 @@ def enrich_players_with_photos(players: List[Dict], photo_map: Dict[int, str]) -
 
 def enrich_court_data_with_photos(court_data: Dict) -> Dict:
     """
-    Обогащает данные корта фотографиями игроков.
+    данные корта с фотографиями игроков
     Возвращает модифицированный court_data.
     """
     team1_ids, team2_ids = extract_player_ids(court_data)

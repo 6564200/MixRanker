@@ -43,6 +43,32 @@ COUNTRIES_RU = {
     'az': 'Азербайджан', 'ge': 'Грузия', 'uz': 'Узбекистан', 'mn': 'Монголия'
 }
 
+
+# Маппинг кодов стран для флагов (3-буквенные → 2-буквенные ISO)
+COUNTRY_CODE_MAP = {
+    "rin": "ru",
+    "rus": "ru", 
+    "bra": "br",
+    "arg": "ar",
+    "esp": "es",
+    "ita": "it",
+    "fra": "fr",
+    "ger": "de",
+    "gbr": "gb",
+    "usa": "us",
+    "den": "dk",
+    "dnk": "dk",
+}
+
+def get_flag_url(country_code: str) -> str:
+    """Возвращает URL флага по коду страны"""
+    if not country_code:
+        return ""
+    code = country_code.lower()
+    code = COUNTRY_CODE_MAP.get(code, code)
+    return f"https://flagcdn.com/w160/{code}.png"
+
+
 # XML типы описания
 XML_TYPE_DESCRIPTIONS = {
     "court_score": "Актуальный счет и участники матча на корте",

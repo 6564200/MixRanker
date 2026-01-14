@@ -12,7 +12,9 @@ from .constants import (
     XML_TYPE_DESCRIPTIONS, XML_UPDATE_FREQUENCIES,
     DEFAULT_RELOAD_INTERVAL,
     get_sport_name, get_country_name, get_country_name_ru,
-    get_xml_type_description, get_update_frequency, get_uptime
+    get_xml_type_description, get_update_frequency, get_uptime,
+    COUNTRY_CODE_MAP,
+    get_flag_url
 )
 
 # База данных
@@ -69,4 +71,6 @@ __all__ = [
     'HTMLGenerator', 'HTMLBaseGenerator',
     'ScoreboardGenerator', 'VSGenerator',
     'ScheduleGenerator', 'TournamentBracketGenerator'
+    'COUNTRY_CODE_MAP',
+    'get_flag_url',
 ]

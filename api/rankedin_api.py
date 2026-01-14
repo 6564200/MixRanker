@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 class RankedinAPI(BaseAPI):
-    """Расширенный API клиент rankedin.com"""
+    """
+    API клиент rankedin.com"""
 
     # === ОБРАБОТКА ДАННЫХ КОРТА ===
     def _process_court_data(self, data: Dict, court_id: str) -> Dict:

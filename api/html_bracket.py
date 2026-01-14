@@ -333,12 +333,12 @@ class TournamentBracketGenerator(HTMLBaseGenerator):
         return f'''<div class="container">
             <div class="row row-top">
                 <div class="names"><span class="name-main {match['secondary1']}">{match['team_1_name']}</span></div>
-                <div class="score"><span class="set-score">{match['sets1']}</span></div>
+                <div class="score">{" ".join([f'<span class="set-score">{word}</span>' for word in match['sets1'].split()]) }</div>
                 <div class="rank rank-top"><span class="rank-number">{score1}</span></div>
             </div>
             <div class="row row-bottom">
                 <div class="names"><span class="name-main {match['secondary2']}">{match['team_2_name']}</span></div>
-                <div class="score"><span class="set-score">{match['sets2']}</span></div>
+                <div class="score">{" ".join([f'<span class="set-score">{word}</span>' for word in match['sets2'].split()]) }</div>
                 <div class="rank rank-bottom"><span class="rank-number">{score2}</span></div>
             </div>
         </div>'''
@@ -432,10 +432,43 @@ class TournamentBracketGenerator(HTMLBaseGenerator):
                     info['secondary1'] = 'lost'
 
                 score = vm.get("Score", {})
-                info['score'] = self.format_score_summary(score)
-                sets = self.format_sets_summary(score)
-                info['sets1'] = ' '.join(re.findall(r'(\d+)-\d+', sets))
-                info['sets2'] = ' '.join(re.findall(r'\d+-(\d+)', sets))
+                
+                # Определяем нужно ли менять местами счёт
+                # FirstParticipantScore всегда относится к победителю
+                # Если победитель - team2 (challenged), меняем местами
+                first_score = score.get('FirstParticipantScore', 0)
+                second_score = score.get('SecondParticipantScore', 0)
+                
+                if winner_id == team2_id:
+                    # Победитель - team2, но FirstParticipantScore - счёт победителя
+                    # Значит меняем местами
+                    team1_total = second_score
+                    team2_total = first_score
+                else:
+                    # Победитель - team1 или нет победителя
+                    team1_total = first_score
+                    team2_total = second_score
+                
+                info['score'] = f"{team1_total}-{team2_total}"
+                
+                # Тоже для детального счёта по сетам
+                detailed = score.get("DetailedScoring", [])
+                sets1_parts = []
+                sets2_parts = []
+                
+                for s in detailed:
+                    s_first = s.get('FirstParticipantScore', 0)
+                    s_second = s.get('SecondParticipantScore', 0)
+                    
+                    if winner_id == team2_id:
+                        sets1_parts.append(str(s_second))
+                        sets2_parts.append(str(s_first))
+                    else:
+                        sets1_parts.append(str(s_first))
+                        sets2_parts.append(str(s_second))
+                
+                info['sets1'] = ' '.join(sets1_parts)
+                info['sets2'] = ' '.join(sets2_parts)
 
             elif is_played and not has_score:
                 info['status'] = 'Walkover'

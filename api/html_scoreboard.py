@@ -58,26 +58,6 @@ class ScoreboardGenerator(HTMLBaseGenerator):
         result = " / ".join(names)
         return result.upper() if use_initials else result
 
-    def _render_set_scores(self, detailed_result: List[Dict], max_sets: int = 3) -> tuple:
-        """Рендерит HTML для счета по сетам. Возвращает (html1, html2)"""
-        html1, html2 = '', ''
-
-        if not detailed_result:
-            for i in range(max_sets):
-                html1 += f'<div class="set set1-{i}">-</div>'
-                html2 += f'<div class="set set2-{i}">-</div>'
-            return html1, html2
-
-        for i, set_data in enumerate(detailed_result):
-            s1 = set_data.get("firstParticipantScore", 0)
-            s2 = set_data.get("secondParticipantScore", 0)
-            cls1 = "setV" if s1 > s2 else "set"
-            cls2 = "setV" if s2 > s1 else "set"
-            html1 += f'<div class="{cls1} set1-{i}">{s1}</div>'
-            html2 += f'<div class="{cls2} set2-{i}">{s2}</div>'
-
-        return html1, html2
-
     def generate_court_scoreboard_html(self, court_data: Dict, tournament_data: Dict = None, tournament_id: str = None, court_id: str = None) -> str:
         """Генерирует HTML scoreboard с AJAX-обновлением"""
         match = self._extract_match_data(court_data)
@@ -110,7 +90,6 @@ class ScoreboardGenerator(HTMLBaseGenerator):
     <style>
         .fade-update {{ transition: opacity 0.15s ease-in-out; }}
         .updating {{ opacity: 0.7; }}
-        .sets-container {{ display: inline-flex; gap: 2px; }}
     </style>
 </head>
 <body data-tournament-id="{t_id}" data-court-id="{c_id}" data-update-interval="2000" data-mode="scoreboard">
@@ -152,10 +131,6 @@ class ScoreboardGenerator(HTMLBaseGenerator):
     <script src="/static/js/smart_scoreboard.js?v=0.0.1"></script>
 </body>
 </html>'''
-
-    def generate_smart_scoreboard_html(self, court_data: Dict, tournament_id: str, court_id: str) -> str:
-        """Алиас для обратной совместимости"""
-        return self.generate_court_scoreboard_html(court_data, None, tournament_id, court_id)
 
     def _render_set_scores_smart(self, detailed_result: List[Dict], max_sets: int = 3) -> tuple:
         """Рендерит HTML для счета по сетам с классами для JS обновления"""
@@ -336,3 +311,101 @@ class ScoreboardGenerator(HTMLBaseGenerator):
     </div>
 </body>
 </html>'''
+
+    def generate_match_introduction_html(self, court_data: Dict, match_info: Dict = None) -> str:
+        """Генерирует страницу представления матча (intro для обеих команд)"""
+        
+        # Получаем данные участников (ключи в snake_case из БД)
+        first_participant = court_data.get("first_participant", []) or court_data.get("firstParticipant", [])
+        second_participant = court_data.get("second_participant", []) or court_data.get("secondParticipant", [])
+        
+        # Игрок 1 команды 1
+        team1_player1 = first_participant[0] if len(first_participant) > 0 else {}
+        team1_player2 = first_participant[1] if len(first_participant) > 1 else {}
+        
+        # Игрок 1 команды 2
+        team2_player1 = second_participant[0] if len(second_participant) > 0 else {}
+        team2_player2 = second_participant[1] if len(second_participant) > 1 else {}
+        
+        # Имена
+        team1_name1 = self.format_player_name(team1_player1)
+        team1_name2 = self.format_player_name(team1_player2)
+        team2_name1 = self.format_player_name(team2_player1)
+        team2_name2 = self.format_player_name(team2_player2)
+        
+        # Флаги
+        team1_flag1 = self.get_flag_url(team1_player1.get("countryCode", ""))
+        team1_flag2 = self.get_flag_url(team1_player2.get("countryCode", ""))
+        team2_flag1 = self.get_flag_url(team2_player1.get("countryCode", ""))
+        team2_flag2 = self.get_flag_url(team2_player2.get("countryCode", ""))
+        
+        # Определяем название раунда
+        round_name = self._get_round_name(match_info) if match_info else court_data.get("class_name", "") or court_data.get("className", "")
+        
+        return f'''{self.html_head("Match Introduction", "introduction.css", 0)}
+<body>
+    <div class="intro-container">
+        <div class="intro-header">
+            <div class="intro-header-text">{round_name}</div>
+        </div>
+        <div class="intro-main">
+            <div class="intro-frame">
+                <div class="intro-info">
+                    <div class="team1-flag1" style="background-image: url('{team1_flag1}');"></div>
+                    <div class="team1-name1">{team1_name1}</div>
+                    <div class="team1-flag2" style="background-image: url('{team1_flag2}');"></div>
+                    <div class="team1-name2">{team1_name2}</div>
+                    
+                    <div class="team2-name1">{team2_name1}</div>
+                    <div class="team2-flag1" style="background-image: url('{team2_flag1}');"></div>
+                    <div class="team2-name2">{team2_name2}</div>
+                    <div class="team2-flag2" style="background-image: url('{team2_flag2}');"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>'''
+
+    def _get_round_name(self, match_info: Dict) -> str:
+        """Определяет название раунда из match_info"""
+        if not match_info:
+            return ""
+        
+        # Прямые флаги
+        if match_info.get("IsFinal"):
+            return "ФИНАЛ"
+        if match_info.get("IsSemiFinal"):
+            return "1/2 ФИНАЛА"
+        if match_info.get("IsQuarterFinal"):
+            return "1/4 ФИНАЛА"
+        
+        # По Places
+        places = match_info.get("Places", {})
+        if places:
+            place1 = places.get("Item1", 0)
+            place2 = places.get("Item2", 0)
+            diff = abs(place2 - place1) + 1
+            
+            if diff == 2:
+                return "ФИНАЛ"
+            elif diff == 4:
+                return "1/2 ФИНАЛА"
+            elif diff == 8:
+                return "1/4 ФИНАЛА"
+            elif diff == 16:
+                return "1/8 ФИНАЛА"
+            elif diff == 32:
+                return "1/16 ФИНАЛА"
+        
+        # Групповой этап
+        pool_name = match_info.get("PoolName", "")
+        if pool_name:
+            return pool_name.upper()
+        
+        # Fallback на Round
+        round_num = match_info.get("Round", 0)
+        if round_num:
+            return f"РАУНД {round_num}"
+        
+        return ""

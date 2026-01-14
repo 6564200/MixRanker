@@ -9,6 +9,7 @@ from typing import Dict, List
 import logging
 
 from .html_scoreboard import ScoreboardGenerator
+from .html_scoreboard_full import ScoreboardFullGenerator
 from .html_vs import VSGenerator
 from .html_schedule import ScheduleGenerator
 from .html_bracket import TournamentBracketGenerator
@@ -24,6 +25,7 @@ class HTMLGenerator:
 
     def __init__(self):
         self._scoreboard = ScoreboardGenerator()
+        self._scoreboard_full = ScoreboardFullGenerator()
         self._vs = VSGenerator()
         self._schedule = ScheduleGenerator()
         self._bracket = TournamentBracketGenerator()
@@ -32,6 +34,9 @@ class HTMLGenerator:
 
     def generate_court_scoreboard_html(self, court_data: Dict, tournament_data: Dict = None, tournament_id: str = None, court_id: str = None) -> str:
         return self._scoreboard.generate_court_scoreboard_html(court_data, tournament_data, tournament_id, court_id)
+
+    def generate_scoreboard_full_html(self, court_data: Dict, tournament_data: Dict = None, tournament_id: str = None, court_id: str = None) -> str:
+        return self._scoreboard_full.generate_scoreboard_full_html(court_data, tournament_data, tournament_id, court_id)
 
     def generate_smart_scoreboard_html(self, court_data: Dict, tournament_id: str, court_id: str) -> str:
         return self._scoreboard.generate_smart_scoreboard_html(court_data, tournament_id, court_id)
@@ -44,6 +49,9 @@ class HTMLGenerator:
 
     def generate_introduction_page_html(self, participant_info: Dict) -> str:
         return self._scoreboard.generate_introduction_page_html(participant_info)
+
+    def generate_match_introduction_html(self, court_data: Dict, match_info: Dict = None) -> str:
+        return self._scoreboard.generate_match_introduction_html(court_data, match_info)
 
     # === VS методы ===
 

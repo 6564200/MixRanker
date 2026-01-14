@@ -111,59 +111,6 @@ class VSGenerator(HTMLBaseGenerator):
 </body>
 </html>'''
 
-    def generate_vs_page_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
-        """Генерирует HTML VS-страницу текущего корта с фото из id_url"""
-        court_name = court_data.get("court_name", "Court")
-        team1 = court_data.get("first_participant", [])
-
-        if not team1 or not id_url:
-            return self.empty_page_html(f"{court_name} - VS", "NO CURRENT MATCH", "vs.css")
-
-        scores1, scores2, detailed = self._extract_scores(court_data)
-        team2 = court_data.get("second_participant", [])
-        id_url_map = {d['id']: d for d in id_url}
-
-        def enrich_players(players):
-            return [(p, id_url_map.get(p.get('id'), {})) for p in players if p.get('id')]
-
-        enriched1 = enrich_players(team1)
-        enriched2 = enrich_players(team2)
-
-        names1 = '<br>'.join(p[0].get("fullName", "") for p in enriched1)
-        names2 = '<br>'.join(p[0].get("fullName", "") for p in enriched2)
-        images1 = ''.join(f'<img src="{p[1].get("photo_url", "")}" alt="{p[0].get("fullName", "")}">' for p in enriched1)
-        images2 = ''.join(f'<img src="{p[1].get("photo_url", "")}" alt="{p[0].get("fullName", "")}">' for p in enriched2)
-
-        return f'''{self.html_head(f"{court_name} - VS", "vs.css", 100000)}
-<body>
-    <div class="vs">
-        <div class="scoreboard">
-            <table>
-                <thead><tr><th>СЕТ1</th><th>СЕТ2</th><th>СЕТ3</th></tr></thead>
-                <tbody>
-                    <tr><td>{scores1[0]}</td><td>{scores1[1]}</td><td>{scores1[2]}</td></tr>
-                    <tr><td>{scores2[0]}</td><td>{scores2[1]}</td><td>{scores2[2]}</td></tr>
-                </tbody>
-            </table>
-            <table>
-                <thead><tr><th colspan="2">СЕТЫ</th></tr></thead>
-                <tbody><tr><td>{scores1[3]}</td><td>{scores2[3]}</td></tr></tbody>
-            </table>
-        </div>
-        <div class="block">
-            <div class="left_team">
-                <div class="left_participants">{names1}</div>
-                <div class="right_participants">{names2}</div>
-            </div>
-            <div class="teams-wrapper">
-                <div class="team-container team-left">{images1}</div>
-                <div class="team-container team-left">{images2}</div>
-            </div>
-        </div>
-    </div>
-</body>
-</html>'''
-
     def generate_winner_page_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
         """Генерирует HTML страницу победителей"""
         court_name = court_data.get("court_name", "Court")
