@@ -196,6 +196,7 @@ body {
     color: #FFFFFF;
     text-transform: uppercase;
 	
+	
 }
 
 .lost {
@@ -205,8 +206,9 @@ body {
 
 /* Блоки со счетом сетов*/
 .set-score {
-    width: 60px; 
-    text-align: right;     /* Размещаем счет справа от имени, но слева от рейтинга */
+    display: inline-block; /* Позволяет задавать ширину */
+    width: 21px;           /* Фиксированная ширина */
+    text-align: right; 
     padding-right: 10px;
 }
 

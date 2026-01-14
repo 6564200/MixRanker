@@ -133,12 +133,19 @@ body {
 }
 
 /* Styles for set scores (set1_1, set1_2, etc.) */
-.set {
+.sets-container {
     position: absolute;
+    right: 58px; /* Справа от основного счёта */
+    top: 0;
+    height: 43px;
+    display: flex;
+    flex-direction: row; /* Сеты слева направо: 1, 2, 3... */
+    align-items: center;
+}
+
+.set {
     width: 43px;
     height: 43px;
-    top: 0px;
-	right: 58px; /* Справа от основного счета (58px ширина main-score-area) */
     font-weight: 700;
     font-size: 30px;
     line-height: 38px;
@@ -147,15 +154,11 @@ body {
     justify-content: center;
     text-align: center;
     color: #FFFFFF;
-    /* color: color(display-p3 1.000 1.000 1.000); */
 }
 
 .setV {
-    position: absolute;
     width: 43px;
     height: 43px;
-    top: 0px;
-	right: 58px; /* Справа от основного счета (58px ширина main-score-area) */
     font-weight: 700;
     font-size: 30px;
     line-height: 38px;
@@ -164,13 +167,8 @@ body {
     justify-content: center;
     text-align: center;
     color: #FFFFFF;
-	background: linear-gradient(180deg, #5C5C5C 0%, #333333 100%);
-    /* color: color(display-p3 1.000 1.000 1.000); */
+    background: linear-gradient(180deg, #5C5C5C 0%, #333333 100%);
 }
-
-.set1-0, .set2-0 { left: 473px; } /* 499px left minus 26px offset */
-.set1-1, .set2-1 { left: 430px; } /* 456px left minus 26px offset */
-.set1-2, .set2-2 { left: 387px; } /* 413px left minus 26px offset */
 
 
 .score-text {

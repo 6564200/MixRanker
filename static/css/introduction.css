@@ -1,0 +1,191 @@
+@font-face {
+    font-family: 'Onest';
+    src: url('/static/fonts/Onest-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Onest', Arial, sans-serif;
+    background: transparent;
+    width: 3840px;
+    height: 651px;
+    overflow: hidden;
+}
+
+.intro-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 50px 10px;
+    width: 3840px;
+    height: 651px;
+}
+
+/* Header с названием раунда */
+.intro-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 23px 0px 0px;
+    width: 589px;
+    height: 100px;
+    background: linear-gradient(180deg, #AED753 0%, #83C000 100%);
+    border-radius: 10px;
+    margin-bottom: -10px;
+    z-index: 10;
+}
+
+.intro-header-text {
+    font-family: 'Onest', Arial, sans-serif;
+    font-weight: 700;
+    font-size: 60px;
+    line-height: 77px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    color: #202020;
+    text-transform: uppercase;
+}
+
+/* Основной контейнер */
+.intro-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 3550px;
+    height: 420px;
+}
+
+.intro-frame {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 3550px;
+    height: 420px;
+    background: #80BD00;
+    border-radius: 15px;
+}
+
+.intro-info {
+    position: relative;
+    width: 3550px;
+    height: 393px;
+    background: #000000;
+    border-radius: 5px;
+}
+
+/* Команда 1 (слева) */
+.team1-name1 {
+    position: absolute;
+    width: 1500px;
+    height: 120px;
+    left: 249px;
+    top: 51px;
+    font-family: 'Onest', Arial, sans-serif;
+    font-weight: 700;
+    font-size: 96px;
+    line-height: 122px;
+    letter-spacing: -0.04em;
+    color: #FFFFFF;
+    text-transform: uppercase;
+}
+
+.team1-name2 {
+    position: absolute;
+    width: 1500px;
+    height: 120px;
+    left: 249px;
+    top: 222px;
+    font-family: 'Onest', Arial, sans-serif;
+    font-weight: 700;
+    font-size: 96px;
+    line-height: 122px;
+    letter-spacing: -0.04em;
+    color: #FFFFFF;
+    text-transform: uppercase;
+}
+
+.team1-flag1 {
+    position: absolute;
+    width: 100px;
+    height: 70px;
+    left: 99px;
+    top: 76px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.team1-flag2 {
+    position: absolute;
+    width: 100px;
+    height: 70px;
+    left: 99px;
+    top: 247px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* Команда 2 (справа) */
+.team2-name1 {
+    position: absolute;
+    width: 1500px;
+    height: 120px;
+    left: 1799px;
+    top: 51px;
+    font-family: 'Onest', Arial, sans-serif;
+    font-weight: 700;
+    font-size: 96px;
+    line-height: 122px;
+    text-align: right;
+    letter-spacing: -0.04em;
+    color: #FFFFFF;
+    text-transform: uppercase;
+}
+
+.team2-name2 {
+    position: absolute;
+    width: 1500px;
+    height: 120px;
+    left: 1799px;
+    top: 222px;
+    font-family: 'Onest', Arial, sans-serif;
+    font-weight: 700;
+    font-size: 96px;
+    line-height: 122px;
+    text-align: right;
+    letter-spacing: -0.04em;
+    color: #FFFFFF;
+    text-transform: uppercase;
+}
+
+.team2-flag1 {
+    position: absolute;
+    width: 100px;
+    height: 70px;
+    left: 3349px;
+    top: 76px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.team2-flag2 {
+    position: absolute;
+    width: 100px;
+    height: 70px;
+    left: 3349px;
+    top: 247px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
