@@ -930,24 +930,6 @@ def get_schedule_data(tournament_id):
         logger.error(f"Ошибка получения данных расписания: {e}")
         return jsonify({"error": str(e)}), 500
 
-
-@app.route('/api/html-live/schedule/<tournament_id>/addreality')
-def get_live_schedule_html_addreality(tournament_id):
-    """Расписание AddReality"""
-    try:
-        tournament_data = get_tournament_data(tournament_id)
-        if not tournament_data:
-            return "<html><body><h1>Турнир не найден</h1></body></html>", 404
-
-        target_date = request.args.get('date')
-        from api import get_settings
-        settings = get_settings()
-        html = html_generator.generate_schedule_html_addreality(tournament_data, target_date, settings)
-        return Response(html, mimetype='text/html; charset=utf-8')
-    except Exception as e:
-        return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
-
-
 @app.route('/api/html-live/round-robin/<tournament_id>/<class_id>/<int:draw_index>')
 def get_live_round_robin_html(tournament_id, class_id, draw_index):
     """Round Robin HTML"""
