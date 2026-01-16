@@ -1,68 +1,101 @@
+/* vs.css - VS страница 16:9 */
+/* Базовое разрешение: FHD 1920x1080 */
 
+@font-face {
+    font-family: 'Onest';
+    src: url('/static/fonts/Onest-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
 
-body {
+@font-face {
+    font-family: 'TT Bluescreens';
+    src: url('/static/fonts/TT-Bluescreens-Trial-Bold-Italic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+}
+
+* {
     margin: 0;
     padding: 0;
-    width: 3840px;
-    height: 2160px;
+    box-sizing: border-box;
+}
+
+:root {
+    --green-gradient: linear-gradient(180deg, #AED557 0%, #84C100 100%);
+    --dark-gradient: linear-gradient(180deg, #202020 0%, #070707 100%);
+    --green-line: #9ACB19;
+    --green-border: #95C602;
+    --text-white: #FFFFFF;
+    --text-dark: #080609;
+    --plashka-bg: #161417;
+    
+    /* FHD базовые размеры */
+    --base-width: 1920;
+    --base-height: 1080;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
     overflow: hidden;
     background: transparent;
     font-family: 'Onest', sans-serif;
-	zoom: 40%;
 }
 
 /* Container */
 .vs-container {
     position: relative;
-    width: 3840px;
-    height: 2160px;
-    /* background: url('/static/images/background_4k.png') center center no-repeat; */
+    width: 1920px;
+    height: 1080px;
+    transform-origin: top left;
     background-size: cover;
 }
 
-/* Header text */
+/* Header text - ЦЕНТР */
 .header-text {
     position: absolute;
-    top: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 2698px;
-    height: 271px;
+    top: 50px;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: 1349px;
+    height: 136px;
     text-align: center;
     z-index: 10;
 }
 
 .header-location {
-    font-family: 'TT Bluescreens Trl Cnd', sans-serif;
+    font-family: 'TT Bluescreens', sans-serif;
     font-style: italic;
     font-weight: 700;
-    font-size: 100px;
-    line-height: 200px;
+    font-size: 50px;
+    line-height: 100px;
     letter-spacing: 0.09em;
-    color: #FFFFFF;
+    color: var(--text-white);
     margin-bottom: 0;
 }
 
 .header-title {
-    font-family: 'TT Bluescreens Trl Cnd', sans-serif;
+    font-family: 'TT Bluescreens', sans-serif;
     font-style: italic;
     font-weight: 700;
-    font-size: 200px;
-    line-height: 139px;
+    font-size: 100px;
+    line-height: 70px;
     letter-spacing: 0.17em;
-    color: #FFFFFF;
+    color: var(--text-white);
 }
 
-/* Teams container - НА ЗАДНЕМ ПЛАНЕ */
+/* Teams container */
 .teams-wrapper {
     position: absolute;
-    bottom: 50px;
+    bottom: 25px;
     left: 0;
     right: 0;
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    padding: 0 10px;
+    padding: 0 5px;
     z-index: 1;
 }
 
@@ -70,8 +103,8 @@ body {
 .team-container {
     position: relative;
     display: block;
-    width: 1750px;
-    height: 1800px;
+    width: 875px;
+    height: 900px;
 }
 
 .team-container.team-left {
@@ -82,12 +115,12 @@ body {
     text-align: right;
 }
 
-/* Player photo - НА ЗАДНЕМ ПЛАНЕ */
+/* Player photo */
 .player-photo {
-    width: 1350px;
-    height: 1800px;
+    width: 675px;
+    height: 900px;
     object-fit: cover;
-    object-position: center bottom;
+    clip-path: inset(0 0 150px 0);
     position: absolute;
     bottom: 0;
 }
@@ -99,13 +132,13 @@ body {
 }
 
 .team-container.team-left .player-photo:last-child {
-    left: 400px;
+    left: 200px;
     z-index: 2;
 }
 
 /* Наложение для правой команды */
 .team-container.team-right .player-photo:first-child {
-    right: 400px;
+    right: 200px;
     z-index: 2;
 }
 
@@ -118,54 +151,45 @@ body {
     opacity: 0.3;
 }
 
-/* Score section - НАД ФОТО */
+/* Score section - внутри bottom-section */
 .score-section {
-    position: absolute;
-    bottom: 70px;
-    left: 50%;
-    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 5px;
     align-items: center;
     z-index: 5;
 }
 
 /* Single set score block */
 .set-block {
-    width: 955px;
-    height: 271px;
+    width: 478px;
+    height: 136px;
 }
 
-/* Set header - СЕРЫЙ для сетов */
+/* Set header */
 .set-header {
-    width: 955px;
-    height: 72px;
-    background: linear-gradient(180deg, #AED557 0%, #84C100 100%);
-    border-radius: 10px 10px 0px 0px;
+    width: 478px;
+    height: 36px;
+    background: var(--green-gradient);
+    border-radius: 5px 5px 0 0;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* Set header - ЗЕЛЕНЫЙ для геймов */
-.game-block .game-header {
-    background: linear-gradient(180deg, #AED557 0%, #84C100 100%);
-}
-
 .set-header-text {
     font-family: 'Onest', sans-serif;
     font-weight: 700;
-    font-size: 50px;
-    line-height: 64px;
-    color: #080609;
+    font-size: 25px;
+    line-height: 32px;
+    color: var(--text-dark);
 }
 
 /* Set scores */
 .set-scores {
-    width: 955px;
-    height: 199px;
-    background: linear-gradient(180deg, #202020 0%, #070707 100%);
+    width: 478px;
+    height: 100px;
+    background: var(--dark-gradient);
     display: flex;
 }
 
@@ -176,66 +200,74 @@ body {
     justify-content: center;
     font-family: 'Onest', sans-serif;
     font-weight: 700;
-    font-size: 160px;
-    line-height: 204px;
-    color: #FFFFFF;
+    font-size: 80px;
+    line-height: 102px;
+    color: var(--text-white);
     position: relative;
 }
 
 /* Divider between scores */
 .score-divider {
-    width: 7px;
-    height: 149px;
-    background: #9ACB19;
+    width: 4px;
+    height: 75px;
+    background: var(--green-line);
     align-self: center;
 }
 
-/* Bottom plashka - НАД ФОТО */
-.bottom-plashka {
+/* Bottom section - объединяет score и plashka */
+.bottom-section {
     position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 3647px;
-    height: 340px;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: 1824px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
     z-index: 10;
+}
+
+/* Bottom plashka - ЦЕНТР */
+.bottom-plashka {
+    width: 1824px;
+    height: 170px;
 }
 
 .plashka-border {
     position: absolute;
-    width: 3647px;
-    height: 340px;
-    background: #95C602;
-    border-radius: 10px;
+    width: 1824px;
+    height: 170px;
+    background: var(--green-border);
+    border-radius: 5px;
 }
 
 .plashka-content {
     position: absolute;
-    top: 13px;
+    top: 7px;
     left: 0;
-    width: 3647px;
-    height: 314px;
-    background: #161417;
-    border-radius: 8px;
+    width: 1824px;
+    height: 157px;
+    background: var(--plashka-bg);
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 0px;
+    padding: 0;
 }
 
 /* Team names in plashka */
 .team-names {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-	padding: 150px;
-	
+    gap: 5px;
+    padding: 75px;
 }
 
 .team-names.team-left {
     align-items: flex-start;
     text-align: left;
-	
 }
 
 .team-names.team-right {
@@ -246,14 +278,109 @@ body {
 .player-name {
     font-family: 'Onest', sans-serif;
     font-weight: 700;
-    font-size: 80px;
-    line-height: 102px;
+    font-size: 40px;
+    line-height: 51px;
     letter-spacing: -0.04em;
-    color: #FFFFFF;
+    color: var(--text-white);
     text-transform: uppercase;
 }
 
 /* Hidden class for 0-0 sets */
 .hidden {
     display: none !important;
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Animation Classes */
+.vs-container {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.header-text {
+    animation: slideInUp 0.6s ease-out 0.1s both;
+}
+
+.team-container.team-left {
+    animation: slideInLeft 0.7s ease-out 0.2s both;
+}
+
+.team-container.team-right {
+    animation: slideInRight 0.7s ease-out 0.2s both;
+}
+
+.score-section {
+    animation: scaleIn 0.6s ease-out 0.3s both;
+}
+
+.bottom-plashka {
+    animation: slideInUp 0.6s ease-out 0.4s both;
+}
+
+.set-block {
+    animation: scaleIn 0.4s ease-out both;
+}
+
+.set-block:nth-child(1) { animation-delay: 0.4s; }
+.set-block:nth-child(2) { animation-delay: 0.5s; }
+.set-block:nth-child(3) { animation-delay: 0.6s; }
+.set-block:nth-child(4) { animation-delay: 0.7s; }
+
+/* Update animation */
+.updating {
+    animation: pulse 0.3s ease-out;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
 }

@@ -1,3 +1,6 @@
+/* introduction.css - Страница представления матча 16:9 */
+/* Базовое разрешение: FHD 1920x1080 */
+
 @font-face {
     font-family: 'Onest';
     src: url('/static/fonts/Onest-Bold.ttf') format('truetype');
@@ -11,21 +14,36 @@
     box-sizing: border-box;
 }
 
-body {
-    font-family: 'Onest', Arial, sans-serif;
-    background: transparent;
-    width: 3840px;
-    height: 651px;
-    overflow: hidden;
+:root {
+    --green-gradient: linear-gradient(180deg, #AED753 0%, #83C000 100%);
+    --black-bg: #000000;
+    --green-frame: #80BD00;
+    --text-white: #FFFFFF;
+    --text-dark: #202020;
+    
+    /* FHD базовые размеры */
+    --base-width: 1920;
+    --base-height: 339;
 }
 
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+    font-family: 'Onest', Arial, sans-serif;
+}
+
+/* Контейнер с масштабированием */
 .intro-container {
+    width: 1920px;
+    height: 339px;
+    transform-origin: top left;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 50px 10px;
-    width: 3840px;
-    height: 651px;
+    padding: 426px 5px;
+    background: transparent;
 }
 
 /* Header с названием раунда */
@@ -34,23 +52,23 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 23px 0px 0px;
-    width: 589px;
-    height: 100px;
-    background: linear-gradient(180deg, #AED753 0%, #83C000 100%);
-    border-radius: 10px;
-    margin-bottom: -10px;
+    padding: 12px 0 0;
+    width: 307px;
+    height: 52px;
+    background: var(--green-gradient);
+    border-radius: 5px;
+    margin-bottom: -5px;
     z-index: 10;
 }
 
 .intro-header-text {
     font-family: 'Onest', Arial, sans-serif;
     font-weight: 700;
-    font-size: 60px;
-    line-height: 77px;
+    font-size: 31px;
+    line-height: 40px;
     text-align: center;
     letter-spacing: 0.05em;
-    color: #202020;
+    color: var(--text-dark);
     text-transform: uppercase;
 }
 
@@ -59,8 +77,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 3550px;
-    height: 420px;
+    width: 1849px;
+    height: 219px;
 }
 
 .intro-frame {
@@ -68,57 +86,63 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    width: 3550px;
-    height: 420px;
-    background: #80BD00;
-    border-radius: 15px;
+    width: 1849px;
+    height: 219px;
+    background: var(--green-frame);
+    border-radius: 8px;
 }
 
 .intro-info {
     position: relative;
-    width: 3550px;
-    height: 393px;
-    background: #000000;
-    border-radius: 5px;
+    width: 1849px;
+    height: 205px;
+    background: var(--black-bg);
+    border-radius: 3px;
 }
 
 /* Команда 1 (слева) */
 .team1-name1 {
     position: absolute;
-    width: 1500px;
-    height: 120px;
-    left: 249px;
-    top: 51px;
+    width: 781px;
+    height: 63px;
+    left: 130px;
+    top: 27px;
     font-family: 'Onest', Arial, sans-serif;
     font-weight: 700;
-    font-size: 96px;
-    line-height: 122px;
+    font-size: 50px;
+    line-height: 63px;
     letter-spacing: -0.04em;
-    color: #FFFFFF;
+    color: var(--text-white);
     text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .team1-name2 {
     position: absolute;
-    width: 1500px;
-    height: 120px;
-    left: 249px;
-    top: 222px;
+    width: 781px;
+    height: 63px;
+    left: 130px;
+    top: 116px;
     font-family: 'Onest', Arial, sans-serif;
     font-weight: 700;
-    font-size: 96px;
-    line-height: 122px;
+    font-size: 50px;
+    line-height: 63px;
     letter-spacing: -0.04em;
-    color: #FFFFFF;
+    color: var(--text-white);
     text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .team1-flag1 {
     position: absolute;
-    width: 100px;
-    height: 70px;
-    left: 99px;
-    top: 76px;
+    width: 52px;
+    height: 36px;
+    left: 52px;
+    top: 40px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -126,10 +150,10 @@ body {
 
 .team1-flag2 {
     position: absolute;
-    width: 100px;
-    height: 70px;
-    left: 99px;
-    top: 247px;
+    width: 52px;
+    height: 36px;
+    left: 52px;
+    top: 129px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -138,42 +162,48 @@ body {
 /* Команда 2 (справа) */
 .team2-name1 {
     position: absolute;
-    width: 1500px;
-    height: 120px;
-    left: 1799px;
-    top: 51px;
+    width: 781px;
+    height: 63px;
+    left: 937px;
+    top: 27px;
     font-family: 'Onest', Arial, sans-serif;
     font-weight: 700;
-    font-size: 96px;
-    line-height: 122px;
+    font-size: 50px;
+    line-height: 63px;
     text-align: right;
     letter-spacing: -0.04em;
-    color: #FFFFFF;
+    color: var(--text-white);
     text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .team2-name2 {
     position: absolute;
-    width: 1500px;
-    height: 120px;
-    left: 1799px;
-    top: 222px;
+    width: 781px;
+    height: 63px;
+    left: 937px;
+    top: 116px;
     font-family: 'Onest', Arial, sans-serif;
     font-weight: 700;
-    font-size: 96px;
-    line-height: 122px;
+    font-size: 50px;
+    line-height: 63px;
     text-align: right;
     letter-spacing: -0.04em;
-    color: #FFFFFF;
+    color: var(--text-white);
     text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .team2-flag1 {
     position: absolute;
-    width: 100px;
-    height: 70px;
-    left: 3349px;
-    top: 76px;
+    width: 52px;
+    height: 36px;
+    left: 1745px;
+    top: 40px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -181,11 +211,84 @@ body {
 
 .team2-flag2 {
     position: absolute;
-    width: 100px;
-    height: 70px;
-    left: 3349px;
-    top: 247px;
+    width: 52px;
+    height: 36px;
+    left: 1745px;
+    top: 129px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animation Classes */
+.intro-container {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.intro-header {
+    animation: slideInDown 0.6s ease-out 0.1s both;
+}
+
+.team1-name1,
+.team1-name2,
+.team1-flag1,
+.team1-flag2 {
+    animation: slideInLeft 0.6s ease-out 0.2s both;
+}
+
+.team2-name1,
+.team2-name2,
+.team2-flag1,
+.team2-flag2 {
+    animation: slideInRight 0.6s ease-out 0.2s both;
+}
+
+/* Update animation */
+.updating {
+    animation: pulse 0.3s ease-out;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
 }

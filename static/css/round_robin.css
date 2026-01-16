@@ -1,100 +1,90 @@
+/* round_robin.css - Групповая таблица 16:9 */
+/* Базовое разрешение: FHD 1920x1080 */
+
 @font-face {
     font-family: 'Bluescreens';
-    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
-    /* font-weight: bold; */
-    
+    src: url('/static/fonts/TT-Bluescreens-Trial-Bold-Italic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
 }
 
 @font-face {
-    font-family: 'Onest Bol';
+    font-family: 'Onest';
     src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
-
-    
+    font-weight: 700;
 }
 
 @font-face {
     font-family: 'Onest Med';
-    src: url('/static/fonts/OnestLight1602-hint') format('truetype');
-    font-weight: medium;
-    
+    src: url('/static/fonts/OnestLight1602-hint.ttf') format('truetype');
+    font-weight: 500;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 :root {
-    --font-primary: 'Bluescreens';
-    --font-onest-bold: 'Onest Bol';
-    --font-onest-med:: 'Onest Med';
-    /* Размеры */
-    --row-height: 30px;
-    --col-number-width: 30px;
-    --col-name-width: 140px;
-    --col-match-width: 160px;
-    --col-points-width: 60px;
-    --col-place-width: 60px;
-    --border-spacing: 4px;
-    
-    --table-width: 2000px;
+    --font-primary: 'Bluescreens', sans-serif;
+    --font-onest: 'Onest', sans-serif;
+    --font-onest-med: 'Onest Med', sans-serif;
     
     /* Цвета текста */
     --text-dark: #070707;
     --text-light: #F9F9F9;
-    --text-m-light: #b5b5b5;
+    --text-muted: #b5b5b5;
     
     /* Цвета ячеек */
-    --cell-gradient-b-bg: linear-gradient(to bottom, #202020, #070707);
-    --cell-line-bg: #91bf1f;
-    --cell-gradient-l-bg: linear-gradient(to bottom, #b6d569, #91bf1f);
+    --cell-dark-gradient: linear-gradient(180deg, #202020 0%, #070707 100%);
+    --cell-green-line: #91bf1f;
+    --cell-green-gradient: linear-gradient(180deg, #b6d569 0%, #91bf1f 100%);
+    
+    /* FHD базовые размеры */
+    --base-width: 1920;
+    --base-height: 1080;
 }
 
-body {
-    zoom: 100%;
-    font-family: var(--font-onest-bold);
-    background: transparent;
-    color: var(--text-dark);
-    width: 1823px;
-    height: 407px;
-    overflow: hidden;
-    position: relative;
-    margin: 0;
-    padding: 0;
-}
-
-.round-robin-container {
+html, body {
     width: 100%;
     height: 100%;
+    overflow: hidden;
+    background: transparent;
+    font-family: var(--font-onest);
+    color: var(--text-dark);
+}
+
+/* Контейнер с масштабированием */
+.round-robin-container {
+    transform-origin: top left;
     display: flex;
     flex-direction: column;
-    padding: 0px;
     align-items: center;
+    padding: 20px;
 }
 
 .round-robin-table {
     display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
     flex-direction: column;
     gap: 2px;
-    width: 1823px;
-    height: 407px;
-    background: var(--cell-line-bg)
+    background: var(--cell-green-line);
+    border-radius: 5px;
+    overflow: hidden;
 }
 
+/* Заголовок таблицы */
 .table-title {
     display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
     flex-direction: row;
-    width: 1823px;
-    height: 64px;
-    background-image: var(--cell-gradient-l-bg);
+    height: 65px;
+    background: var(--cell-green-gradient);
 }
 
 .table-header {
     display: flex;
-    align-items: left;
-    justify-content: left;
-    flex-direction: row;
-    width: 770px;
-    height: 64px;
+    align-items: center;
+    height: 65px;
 }
 
 .cell-num {
@@ -102,141 +92,115 @@ body {
     align-items: center;
     justify-content: center;
     width: 70px;
-    height: 64px;
+    height: 65px;
 }
 
 .cell-gpp {
     display: flex;
     align-items: center;
-    justify-content: left;
-    width: auto;
-    height: auto;
-    font-weight: 400;
+    justify-content: flex-start;
+    font-weight: 700;
     font-size: 32px;
     line-height: 1;
-    text-align: center;
-    color: rgb(0, 0, 0);
+    color: var(--text-dark);
+    padding-left: 15px;
 }
 
+/* Заголовки номеров команд */
 .team-number-header {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    flex-direction: row;
-    width: 175px;
-    height: 64px;
+    justify-content: center;
+    height: 65px;
 }
 
 .team-number {
     display: flex;
-    align-items: center;  
+    align-items: center;
     justify-content: center;
-    flex-direction: row;  
-    width: 175px;
-    height: 65px;
-    font-weight: 400;
+    width: 100%;
+    height: 100%;
+    font-weight: 700;
     font-size: 32px;
-    line-height: 0.36;
-    text-align: center;
     color: var(--text-dark);
 }
 
+/* Заголовки очков/места */
 .points-header {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    flex-direction: row;
-    gap: 0px;
-    width: 175px;
+    justify-content: center;
     height: 65px;
 }
 
 .points {
     display: flex;
-    align-items: center;  
+    align-items: center;
     justify-content: center;
-    flex-direction: row;
-    width: 175px;
-    height: 63px;
-    font-size: 32px;
-    text-align: center;
-    color: var(--text-dark) 
+    width: 100%;
+    height: 100%;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-dark);
 }
 
 /* Строки таблицы */
 .team-row {
     display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
     flex-direction: row;
-    width: 1823px;
-    height: 83px;
-    background-image: var(--cell-gradient-b-bg);
+    height: 85px;
+    background: var(--cell-dark-gradient);
 }
 
 .team-number-cell {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    flex-direction: row;
-    width: 770px;
-    height: 83px;
+    height: 85px;
 }
 
 .team-num {
     display: flex;
-    align-items: center;  
+    align-items: center;
     justify-content: center;
-    flex-direction: row;  
     width: 70px;
-    height: 83px;
-    font-weight: 400;
+    height: 85px;
+    font-weight: 700;
     font-size: 32px;
-    line-height: 0.36;
-    text-align: center;
-    color: var(--text-m-light);
+    color: var(--text-muted);
 }
 
 .team-name-cell {
     display: flex;
     align-items: center;
-    justify-content: left;
-    flex-direction: row;
-    width: 700px;
-    height: 83px;
-    background: rgba(255, 255, 255, 0);
-    font-weight: 400;
+    justify-content: flex-start;
+    height: 85px;
+    padding-left: 15px;
+    font-weight: 700;
     font-size: 32px;
-    line-height: 1;
     color: var(--text-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
+/* Диагональная ячейка */
 .diagonal-cell {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    flex-direction: row;
-    width: 175px;
-    height: 83px;
-    background: var(--cell-gradient-l-bg);
+    justify-content: center;
+    height: 85px;
+    background: var(--cell-green-gradient);
 }
 
-.match-cell-bye-cell {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    flex-direction: row;
-}
-
-/* Ячейки номеров команд */
+/* Ячейка матча */
 .match-cell {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 175px;
-    height: 83px;
-    background: var(--cell-gradient-b-bg);
+    height: 85px;
+    background: var(--cell-dark-gradient);
+    transition: all 0.3s ease;
 }
 
 .match-cell-empty-cell {
@@ -244,78 +208,168 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 175px;
-    height: 83px;
-    background: var(--cell-gradient-b-bg);	
+    height: 85px;
+    background: var(--cell-dark-gradient);
 }
 
-.match-score {
-    width: auto;
-    height: auto;
-    font-weight: 400;
-    font-size: 40px;
-    line-height: 1;
-    color: var(--text-light);
-    margin-bottom: 4px; /* отступ снизу */
-}
-
-.match-sets {
-    width: auto;
-    height: auto;
-    font-family: var(--font-onest-med);
-    font-weight: 400;
-    font-size: 21px;
-    line-height: 1;
-    text-align: center;
-    color: var(--text-m-light);	
-}
-
-.points-cell {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    flex-direction: row;
-    gap: 0px;
-    width: 175px;
-    height: 83px;
-    background: var(--cell-gradient-b-bg);
-}
-
-.points-z {
+.match-cell-bye-cell {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: row;
-    width: 175px;
-    height: 83px;
-
-    font-weight: 400;
-    font-size: 40px;
-    line-height: 0.36;
-    text-align: center;
-    color: var(--text-light);
+    height: 85px;
+    background: var(--cell-dark-gradient);
+    color: var(--text-muted);
+    font-size: 24px;
 }
 
+.match-score {
+    font-weight: 700;
+    font-size: 36px;
+    color: var(--text-light);
+    margin-bottom: 4px;
+}
+
+.match-sets {
+    font-family: var(--font-onest-med);
+    font-weight: 500;
+    font-size: 20px;
+    color: var(--text-muted);
+}
+
+/* Ячейки очков и места */
+.points-cell,
 .place-cell {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    flex-direction: row;
-    width: 175px;
-    height: 83px;
-    background: var(--cell-gradient-b-bg);
+    justify-content: center;
+    height: 85px;
+    background: var(--cell-dark-gradient);
 }
 
+.points-z,
 .place-z {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: row;
-    width: 175px;
-    height: 83px;
-    font-weight: 400;
-    font-size: 40px;
-    line-height: 0.36;
-    text-align: center;
+    width: 100%;
+    height: 100%;
+    font-weight: 700;
+    font-size: 36px;
     color: var(--text-light);
+}
+
+/* Hidden */
+.hidden {
+    display: none !important;
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes scoreUpdate {
+    0% {
+        transform: scale(1);
+        text-shadow: 0 0 0 transparent;
+    }
+    50% {
+        transform: scale(1.15);
+        text-shadow: 0 0 15px rgba(174, 213, 87, 0.8);
+    }
+    100% {
+        transform: scale(1);
+        text-shadow: 0 0 0 transparent;
+    }
+}
+
+@keyframes highlightCell {
+    0% {
+        box-shadow: inset 0 0 0 0 rgba(174, 213, 87, 0);
+    }
+    50% {
+        box-shadow: inset 0 0 20px 5px rgba(174, 213, 87, 0.4);
+    }
+    100% {
+        box-shadow: inset 0 0 0 0 rgba(174, 213, 87, 0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+
+/* Animation Classes */
+.round-robin-container {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.table-title {
+    animation: slideInUp 0.5s ease-out 0.1s both;
+}
+
+.team-row {
+    animation: slideInLeft 0.4s ease-out both;
+}
+
+.team-row:nth-child(2) { animation-delay: 0.15s; }
+.team-row:nth-child(3) { animation-delay: 0.2s; }
+.team-row:nth-child(4) { animation-delay: 0.25s; }
+.team-row:nth-child(5) { animation-delay: 0.3s; }
+.team-row:nth-child(6) { animation-delay: 0.35s; }
+
+/* Update animations */
+.match-cell.updating .match-score {
+    animation: scoreUpdate 0.5s ease-out;
+}
+
+.match-cell.updated {
+    animation: highlightCell 1s ease-out;
+}
+
+.points-z.updating,
+.place-z.updating {
+    animation: scoreUpdate 0.5s ease-out;
+}
+
+.fade-out {
+    animation: fadeOut 0.3s ease-out forwards !important;
+}
+
+/* Transition for smooth updates */
+.match-score,
+.match-sets,
+.points-z,
+.place-z {
+    transition: all 0.3s ease;
 }

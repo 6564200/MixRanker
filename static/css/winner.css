@@ -1,129 +1,137 @@
+/* winner.css - Страница победителя 16:9 */
+/* Базовое разрешение: FHD 1920x1080 */
+
 @font-face {
-    font-family: 'Onest Bol';
+    font-family: 'Onest';
     src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
+    font-weight: 700;
 }
 
 @font-face {
     font-family: 'Onest Med';
-    src: url('/static/fonts/OnestLight1602-hint') format('truetype');
-    font-weight: medium;
+    src: url('/static/fonts/OnestLight1602-hint.ttf') format('truetype');
+    font-weight: 500;
 }
 
 @font-face {
     font-family: 'Bluescreens';
-    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
+    src: url('/static/fonts/TT-Bluescreens-Trial-Bold-Italic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
 }
 
-body {
+* {
     margin: 0;
     padding: 0;
-    width: 3840px;
-    height: 2160px;
+    box-sizing: border-box;
+}
+
+:root {
+    --green-gradient: linear-gradient(180deg, #A4D33E 0%, #82C100 100%);
+    --dark-gradient: linear-gradient(180deg, #202020 0%, #070707 100%);
+    --green-solid: #8DC900;
+    --text-white: #FAFAFA;
+    
+    /* FHD базовые размеры */
+    --base-width: 1920;
+    --base-height: 1080;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
     overflow: hidden;
-    /*background: rgba(55, 55, 255, 0.18);*/
-	background: transparent;
+    background: transparent;
     font-family: 'Onest', sans-serif;
 }
 
 .winner {
     position: relative;
-    width: 3840px;
-    height: 2160px;
+    width: 1920px;
+    height: 1080px;
+    transform-origin: top left;
 }
 
 .winner_container {
     position: relative;
-    width: 3840px;
-    height: 2160px;
+    width: 1920px;
+    height: 1080px;
 }
 
+/* Название категории */
 .class_name {
     position: absolute;
-    left: 190px;
-    top: 170px;
-    font-family: 'Bluescreens';
+    left: 95px;
+    top: 85px;
+    font-family: 'Bluescreens', sans-serif;
     font-style: italic;
     font-weight: 700;
-    font-size: 140px;
-    line-height: 150px;
-    letter-spacing: -0.00em;
-    background: linear-gradient(180deg, #A4D33E 0%, #82C100 100%);
+    font-size: 70px;
+    line-height: 75px;
+    letter-spacing: 0;
+    background: var(--green-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-	display: inline-block;
+    display: inline-block;
 }
 
 /* ПОБЕДИТЕЛЬ */
-
 .txt_winner {
-	position: absolute;
-	font-family: 'Bluescreens';
-		left: 170px;
-		top: 230px;
-	font-style: italic;
-	font-weight: 700;
-	font-size: 400px;
-	line-height: 565px;
-	letter-spacing: -0.01em;
-    color: #FAFAFA;
-}
-
-
-.winner_container > span:first-of-type {
     position: absolute;
-    left: 190px;
-    top: 170px;
-    font-family: 'Bluescreens';
+    left: 85px;
+    top: 115px;
+    font-family: 'Bluescreens', sans-serif;
     font-style: italic;
     font-weight: 700;
-    font-size: 500px;
-    line-height: 565px;
+    font-size: 200px;
+    line-height: 283px;
     letter-spacing: -0.01em;
-    color: #FAFAFA;
+    color: var(--text-white);
 }
 
+/* Таблица победителей */
 .winners_table {
     position: absolute;
-    left: 188px;
-    top: 977px;
+    left: 94px;
+    top: 489px;
     display: flex;
     flex-direction: column;
-    gap: 67px;
+    gap: 34px;
 }
 
 .winners_table > div {
     display: flex;
     flex-direction: row;
-    gap: 67px;
+    gap: 34px;
     align-items: flex-start;
 }
 
 .flag-icon {
-    width: 140px;
-    height: 98px;
+    width: 70px;
+    height: 49px;
     flex-shrink: 0;
-    margin-top: 26px;
+    margin-top: 13px;
 }
 
 .win_name {
-    font-family: 'Onest Bol';
+    font-family: 'Onest', sans-serif;
     font-weight: 700;
-    font-size: 120px;
-    line-height: 153px;
+    font-size: 60px;
+    line-height: 77px;
     letter-spacing: -0.04em;
-    color: #FAFAFA;
+    color: var(--text-white);
     text-transform: uppercase;
     margin: 0;
 }
 
 .country_name {
-    font-family: 'Onest Bol';
+    font-family: 'Onest', sans-serif;
     font-weight: 700;
-    font-size: 50px;
-    line-height: 64px;
-    letter-spacing: -0.00em;
-    color: #FAFAFA;
+    font-size: 25px;
+    line-height: 32px;
+    letter-spacing: 0;
+    color: var(--text-white);
     text-transform: uppercase;
     margin: 0;
 }
@@ -131,29 +139,30 @@ body {
 .player-info {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 3px;
 }
 
+/* Контейнер с фото */
 .image_container {
     position: absolute;
     display: flex;
     flex-direction: row;
     align-items: flex-end;
-    left: 1804px;
+    left: 902px;
     top: 0;
-    width: 2036px;
-    height: 2160px;
+    width: 1018px;
+    height: 1080px;
 }
 
 .image_container img {
-    width: 1500px;
-    height: 2000px;
+    width: 750px;
+    height: 1000px;
     object-fit: cover;
     flex-shrink: 0;
 }
 
 .image_container img:first-child {
-    margin-right: -955px;
+    margin-right: -478px;
     z-index: 1;
 }
 
@@ -162,29 +171,34 @@ body {
     z-index: 2;
 }
 
+.image_container img.silhouette {
+    opacity: 0.3;
+}
+
+/* Блок информации снизу */
 .info_block {
     position: absolute;
-    left: 150px;
-    top: 1680px;
-    width: 3350px;
-    height: 270px;
-    padding: 28px 0 28px 150px;
-    background: #8DC900;
-    border-radius: 4px;
+    left: 75px;
+    top: 840px;
+    width: 1675px;
+    height: 135px;
+    padding: 14px 0 14px 75px;
+    background: var(--green-solid);
+    border-radius: 2px;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 3px;
 }
 
 .info_block::before {
     content: '';
     position: absolute;
-    width: 3500px;
-    height: 306px;
+    width: 1750px;
+    height: 153px;
     left: 0;
-    top: 8px;
-    background: linear-gradient(180deg, #202020 0%, #070707 100%);
-    border-radius: 4px;
+    top: 4px;
+    background: var(--dark-gradient);
+    border-radius: 2px;
     z-index: 0;
 }
 
@@ -194,38 +208,146 @@ body {
 }
 
 .info_block > span:first-child {
-    font-family: 'Onest Bol';
+    font-family: 'Onest', sans-serif;
     font-weight: 700;
-    font-size: 50px;
-    line-height: 64px;
+    font-size: 25px;
+    line-height: 32px;
     letter-spacing: 0.05em;
-    color: #8DC900;
+    color: var(--green-solid);
 }
 
 .info_block .loser {
-    font-family: 'Onest Bol', sans-serif;
+    font-family: 'Onest', sans-serif;
     font-weight: 700;
-    font-size: 80px;
-    line-height: 102px;
-    color: #FAFAFA;
+    font-size: 40px;
+    line-height: 51px;
+    color: var(--text-white);
     text-transform: uppercase;
 }
 
 .info_block .score {
     display: flex;
     flex-direction: row;
-    gap: 50px;
+    gap: 25px;
 }
 
 .set_score {
-    font-family: 'Onest Bol';
+    font-family: 'Onest', sans-serif;
     font-weight: 700;
-    font-size: 50px;
-    line-height: 64px;
+    font-size: 25px;
+    line-height: 32px;
     letter-spacing: -0.04em;
-    color: #FAFAFA;
+    color: var(--text-white);
 }
 
+/* No winner */
+.no-winner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Onest', sans-serif;
+    font-weight: 700;
+    font-size: 60px;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+}
+
+/* Hidden */
 .hidden {
     display: none !important;
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Animation Classes */
+.winner {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.class_name {
+    animation: slideInLeft 0.6s ease-out 0.1s both;
+}
+
+.txt_winner {
+    animation: slideInLeft 0.7s ease-out 0.2s both;
+}
+
+.winners_table {
+    animation: slideInLeft 0.6s ease-out 0.3s both;
+}
+
+.winners_table > div:nth-child(1) {
+    animation: slideInUp 0.5s ease-out 0.4s both;
+}
+
+.winners_table > div:nth-child(2) {
+    animation: slideInUp 0.5s ease-out 0.5s both;
+}
+
+.image_container {
+    animation: slideInRight 0.7s ease-out 0.3s both;
+}
+
+.info_block {
+    animation: slideInUp 0.6s ease-out 0.5s both;
+}
+
+/* Update animation */
+.updating {
+    animation: pulse 0.3s ease-out;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
 }

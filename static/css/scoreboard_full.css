@@ -41,8 +41,6 @@ html, body {
 
 /* Контейнер с масштабированием */
 .scoreboard-full-container {
-    width: 3840px;
-    height: 2160px;
     transform-origin: top left;
     display: flex;
     flex-direction: column;

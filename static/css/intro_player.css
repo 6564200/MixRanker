@@ -1,0 +1,189 @@
+/* intro_player.css - Страница представления игрока 16:9 */
+/* Базовое разрешение: FHD 1920x1080 */
+
+@font-face {
+    font-family: 'Onest';
+    src: url('/static/fonts/Onest-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --green-gradient: linear-gradient(180deg, #AED753 0%, #83C000 100%);
+    --dark-gradient: linear-gradient(180deg, #202020 0%, #070707 100%);
+    --green-line: #AED557;
+    --text-white: #F9F9F9;
+    --text-dark: #080609;
+    --text-muted: rgba(255, 255, 255, 0.7);
+    
+    /* FHD базовые размеры */
+    --base-width: 1920;
+    --base-height: 400;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+    font-family: 'Onest', Arial, sans-serif;
+}
+
+/* Контейнер с масштабированием */
+.intro-player-container {
+    width: 1920px;
+    height: 400px;
+    transform-origin: top left;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+}
+
+/* Карточка игрока */
+.player-card {
+    display: flex;
+    flex-direction: column;
+    width: 800px;
+    background: var(--dark-gradient);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 4px solid var(--green-line);
+}
+
+/* Header с именем */
+.player-header {
+    display: flex;
+    align-items: center;
+    padding: 20px 30px;
+    background: var(--green-gradient);
+    gap: 20px;
+}
+
+.player-flag {
+    width: 60px;
+    height: 42px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    flex-shrink: 0;
+}
+
+.player-name {
+    font-family: 'Onest', Arial, sans-serif;
+    font-weight: 700;
+    font-size: 36px;
+    line-height: 46px;
+    letter-spacing: -0.02em;
+    color: var(--text-dark);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Информация об игроке */
+.player-info {
+    display: flex;
+    flex-direction: column;
+    padding: 20px 30px;
+    gap: 12px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-family: 'Onest', Arial, sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 26px;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.info-value {
+    font-family: 'Onest', Arial, sans-serif;
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 31px;
+    color: var(--text-white);
+    text-align: right;
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Animation Classes */
+.intro-player-container {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.player-card {
+    animation: scaleIn 0.6s ease-out 0.1s both;
+}
+
+.player-header {
+    animation: slideInUp 0.5s ease-out 0.2s both;
+}
+
+.info-row {
+    animation: slideInUp 0.4s ease-out both;
+}
+
+.info-row:nth-child(1) { animation-delay: 0.3s; }
+.info-row:nth-child(2) { animation-delay: 0.4s; }
+.info-row:nth-child(3) { animation-delay: 0.5s; }
+.info-row:nth-child(4) { animation-delay: 0.6s; }
+
+/* Update animation */
+.updating {
+    animation: pulse 0.3s ease-out;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
