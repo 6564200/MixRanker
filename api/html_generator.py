@@ -10,9 +10,13 @@ import logging
 
 from .html_scoreboard import ScoreboardGenerator
 from .html_scoreboard_full import ScoreboardFullGenerator
+from .html_introduction import IntroductionGenerator
+from .html_intro_player import IntroPlayerGenerator
 from .html_vs import VSGenerator
+from .html_winner import WinnerGenerator
 from .html_schedule import ScheduleGenerator
-from .html_bracket import TournamentBracketGenerator
+from .html_round_robin import RoundRobinGenerator
+from .html_elimination import EliminationGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +30,13 @@ class HTMLGenerator:
     def __init__(self):
         self._scoreboard = ScoreboardGenerator()
         self._scoreboard_full = ScoreboardFullGenerator()
+        self._introduction = IntroductionGenerator()
+        self._intro_player = IntroPlayerGenerator()
         self._vs = VSGenerator()
+        self._winner = WinnerGenerator()
         self._schedule = ScheduleGenerator()
-        self._bracket = TournamentBracketGenerator()
+        self._round_robin = RoundRobinGenerator()
+        self._elimination = EliminationGenerator()
 
     # === Scoreboard методы ===
 
@@ -47,11 +55,15 @@ class HTMLGenerator:
     def generate_next_match_page_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
         return self._scoreboard.generate_next_match_page_html(court_data, id_url, tournament_data)
 
-    def generate_introduction_page_html(self, participant_info: Dict) -> str:
-        return self._scoreboard.generate_introduction_page_html(participant_info)
+    # === Introduction методы ===
 
-    def generate_match_introduction_html(self, court_data: Dict, match_info: Dict = None) -> str:
-        return self._scoreboard.generate_match_introduction_html(court_data, match_info)
+    def generate_introduction_page_html(self, participant_info: Dict, tournament_id: str = None) -> str:
+        """Генерирует страницу представления игрока"""
+        return self._intro_player.generate_introduction_page_html(participant_info, tournament_id)
+
+    def generate_match_introduction_html(self, court_data: Dict, match_info: Dict = None, tournament_id: str = None, court_id: str = None) -> str:
+        """Генерирует страницу представления матча"""
+        return self._introduction.generate_match_introduction_html(court_data, match_info, tournament_id, court_id)
 
     # === VS методы ===
 
@@ -61,8 +73,8 @@ class HTMLGenerator:
     def generate_vs_page_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
         return self._vs.generate_vs_page_html(court_data, id_url, tournament_data)
 
-    def generate_winner_page_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
-        return self._vs.generate_winner_page_html(court_data, id_url, tournament_data)
+    def generate_winner_page_html(self, court_data: Dict, id_url: List[Dict] = None, tournament_data: Dict = None, tournament_id: str = None, court_id: str = None) -> str:
+        return self._winner.generate_winner_page_html(court_data, id_url, tournament_data, tournament_id, court_id)
 
     # === Schedule методы ===
 
@@ -80,8 +92,8 @@ class HTMLGenerator:
 
     # === Bracket методы ===
 
-    def generate_round_robin_html(self, tournament_data: Dict, xml_type_info: Dict) -> str:
-        return self._bracket.generate_round_robin_html(tournament_data, xml_type_info)
+    def generate_round_robin_html(self, tournament_data: Dict, xml_type_info: Dict, tournament_id: str = None) -> str:
+        return self._round_robin.generate_round_robin_html(tournament_data, xml_type_info, tournament_id)
 
     def generate_elimination_html(self, tournament_data: Dict, xml_type_info: Dict) -> str:
-        return self._bracket.generate_elimination_html(tournament_data, xml_type_info)
+        return self._elimination.generate_elimination_html(tournament_data, xml_type_info)

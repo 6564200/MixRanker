@@ -4,7 +4,7 @@
 vMixRanker API модуль v2.6
 """
 
-__version__ = "2.6.0"
+__version__ = "2.6.1"
 
 # Константы и утилиты
 from .constants import (
@@ -48,7 +48,11 @@ from .html_base import HTMLBaseGenerator
 from .html_scoreboard import ScoreboardGenerator
 from .html_vs import VSGenerator
 from .html_schedule import ScheduleGenerator
-from .html_bracket import TournamentBracketGenerator
+from .html_introduction import IntroductionGenerator
+from .html_intro_player import IntroPlayerGenerator
+from .html_winner import WinnerGenerator
+from .html_round_robin import RoundRobinGenerator
+from .html_elimination import EliminationGenerator
 
 __all__ = [
     '__version__',

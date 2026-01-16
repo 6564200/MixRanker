@@ -14,18 +14,34 @@ logger = logging.getLogger(__name__)
 
 class ScheduleGenerator(HTMLBaseGenerator):
     """Генератор schedule страниц"""
+    
+    # FHD размеры (увеличенные)
+    MATCH_HEIGHT = 86
+    GAP = 8
+
+    def _split_team_name(self, team_name: str) -> list:
+        """Разбивает имя команды на отдельных игроков"""
+        if not team_name:
+            return ["TBD"]
+        
+        # Разделители: "/" или " / "
+        if "/" in team_name:
+            players = [p.strip() for p in team_name.split("/")]
+            return [p for p in players if p]
+        
+        return [team_name]
+
+    def _get_tournament_name_class(self, name: str) -> str:
+        """Определяет CSS класс для названия турнира в зависимости от длины"""
+        if len(name) > 40:
+            return "very-long-name"
+        elif len(name) > 25:
+            return "long-name"
+        return ""
 
     def generate_schedule_html(self, tournament_data: Dict, target_date: str = None, settings: Dict = None) -> str:
         """Генерирует HTML для расписания матчей"""
-        return self._generate_schedule(tournament_data, target_date, "schedule_new.css", filter_matches=True, settings=settings)
-
-    def generate_schedule_html_new(self, tournament_data: Dict, target_date: str = None, settings: Dict = None) -> str:
-        """Генерирует HTML для расписания (новый дизайн)"""
-        return self._generate_schedule(tournament_data, target_date, "schedule_new.css", filter_matches=False, settings=settings)
-
-    def generate_schedule_html_addreality(self, tournament_data: Dict, target_date: str = None, settings: Dict = None) -> str:
-        """Генерирует HTML для расписания (Addreality дизайн)"""
-        return self._generate_schedule(tournament_data, target_date, "schedule_addreality.css", filter_matches=False, settings=settings)
+        return self._generate_schedule(tournament_data, target_date, "schedule.css", filter_matches=True, settings=settings)
 
     def get_schedule_data(self, tournament_data: Dict, target_date: str = None, settings: Dict = None) -> Dict:
         """Возвращает данные расписания в формате JSON для AJAX"""
@@ -330,7 +346,7 @@ class ScheduleGenerator(HTMLBaseGenerator):
                 [m for m in matches if m.get("ChallengerResult") or m.get("ChallengedResult")],
                 key=lambda x: x.get("datetime_obj") or datetime.min
             )
-            
+            logger.error(f"filter_matches: {with_results}")
             if len(with_results) >= finished_count:
                 # Берём время N-го с конца (первого из показываемых)
                 cutoff_match = with_results[-finished_count]
@@ -351,7 +367,7 @@ class ScheduleGenerator(HTMLBaseGenerator):
             return courts_matches
         
         # Шаг 2: Находим самое позднее время отсечки (отстающий корт)
-        global_cutoff = max(t for t in court_cutoff_times.values() if t)
+        global_cutoff = min(t for t in court_cutoff_times.values() if t)
         
         # Шаг 3: Фильтруем все корты по глобальному времени отсечки
         filtered = {}
@@ -377,25 +393,40 @@ class ScheduleGenerator(HTMLBaseGenerator):
             for m in courts_matches[court]:
                 version_data += f":{m.get('TournamentMatchId', '')}:{m.get('ChallengerResult', '')}:{m.get('ChallengedResult', '')}"
         version = hashlib.md5(version_data.encode()).hexdigest()[:12]
+        
+        # Определяем класс для названия турнира
+        name_class = self._get_tournament_name_class(tournament_name)
 
         html = f'''{self.html_head(f"Расписание матчей - {tournament_name}", css_file, 0)}
 <body>
     <div class="schedule-container" data-tournament-id="{tournament_id}" data-target-date="{target_date}" data-version="{version}">
+
+        <!-- Header -->
+        <div class="header">
+            <div class="tournament-name {name_class}">{tournament_name}</div>
+            <div class="logos">
+                <div class="logo logo4" style="background-image: url('/static/images/logo4.png');"></div>
+                <div class="logo logo3" style="background-image: url('/static/images/logo3.png');"></div>
+                <div class="logo logo2" style="background-image: url('/static/images/logo2.png');"></div>
+                <div class="logo logo1" style="background-image: url('/static/images/logo1.png');"></div>
+            </div>
+        </div>
+
         <div class="main-grid">
-            <div class="time-scale" style="display: grid; grid-template-rows: repeat({len(time_slots)}, 86px); gap: 16px; padding-top: 64px;">'''
+            <div class="time-scale" style="display: grid; grid-template-rows: repeat({len(time_slots)}, {self.MATCH_HEIGHT}px); gap: {self.GAP}px; padding-top: 36px;">'''
         
         for idx, time_slot in enumerate(time_slots):
             html += f'<div class="time-slot" style="animation-delay: {0.1 + idx * 0.05}s;">{time_slot}</div>'
         
         html += '''</div>
             <div class="courts-container">
-                <div class="courts-header">'''
+                <div class="courts-header" style="grid-template-columns: repeat(''' + str(len(sorted_courts)) + ''', 1fr);">'''
         
         for court_name in sorted_courts:
             html += f'<div class="court-header"><h3>{court_name}</h3></div>'
         
         html += f'''</div>
-                <div class="matches-grid" style="display: grid; grid-template-rows: repeat({len(time_slots)}, 86px); grid-template-columns: repeat({len(sorted_courts)}, 534px); gap: 16px;">'''
+                <div class="matches-grid" style="display: grid; grid-template-rows: repeat({len(time_slots)}, {self.MATCH_HEIGHT}px); grid-template-columns: repeat({len(sorted_courts)}, 1fr); gap: {self.GAP}px;">'''
 
         # Размещаем матчи по сетке
         for col_idx, court_name in enumerate(sorted_courts):
@@ -411,12 +442,12 @@ class ScheduleGenerator(HTMLBaseGenerator):
         return html
 
     def _render_match_item_grid(self, match: Dict, row: int, col: int) -> str:
-        """Рендерит матч с CSS Grid позиционированием"""
+        """Рендерит матч с CSS Grid позиционированием и вертикальным расположением имён"""
         status_class = self.get_status_class(self.get_match_status(match))
         
         # Используем полные имена если есть, иначе сокращённые
-        challenger = match.get("ChallengerFullName") or match.get("ChallengerName", "TBD")
-        challenged = match.get("ChallengedFullName") or match.get("ChallengedName", "TBD")
+        challenger_full = match.get("ChallengerFullName") or match.get("ChallengerName", "TBD")
+        challenged_full = match.get("ChallengedFullName") or match.get("ChallengedName", "TBD")
         episode = match.get("episode_number", 1)
 
         # Счёт из court_usage
@@ -431,11 +462,25 @@ class ScheduleGenerator(HTMLBaseGenerator):
         if challenged_wo:
             challenged_result = ""
 
-        def team_html(name, wo, result):
+        # Разбиваем имена на отдельных игроков
+        challenger_players = self._split_team_name(challenger_full)
+        challenged_players = self._split_team_name(challenged_full)
+
+        def team_html(players: list, wo: bool, result: str) -> str:
             wo_div = "<div class='match-team-wo'>W.O.</div>" if wo else ""
             score_div = f"<div class='match-team-score'>{result}</div>" if result else ""
+            
+            # Если один игрок - используем старый формат
+            if len(players) == 1:
+                return f'''<div class="match-team">
+                    <div class="match-team-name">{players[0]}</div>
+                    {wo_div}{score_div}
+                </div>'''
+            
+            # Если несколько игроков - располагаем вертикально
+            players_html = ''.join(f'<div class="match-player-name">{p}</div>' for p in players[:2])
             return f'''<div class="match-team">
-                <div class="match-team-name">{name}</div>
+                <div class="match-team-names">{players_html}</div>
                 {wo_div}{score_div}
             </div>'''
 
@@ -444,18 +489,29 @@ class ScheduleGenerator(HTMLBaseGenerator):
                 <div class="match-content">
                     <div class="match-number">{episode}</div>
                     <div class="match-teams-wrapper">
-                        {team_html(challenger, challenger_wo, challenger_result)}
-                        {team_html(challenged, challenged_wo, challenged_result)}
+                        {team_html(challenger_players, challenger_wo, challenger_result)}
+                        {team_html(challenged_players, challenged_wo, challenged_result)}
                     </div>
                 </div>
             </div>'''
 
     def _generate_empty_schedule_html(self, tournament_name: str, message: str) -> str:
         """Генерирует пустую страницу расписания"""
+        name_class = self._get_tournament_name_class(tournament_name)
+        
         return f'''{self.html_head(f"Расписание матчей - {tournament_name}", "schedule.css")}
 <body>
     <div class="schedule-container">
-        <div class="header"><h1 class="tournament-title">{tournament_name}</h1></div>
+        <!-- Header -->
+        <div class="header">
+            <div class="tournament-name {name_class}">{tournament_name}</div>
+            <div class="logos">
+                <div class="logo logo4" style="background-image: url('/static/images/logo4.png');"></div>
+                <div class="logo logo3" style="background-image: url('/static/images/logo3.png');"></div>
+                <div class="logo logo2" style="background-image: url('/static/images/logo2.png');"></div>
+                <div class="logo logo1" style="background-image: url('/static/images/logo1.png');"></div>
+            </div>
+        </div>
         <div class="empty-message"><p>{message}</p></div>
     </div>
 </body>
