@@ -28,7 +28,10 @@ class WinnerGenerator(HTMLBaseGenerator):
         event_state = court_data.get("event_state", "")
         class_name = court_data.get("class_name", "")
 
-        if event_state != 'Finished':
+        first_participant = court_data.get("first_participant", [])
+        second_participant = court_data.get("second_participant", [])
+
+        if not first_participant and not second_participant:
             return self._empty_winner_html(court_name)
 
         score1 = court_data.get("first_participant_score", 0)

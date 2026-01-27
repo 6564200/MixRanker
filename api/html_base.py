@@ -20,8 +20,10 @@ class HTMLBaseGenerator:
 
     @staticmethod
     def get_game_score_display(detailed_result: List[Dict], set_score: int, team: str) -> str:
+        
         """Возвращает счет гейма если есть, иначе счет сетов"""
         if detailed_result:
+            logger.error(f"detailed_result: {detailed_result}")
             last_set = detailed_result[-1]
             game_score = last_set.get("gameScore")
             if game_score:
