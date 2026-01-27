@@ -3,14 +3,14 @@
 
 @font-face {
     font-family: 'Onest';
-    src: url('/static/fonts/Onest-Bold.ttf') format('truetype');
+    src: url('../fonts/OnestBold1602-hint.ttf') format('truetype');
     font-weight: 700;
     font-style: normal;
 }
 
 @font-face {
-    font-family: 'TT Bluescreens';
-    src: url('/static/fonts/TT-Bluescreens-Trial-Bold-Italic.ttf') format('truetype');
+    font-family: 'TT_Bluescreens';
+    src: url('../fonts/TT-Bluescreens-Trial-Bold-Italic.ttf') format('truetype');
     font-weight: 700;
     font-style: italic;
 }
@@ -26,7 +26,7 @@
     --dark-gradient: linear-gradient(180deg, #202020 0%, #070707 100%);
     --green-line: #9ACB19;
     --green-border: #95C602;
-    --text-white: #FFFFFF;
+    --text-white: #F9F9F9;
     --text-dark: #080609;
     --plashka-bg: #161417;
     
@@ -40,7 +40,6 @@ html, body {
     height: 100%;
     overflow: hidden;
     background: transparent;
-    font-family: 'Onest', sans-serif;
 }
 
 /* Container */
@@ -66,7 +65,6 @@ html, body {
 }
 
 .header-location {
-    font-family: 'TT Bluescreens', sans-serif;
     font-style: italic;
     font-weight: 700;
     font-size: 50px;
@@ -77,7 +75,7 @@ html, body {
 }
 
 .header-title {
-    font-family: 'TT Bluescreens', sans-serif;
+    font-family: 'TT Bluescreens';
     font-style: italic;
     font-weight: 700;
     font-size: 100px;

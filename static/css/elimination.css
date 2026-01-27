@@ -195,8 +195,9 @@ body {
     line-height: 28px;
     color: #FFFFFF;
     text-transform: uppercase;
-	
-	
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
 }
 
 .lost {

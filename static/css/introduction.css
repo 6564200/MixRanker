@@ -37,12 +37,12 @@ html, body {
 /* Контейнер с масштабированием */
 .intro-container {
     width: 1920px;
-    height: 339px;
+    height: 1080px;
     transform-origin: top left;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 426px 5px;
+    padding: 410px 15px;
     background: transparent;
 }
 
@@ -70,6 +70,10 @@ html, body {
     letter-spacing: 0.05em;
     color: var(--text-dark);
     text-transform: uppercase;
+    white-space: nowrap; /* Запрещает перенос текста */
+    overflow: hidden; /* Скрывает выходящий за границы текст */
+    text-overflow: ellipsis; /* Добавляет многоточие в конце */
+    width: 100%; /* Занимает всю ширину родителя */
 }
 
 /* Основной контейнер */
@@ -77,7 +81,7 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 1849px;
+    width: 1800px;
     height: 219px;
 }
 
@@ -86,7 +90,7 @@ html, body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    width: 1849px;
+    width: 1800px;
     height: 219px;
     background: var(--green-frame);
     border-radius: 8px;
@@ -94,7 +98,7 @@ html, body {
 
 .intro-info {
     position: relative;
-    width: 1849px;
+    width: 1800px;
     height: 205px;
     background: var(--black-bg);
     border-radius: 3px;
@@ -164,7 +168,7 @@ html, body {
     position: absolute;
     width: 781px;
     height: 63px;
-    left: 937px;
+    left: 885px;
     top: 27px;
     font-family: 'Onest', Arial, sans-serif;
     font-weight: 700;
@@ -183,7 +187,7 @@ html, body {
     position: absolute;
     width: 781px;
     height: 63px;
-    left: 937px;
+    left: 885px;
     top: 116px;
     font-family: 'Onest', Arial, sans-serif;
     font-weight: 700;
@@ -202,7 +206,7 @@ html, body {
     position: absolute;
     width: 52px;
     height: 36px;
-    left: 1745px;
+    left: 1700px;
     top: 40px;
     background-size: contain;
     background-repeat: no-repeat;
@@ -213,7 +217,7 @@ html, body {
     position: absolute;
     width: 52px;
     height: 36px;
-    left: 1745px;
+    left: 1700px;
     top: 129px;
     background-size: contain;
     background-repeat: no-repeat;

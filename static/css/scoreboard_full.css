@@ -65,7 +65,7 @@ html, body {
     flex: 1;
     max-width: 1383px;
     height: 452px;
-    font-family: 'TT_Bluescreens', sans-serif;
+    font-family: 'TT_Bluescreens';
     font-style: italic;
     font-weight: 800;
     font-size: 200px;
@@ -82,7 +82,7 @@ html, body {
     flex-direction: row;
     justify-content: flex-end;
     align-items: center;
-    gap: 40px;
+    gap: 70px;
     height: 262px;
 }
 
@@ -94,9 +94,9 @@ html, body {
 }
 
 .logo1 { width: 360px; }
-.logo2 { width: 370px; }
-.logo3 { width: 439px; }
-.logo4 { width: 370px; }
+.logo2 { width: 230px; }
+.logo3 { width: 230px; }
+.logo4 { width: 350px; }
 
 /* === TABLE === */
 .table {
