@@ -40,6 +40,7 @@
 
     /**
      * Получение счёта текущего гейма
+     * В тай-брейке показывает очки тай-брейка, иначе теннисный формат
      */
     function getGameScore(detailed, score, participant) {
         if (!detailed || !detailed.length) return score || 0;
@@ -47,10 +48,14 @@
         const lastSet = detailed[detailed.length - 1];
         if (!lastSet) return score || 0;
         
-        const key = participant === 'first' ? 'firstParticipantTiebreakScore' : 'secondParticipantTiebreakScore';
-        if (lastSet[key] !== undefined && lastSet[key] !== null) {
-            return lastSet[key];
+        // gameScore - словарь с ключами 'first' и 'second'
+        // В тай-брейке там уже правильные очки (1, 2, 3...)
+        // В обычном гейме - теннисный формат (0, 15, 30, 40, AD)
+        const gameScore = lastSet.gameScore;
+        if (gameScore && gameScore[participant] !== undefined) {
+            return gameScore[participant];
         }
+        
         return score || 0;
     }
 
