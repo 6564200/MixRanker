@@ -73,6 +73,15 @@ class RankedinAPI(BaseAPI):
                     "is_super_tiebreak": False,
                     "current_match_state": "finished"
                 })
+            else:
+                result.update({
+                    "first_participant_score": 0,
+                    "second_participant_score": 0,
+                    "detailed_result": [],
+                    "is_tiebreak": False,
+                    "is_super_tiebreak": False,
+                    "current_match_state": "finished"
+                })
             result.update(self._empty_next())
         else:
             result.update(self._empty_current())
@@ -159,9 +168,10 @@ class RankedinAPI(BaseAPI):
                     # Обычный гейм - конвертируем в теннисный формат (0, 15, 30, 40, AD)
                     def conv(v, other): 
                         if v <= 3:
-                            return {0: "0", 1: "15", 2: "30", 3: "40"}[v]
+                            return {0: "0", 1: "15", 2: "30", 3: "40"}.get(v, str(v))
                         else:
-                            # v >= 4: при равенстве или отставании — 40, при лидерстве — AD
+                            # При равенстве 40:40 (deuce) - оба 40
+                            # При преимуществе - лидер AD, отстающий 40
                             if v > other:
                                 return "AD"
                             else:
@@ -256,6 +266,8 @@ class RankedinAPI(BaseAPI):
 
         for court in tournament_data.get("courts", []):
             if isinstance(court, dict) and court.get("Item1"):
-                types.append({"id": f"court_{court['Item1']}", "name": f"{court.get('Item2', f'Корт {court['Item1']}')} - Счет", "type": "court_score", "court_id": court["Item1"], "court_name": court.get("Item2", "")})
+                court_id = court['Item1']
+                court_name = court.get('Item2', f'Корт {court_id}')
+                types.append({"id": f"court_{court_id}", "name": f"{court_name} - Счет", "type": "court_score", "court_id": court_id, "court_name": court.get("Item2", "")})
 
         return types

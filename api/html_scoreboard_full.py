@@ -61,6 +61,41 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
         # Проверяем наличие матча
         has_match = match["show_current_match"]
         
+        # Формируем контент таблицы
+        if has_match:
+            table_content = f'''
+            <!-- Team 1 -->
+            <div class="team-row" data-team="1">
+                {team1_html}
+                <div class="scores-block">
+                    {team1_sets_html}
+                    <div class="score-cell total" data-field="team1_total">{team1_game_score}</div>
+                </div>
+            </div>
+            
+            <!-- Green Line -->
+            <div class="green-line"></div>
+            
+            <!-- Team 2 -->
+            <div class="team-row" data-team="2">
+                {team2_html}
+                <div class="scores-block">
+                    {team2_sets_html}
+                    <div class="score-cell total" data-field="team2_total">{team2_game_score}</div>
+                </div>
+            </div>
+            
+            <!-- Bottom Green Line -->
+            <div class="green-line"></div>
+            '''
+        else:
+            table_content = '''
+            <!-- No Match -->
+            <div class="no-match">
+                <span class="no-match-text">Нет активного матча</span>
+            </div>
+            '''
+        
         return f'''<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -90,42 +125,11 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
               <div class="table-header-block">
                 {sets_header_html}
                 
-                <div class="header-cell total">ИТОГ</div>
+                <div class="header-cell total">СЧЕТ</div>
               </div>
             </div>
             
-            {f'''
-            <!-- Team 1 -->
-            <div class="team-row" data-team="1">
-                {team1_html}
-                <div class="scores-block">
-                    {team1_sets_html}
-                    
-                    <div class="score-cell total" data-field="team1_total">{team1_sets_won}</div>
-                </div>
-            </div>
-            
-            <!-- Green Line -->
-            <div class="green-line"></div>
-            
-            <!-- Team 2 -->
-            <div class="team-row" data-team="2">
-                {team2_html}
-                <div class="scores-block">
-                    {team2_sets_html}
-                    
-                    <div class="score-cell total" data-field="team2_total">{team2_sets_won}</div>
-                </div>
-            </div>
-            
-            <!-- Bottom Green Line -->
-            <div class="green-line"></div>
-            ''' if has_match else '''
-            <!-- No Match -->
-            <div class="no-match">
-                <span class="no-match-text">Нет активного матча</span>
-            </div>
-            '''}
+            {table_content}
         </div>
         
         <!-- Footer -->

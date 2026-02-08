@@ -95,6 +95,7 @@ def init_database():
                 court_id TEXT NOT NULL,
                 court_name TEXT,
                 event_state TEXT,
+                current_match_state TEXT,
                 class_name TEXT,
                 first_participant_score INTEGER DEFAULT 0,
                 second_participant_score INTEGER DEFAULT 0,
@@ -177,7 +178,66 @@ def init_database():
             CREATE INDEX IF NOT EXISTS idx_xml_tournament ON xml_files(tournament_id);
             CREATE INDEX IF NOT EXISTS idx_tournaments_status ON tournaments(status);
             CREATE INDEX IF NOT EXISTS idx_tournaments_updated ON tournaments(updated_at);
+            
+            CREATE TABLE IF NOT EXISTS display_windows (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                type TEXT NOT NULL CHECK(type IN ('pool', 'court')),
+                slot_number INTEGER,
+                name TEXT,
+                tournament_id TEXT,
+                court_id TEXT,
+                mode TEXT DEFAULT 'auto' CHECK(mode IN ('auto', 'manual')),
+                manual_page TEXT,
+                settings TEXT,
+                is_active INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE INDEX IF NOT EXISTS idx_display_type_slot ON display_windows(type, slot_number);
+            
+            -- Пересоздаём composite_pages с правильным constraint
+            DROP TABLE IF EXISTS composite_pages;
+            
+            CREATE TABLE IF NOT EXISTS composite_pages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tournament_id TEXT NOT NULL,
+                page_type TEXT NOT NULL CHECK(page_type IN ('round', 'elimination')),
+                slot_number INTEGER NOT NULL CHECK(slot_number BETWEEN 1 AND 3),
+                name TEXT,
+                background_settings TEXT,
+                layers TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(tournament_id, page_type, slot_number)
+            );
+            
+            CREATE INDEX IF NOT EXISTS idx_composite_tournament ON composite_pages(tournament_id);
         ''')
+        
+        # Миграция: добавляем колонку current_match_state если её нет
+        try:
+            cursor.execute("SELECT current_match_state FROM courts_data LIMIT 1")
+        except sqlite3.OperationalError:
+            logger.info("Миграция: добавляем колонку current_match_state в courts_data")
+            cursor.execute("ALTER TABLE courts_data ADD COLUMN current_match_state TEXT")
+        
+        # Создаём окна по умолчанию если их нет
+        cursor.execute('SELECT COUNT(*) FROM display_windows WHERE type = "pool"')
+        if cursor.fetchone()[0] == 0:
+            for i in range(1, 4):
+                cursor.execute('''
+                    INSERT INTO display_windows (type, slot_number, name, settings)
+                    VALUES ('pool', ?, ?, '{"items": [], "current_index": 0}')
+                ''', (i, f'Пул {i}'))
+        
+        cursor.execute('SELECT COUNT(*) FROM display_windows WHERE type = "court"')
+        if cursor.fetchone()[0] == 0:
+            for i in range(1, 11):
+                cursor.execute('''
+                    INSERT INTO display_windows (type, slot_number, name, mode)
+                    VALUES ('court', ?, ?, 'auto')
+                ''', (i, f'Корт {i}'))
 
         conn.commit()
         conn.close()
@@ -271,7 +331,7 @@ def get_court_data(tournament_id: str, court_id: str) -> Optional[Dict]:
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT court_id, court_name, event_state, class_name,
+            SELECT court_id, court_name, event_state, current_match_state, class_name,
                    first_participant_score, second_participant_score, 
                    detailed_result, first_participant, second_participant, updated_at
             FROM courts_data 
@@ -288,13 +348,14 @@ def get_court_data(tournament_id: str, court_id: str) -> Optional[Dict]:
             "court_id": row[0],
             "court_name": row[1],
             "event_state": row[2],
-            "class_name": row[3],
-            "first_participant_score": row[4],
-            "second_participant_score": row[5],
-            "detailed_result": _safe_json_loads(row[6], []),
-            "first_participant": _safe_json_loads(row[7], []),
-            "second_participant": _safe_json_loads(row[8], []),
-            "updated_at": row[9],
+            "current_match_state": row[3],
+            "class_name": row[4],
+            "first_participant_score": row[5],
+            "second_participant_score": row[6],
+            "detailed_result": _safe_json_loads(row[7], []),
+            "first_participant": _safe_json_loads(row[8], []),
+            "second_participant": _safe_json_loads(row[9], []),
+            "updated_at": row[10],
             "next_class_name": "",
             "next_first_participant": [],
             "next_second_participant": [],
@@ -315,16 +376,17 @@ def save_courts_data(tournament_id: str, courts_data: List[Dict]) -> int:
             if "error" not in court:
                 cursor.execute('''
                     INSERT OR REPLACE INTO courts_data 
-                    (tournament_id, court_id, court_name, event_state, class_name,
+                    (tournament_id, court_id, court_name, event_state, current_match_state, class_name,
                      first_participant_score, second_participant_score, 
                      detailed_result, first_participant, second_participant, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ''', (
                     tournament_id, str(court["court_id"]), court["court_name"],
-                    court["event_state"], court["class_name"],
-                    court["first_participant_score"], court["second_participant_score"],
-                    json.dumps(court["detailed_result"]), json.dumps(court["first_participant"]),
-                    json.dumps(court["second_participant"])
+                    court.get("event_state", ""), court.get("current_match_state", ""),
+                    court.get("class_name", ""),
+                    court.get("first_participant_score", 0), court.get("second_participant_score", 0),
+                    json.dumps(court.get("detailed_result", [])), json.dumps(court.get("first_participant", [])),
+                    json.dumps(court.get("second_participant", []))
                 ))
                 count += 1
         return count

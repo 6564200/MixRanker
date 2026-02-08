@@ -2,11 +2,14 @@
 # -*- coding: utf-8 -*-
 """
 Генератор HTML для Elimination (турнирных сеток на выбывание)
+С поддержкой AJAX обновления без перезагрузки страницы
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 from .html_base import HTMLBaseGenerator
 import logging
+import hashlib
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -32,18 +35,90 @@ class EliminationGenerator(HTMLBaseGenerator):
         bracket = elim_data["Elimination"]
         class_name = (xml_type_info.get("class_name", "Категория")).upper()
         stage_name = (xml_type_info.get("stage_name", "Плей-офф")).upper()
+        tournament_id = tournament_data.get("metadata", {}).get("tournament_id", "")
 
         rounds = self._analyze_structure(bracket)
+        
+        # Версия для AJAX
+        version = self._calculate_version(rounds)
 
-        return self._render_html(class_name, stage_name, rounds)
+        return self._render_html(tournament_id, class_id, draw_index, class_name, stage_name, rounds, version)
 
-    def _render_html(self, class_name: str, stage_name: str, rounds: List[Dict]) -> str:
-        """Рендерит HTML elimination сетки"""
-        html = f'''{self.html_head(f"{class_name} - {stage_name}", "elimination.css", 30000)}
+    def get_elimination_data(self, tournament_data: Dict, xml_type_info: Dict) -> Dict:
+        """Возвращает данные elimination в формате JSON для AJAX"""
+        class_id = xml_type_info.get("class_id")
+        draw_index = xml_type_info.get("draw_index", 0)
+
+        class_data = tournament_data.get("draw_data", {}).get(str(class_id), {})
+        elimination_data = class_data.get("elimination", [])
+
+        if draw_index >= len(elimination_data):
+            return {"error": "Нет данных турнирной сетки", "matches": []}
+
+        elim_data = elimination_data[draw_index]
+        if not elim_data or "Elimination" not in elim_data:
+            return {"error": "Неверные данные турнирной сетки", "matches": []}
+
+        bracket = elim_data["Elimination"]
+        rounds = self._analyze_structure(bracket)
+        
+        # Собираем все матчи в плоский список
+        matches = []
+        match_index = 0
+        for round_idx, round_info in enumerate(rounds):
+            if round_info.get('type') == 'participants':
+                continue
+            
+            round_matches = self._generate_match_pairs(round_idx, round_info['matches'])
+            for match in round_matches:
+                match['match_id'] = f"match_{round_idx}_{match_index}"
+                match['round_index'] = round_idx
+                match['round_title'] = round_info.get('title', '')
+                
+                # Разбиваем score на части для удобства
+                score_parts = match['score'].split('-')
+                match['score1'] = score_parts[0] if score_parts else '0'
+                match['score2'] = score_parts[1] if len(score_parts) > 1 else '0'
+                
+                matches.append(match)
+                match_index += 1
+
+        version = self._calculate_version(rounds)
+
+        return {
+            "class_id": class_id,
+            "draw_index": draw_index,
+            "matches": matches,
+            "version": version
+        }
+
+    def _calculate_version(self, rounds: List[Dict]) -> str:
+        """Вычисляет хеш версии данных для определения изменений"""
+        data_str = json.dumps(rounds, sort_keys=True, default=str)
+        return hashlib.md5(data_str.encode()).hexdigest()[:8]
+
+    def _render_html(self, tournament_id: str, class_id: str, draw_index: int,
+                     class_name: str, stage_name: str, rounds: List[Dict], version: str) -> str:
+        """Рендерит HTML elimination сетки с поддержкой AJAX"""
+        
+        # Генерируем HTML без авто-обновления (JS сделает это)
+        html = f'''<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>{class_name} - {stage_name}</title>
+    <link rel="stylesheet" href="/static/css/elimination.css">
+</head>
 <body>
-    <div class="elimination-container">
+    <div class="elimination-container" 
+         data-tournament-id="{tournament_id}"
+         data-class-id="{class_id}"
+         data-draw-index="{draw_index}"
+         data-version="{version}">
         <div class="round-column">'''
 
+        match_index = 0
         for round_idx, round_info in enumerate(rounds):
             if round_info.get('type') == 'participants':
                 continue
@@ -55,28 +130,37 @@ class EliminationGenerator(HTMLBaseGenerator):
                 html += f'<div class="places">{stage_name}</div>'
 
             for match in matches:
-                html += self._render_match(match)
+                match_id = f"match_{round_idx}_{match_index}"
+                html += self._render_match(match, match_id)
+                match_index += 1
 
             html += '</div>'
 
-        html += '''</div></div></body></html>'''
+        html += '''</div>
+    </div>
+    <script src="/static/js/elimination_live.js"></script>
+</body>
+</html>'''
         return html
 
-    def _render_match(self, match: Dict) -> str:
-        """Рендерит один матч elimination"""
+    def _render_match(self, match: Dict, match_id: str) -> str:
+        """Рендерит один матч elimination с data-атрибутами для AJAX"""
         score_parts = match['score'].split('-')
         score1 = score_parts[0] if score_parts else '0'
         score2 = score_parts[1] if len(score_parts) > 1 else '0'
 
-        return f'''<div class="container">
+        sets1_html = " ".join([f'<span class="set-score">{word}</span>' for word in match.get('sets1', '').split() if word])
+        sets2_html = " ".join([f'<span class="set-score">{word}</span>' for word in match.get('sets2', '').split() if word])
+
+        return f'''<div class="container" data-match-id="{match_id}">
             <div class="row row-top">
                 <div class="names"><span class="name-main {match.get('secondary1', '')}">{match.get('team_1_name', 'TBD')}</span></div>
-                <div class="score">{" ".join([f'<span class="set-score">{word}</span>' for word in match.get('sets1', '').split()])}</div>
+                <div class="score">{sets1_html}</div>
                 <div class="rank rank-top"><span class="rank-number">{score1}</span></div>
             </div>
             <div class="row row-bottom">
                 <div class="names"><span class="name-main {match.get('secondary2', '')}">{match.get('team_2_name', 'TBD')}</span></div>
-                <div class="score">{" ".join([f'<span class="set-score">{word}</span>' for word in match.get('sets2', '').split()])}</div>
+                <div class="score">{sets2_html}</div>
                 <div class="rank rank-bottom"><span class="rank-number">{score2}</span></div>
             </div>
         </div>'''
@@ -164,7 +248,7 @@ class EliminationGenerator(HTMLBaseGenerator):
                 'team_2_name': self.create_short_name(team2) if team2 else 'TBD',
                 'team_1_id': team1_id,
                 'team_2_id': team2_id,
-                'status': 'Запланирован',
+                'status': 'scheduled',
                 'score': '0-0',
                 'sets1': '',
                 'sets2': '',
@@ -173,7 +257,7 @@ class EliminationGenerator(HTMLBaseGenerator):
             }
 
             if is_played and has_score:
-                info['status'] = 'Сыгран'
+                info['status'] = 'finished'
                 if winner_id == team1_id:
                     info['secondary2'] = 'lost'
                 elif winner_id == team2_id:
@@ -211,7 +295,7 @@ class EliminationGenerator(HTMLBaseGenerator):
                 info['sets2'] = ' '.join(sets2_parts)
 
             elif is_played and not has_score:
-                info['status'] = 'Walkover'
+                info['status'] = 'walkover'
                 if winner_id == team1_id:
                     info['secondary2'] = 'lost'
                     info['score'] = '1-0'

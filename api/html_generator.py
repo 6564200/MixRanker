@@ -97,3 +97,7 @@ class HTMLGenerator:
 
     def generate_elimination_html(self, tournament_data: Dict, xml_type_info: Dict) -> str:
         return self._elimination.generate_elimination_html(tournament_data, xml_type_info)
+
+    def get_elimination_data(self, tournament_data: Dict, xml_type_info: Dict) -> Dict:
+        """Получение данных elimination для AJAX"""
+        return self._elimination.get_elimination_data(tournament_data, xml_type_info)

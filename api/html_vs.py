@@ -77,16 +77,24 @@ class VSGenerator(HTMLBaseGenerator):
         team1_photos = self._generate_player_photos_html(team1[:2])
         team2_photos = self._generate_player_photos_html(team2[:2])
 
-        # Имена с data-field
+        # Имена с флагами и data-field
         team1_names = ''
         for i, p in enumerate(team1[:2]):
-            name = p.get("fullName", "")
-            team1_names += f'<div class="player-name" data-field="team1_player{i+1}">{name}</div>'
+            name = self.format_player_name(p)
+            flag_url = self.get_flag_url(p.get("countryCode", ""))
+            team1_names += f'''<div class="player-row">
+                <div class="player-flag" data-field="team1_flag{i+1}" style="background-image: url('{flag_url}');"></div>
+                <div class="player-name" data-field="team1_player{i+1}">{name}</div>
+            </div>'''
         
         team2_names = ''
         for i, p in enumerate(team2[:2]):
-            name = p.get("fullName", "")
-            team2_names += f'<div class="player-name" data-field="team2_player{i+1}">{name}</div>'
+            name = self.format_player_name(p)
+            flag_url = self.get_flag_url(p.get("countryCode", ""))
+            team2_names += f'''<div class="player-row">
+                <div class="player-name" data-field="team2_player{i+1}">{name}</div>
+                <div class="player-flag" data-field="team2_flag{i+1}" style="background-image: url('{flag_url}');"></div>
+            </div>'''
 
         return f'''<!DOCTYPE html>
 <html lang="ru">

@@ -183,13 +183,14 @@ class AutoRefreshService:
                         if "error" not in court:
                             cursor.execute('''
                                 INSERT OR REPLACE INTO courts_data 
-                                (tournament_id, court_id, court_name, event_state, class_name,
+                                (tournament_id, court_id, court_name, event_state, current_match_state, class_name,
                                  first_participant_score, second_participant_score, 
                                  detailed_result, first_participant, second_participant, updated_at)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                             ''', (
                                 tid, str(court["court_id"]), court["court_name"],
-                                court["event_state"], court["class_name"],
+                                court["event_state"], court["current_match_state"],
+                                court["class_name"],
                                 court["first_participant_score"], court["second_participant_score"],
                                 json.dumps(court["detailed_result"]), json.dumps(court["first_participant"]),
                                 json.dumps(court["second_participant"])

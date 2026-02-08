@@ -74,7 +74,7 @@ __all__ = [
     'RankedinAPI',
     'HTMLGenerator', 'HTMLBaseGenerator',
     'ScoreboardGenerator', 'VSGenerator',
-    'ScheduleGenerator', 'TournamentBracketGenerator'
+    'ScheduleGenerator', 'RoundRobinGenerator', 'EliminationGenerator',
     'COUNTRY_CODE_MAP',
     'get_flag_url',
 ]

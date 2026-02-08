@@ -346,7 +346,7 @@ class ScheduleGenerator(HTMLBaseGenerator):
                 [m for m in matches if m.get("ChallengerResult") or m.get("ChallengedResult")],
                 key=lambda x: x.get("datetime_obj") or datetime.min
             )
-            logger.error(f"filter_matches: {with_results}")
+
             if len(with_results) >= finished_count:
                 # Берём время N-го с конца (первого из показываемых)
                 cutoff_match = with_results[-finished_count]
