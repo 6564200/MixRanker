@@ -59,6 +59,12 @@ html_generator = HTMLGenerator()
 # Регистрация роутов аутентификации
 register_auth_routes(app)
 
+# Регистрация blueprints
+from api.display_windows import display_bp
+from api.composite_pages import composite_bp
+app.register_blueprint(display_bp)
+app.register_blueprint(composite_bp)
+
 
 @app.after_request
 def set_secure_headers(response):
@@ -174,6 +180,10 @@ def get_tournaments():
 def delete_tournament(tournament_id):
     """Удаление турнира"""
     try:
+        # Удаляем композитные страницы
+        from api.composite_pages import delete_composite_pages_for_tournament
+        delete_composite_pages_for_tournament(tournament_id)
+        
         def transaction(conn):
             cursor = conn.cursor()
             cursor.execute('DELETE FROM courts_data WHERE tournament_id = ?', (tournament_id,))
@@ -972,6 +982,32 @@ def get_live_elimination_html(tournament_id, class_id, draw_index):
     except Exception as e:
         logger.error(f"Ошибка elimination HTML: {e}")
         return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
+
+
+@app.route('/api/elimination/<tournament_id>/<class_id>/data')
+def get_elimination_data(tournament_id, class_id):
+    """JSON данные elimination для AJAX обновлений"""
+    try:
+        tournament_data = get_tournament_data(tournament_id)
+        if not tournament_data:
+            return jsonify({"error": "Турнир не найден"}), 404
+
+        draw_index = request.args.get('draw_index', 0, type=int)
+        
+        xml_types = api.get_xml_data_types(tournament_data)
+        xml_type_info = next((t for t in xml_types if t.get("type") == "tournament_table" and 
+                             t.get("draw_type") == "elimination" and t.get("class_id") == class_id and 
+                             t.get("draw_index") == draw_index), None)
+        
+        if not xml_type_info:
+            return jsonify({"error": "Сетка не найдена", "matches": []}), 404
+
+        elimination_data = html_generator.get_elimination_data(tournament_data, xml_type_info)
+        
+        return jsonify(elimination_data)
+    except Exception as e:
+        logger.error(f"Ошибка получения данных elimination: {e}")
+        return jsonify({"error": str(e)}), 500
 
 # === API: НАСТРОЙКИ И СТАТУС ===
 @app.route('/api/settings', methods=['GET', 'POST'])
