@@ -1,16 +1,20 @@
-/* vs.css - VS страница 16:9 */
-/* Базовое разрешение: FHD 1920x1080 */
+/* VS Page - Base resolution FHD 1920x1080 */
 
 @font-face {
     font-family: 'Onest';
-    src: url('../fonts/OnestBold1602-hint.ttf') format('truetype');
+    src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
     font-weight: 700;
-    font-style: normal;
 }
 
 @font-face {
-    font-family: 'TT_Bluescreens';
-    src: url('../fonts/TT-Bluescreens-Trial-Bold-Italic.ttf') format('truetype');
+    font-family: 'Onest Med';
+    src: url('/static/fonts/OnestLight1602-hint.ttf') format('truetype');
+    font-weight: 500;
+}
+
+@font-face {
+    font-family: 'Bluescreens';
+    src: url('/static/fonts/TT-Bluescreens-Trial-Bold-Italic.ttf') format('truetype');
     font-weight: 700;
     font-style: italic;
 }
@@ -21,67 +25,50 @@
     box-sizing: border-box;
 }
 
-:root {
-    --green-gradient: linear-gradient(180deg, #AED557 0%, #84C100 100%);
-    --dark-gradient: linear-gradient(180deg, #202020 0%, #070707 100%);
-    --green-line: #9ACB19;
-    --green-border: #95C602;
-    --text-white: #F9F9F9;
-    --text-dark: #080609;
-    --plashka-bg: #161417;
-    
-    /* FHD базовые размеры */
-    --base-width: 1920;
-    --base-height: 1080;
-}
-
 html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
     background: transparent;
+    font-family: 'Onest';
 }
 
-/* Container */
 .vs-container {
-    position: relative;
+    position: absolute;
     width: 1920px;
     height: 1080px;
-    transform-origin: top left;
     background-size: cover;
 }
 
-/* Header text - ЦЕНТР */
 .header-text {
     position: absolute;
     top: 50px;
-    left: 0;
-    right: 0;
-    margin: 0 auto;
+    left: 50%;
+    transform: translateX(-50%);
     width: 1349px;
-    height: 136px;
     text-align: center;
     z-index: 10;
 }
 
 .header-location {
+    font-family: 'Bluescreens';
     font-style: italic;
     font-weight: 700;
     font-size: 50px;
     line-height: 100px;
     letter-spacing: 0.09em;
-    color: var(--text-white);
+    color: #FFFFFF;
     margin-bottom: 0;
 }
 
 .header-title {
-    font-family: 'TT Bluescreens';
+    font-family: 'Bluescreens';
     font-style: italic;
     font-weight: 700;
     font-size: 100px;
     line-height: 70px;
     letter-spacing: 0.17em;
-    color: var(--text-white);
+    color: #FFFFFF;
 }
 
 /* Teams container */
@@ -118,7 +105,7 @@ html, body {
     width: 675px;
     height: 900px;
     object-fit: cover;
-    clip-path: inset(0 0 150px 0);
+    object-position: center bottom;
     position: absolute;
     bottom: 0;
 }
@@ -149,8 +136,12 @@ html, body {
     opacity: 0.3;
 }
 
-/* Score section - внутри bottom-section */
+/* Score section */
 .score-section {
+    position: absolute;
+    bottom: 94px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -168,8 +159,8 @@ html, body {
 .set-header {
     width: 478px;
     height: 36px;
-    background: var(--green-gradient);
-    border-radius: 5px 5px 0 0;
+    background: linear-gradient(180deg, #AED557 0%, #84C100 100%);
+    border-radius: 5px 5px 0px 0px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -180,14 +171,14 @@ html, body {
     font-weight: 700;
     font-size: 25px;
     line-height: 32px;
-    color: var(--text-dark);
+    color: #080609;
 }
 
 /* Set scores */
 .set-scores {
     width: 478px;
     height: 100px;
-    background: var(--dark-gradient);
+    background: linear-gradient(180deg, #202020 0%, #070707 100%);
     display: flex;
 }
 
@@ -200,7 +191,7 @@ html, body {
     font-weight: 700;
     font-size: 80px;
     line-height: 102px;
-    color: var(--text-white);
+    color: #FFFFFF;
     position: relative;
 }
 
@@ -208,36 +199,26 @@ html, body {
 .score-divider {
     width: 4px;
     height: 75px;
-    background: var(--green-line);
+    background: #9ACB19;
     align-self: center;
 }
 
-/* Bottom section - объединяет score и plashka */
-.bottom-section {
-    position: absolute;
-    bottom: 20px;
-    left: 0;
-    right: 0;
-    margin: 0 auto;
-    width: 1824px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    z-index: 10;
-}
-
-/* Bottom plashka - ЦЕНТР */
+/* Bottom plashka */
 .bottom-plashka {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
     width: 1824px;
     height: 170px;
+    z-index: 10;
 }
 
 .plashka-border {
     position: absolute;
     width: 1824px;
     height: 170px;
-    background: var(--green-border);
+    background: #95C602;
     border-radius: 5px;
 }
 
@@ -247,7 +228,7 @@ html, body {
     left: 0;
     width: 1824px;
     height: 157px;
-    background: var(--plashka-bg);
+    background: #161417;
     border-radius: 4px;
     display: flex;
     align-items: center;
@@ -260,7 +241,7 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    padding: 75px;
+    padding: 25px 75px;
 }
 
 .team-names.team-left {
@@ -273,112 +254,34 @@ html, body {
     text-align: right;
 }
 
+/* Player row with flag */
+.player-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.player-flag {
+    width: 50px;
+    height: 34px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
 .player-name {
     font-family: 'Onest', sans-serif;
     font-weight: 700;
     font-size: 40px;
     line-height: 51px;
     letter-spacing: -0.04em;
-    color: var(--text-white);
+    color: #FFFFFF;
     text-transform: uppercase;
 }
 
-/* Hidden class for 0-0 sets */
+/* Hidden class */
 .hidden {
     display: none !important;
-}
-
-/* === ANIMATIONS === */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideInLeft {
-    from {
-        opacity: 0;
-        transform: translateX(-100px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(100px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes scaleIn {
-    from {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-/* Animation Classes */
-.vs-container {
-    animation: fadeIn 0.5s ease-out;
-}
-
-.header-text {
-    animation: slideInUp 0.6s ease-out 0.1s both;
-}
-
-.team-container.team-left {
-    animation: slideInLeft 0.7s ease-out 0.2s both;
-}
-
-.team-container.team-right {
-    animation: slideInRight 0.7s ease-out 0.2s both;
-}
-
-.score-section {
-    animation: scaleIn 0.6s ease-out 0.3s both;
-}
-
-.bottom-plashka {
-    animation: slideInUp 0.6s ease-out 0.4s both;
-}
-
-.set-block {
-    animation: scaleIn 0.4s ease-out both;
-}
-
-.set-block:nth-child(1) { animation-delay: 0.4s; }
-.set-block:nth-child(2) { animation-delay: 0.5s; }
-.set-block:nth-child(3) { animation-delay: 0.6s; }
-.set-block:nth-child(4) { animation-delay: 0.7s; }
-
-/* Update animation */
-.updating {
-    animation: pulse 0.3s ease-out;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.7; }
-    100% { opacity: 1; }
 }

@@ -1,28 +1,30 @@
+/**
+ * Elimination CSS
+ * Стили для турнирной сетки на выбывание
+ * Базовое разрешение: FHD 1920x1080
+ * Адаптивность: HD (1280x720), FHD (1920x1080), UHD (3840x2160)
+ */
+
 @font-face {
     font-family: 'Bluescreens';
     src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
-    /* font-weight: bold; */
-    
 }
 
 @font-face {
     font-family: 'Onest Bol';
     src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
-
-    
 }
 
 @font-face {
     font-family: 'Onest Med';
-    src: url('/static/fonts/OnestLight1602-hint') format('truetype');
+    src: url('/static/fonts/OnestLight1602-hint.ttf') format('truetype');
     font-weight: medium;
-    
 }
 
 :root {
     --font-primary: 'Bluescreens';
     --font-onest-bold: 'Onest Bol';
-    --font-onest-med:: 'Onest Med';
+    --font-onest-med: 'Onest Med';
 
     /* Цвета текста */
     --text-dark: #070707;
@@ -34,118 +36,119 @@
     --cell-line-bg: #91bf1f;
     --cell-gradient-l-bg: linear-gradient(to bottom, #b6d569, #91bf1f);
 
-    --b-radius: 6px;
+    --b-radius: 8px;
+    
+    /* Анимации */
+    --transition-fast: 0.2s ease-out;
+    --transition-normal: 0.3s ease-out;
+    --transition-slow: 0.5s ease-out;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-    zoom: 100%;
     background: transparent;  
     font-family: var(--font-onest-bold);
-    width: 3840px;
-    height: 2160px;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
     position: relative;
-    margin: 10;
+    margin: 0;
     padding: 0;
 }
 
+/* === КОНТЕЙНЕР === */
 .elimination-container {
-    width: 100%;
-    height: 100%;
+    width: 1920px;
+    height: 1080px;
     display: flex;
     flex-direction: column;
-    margin: 0px;
+    padding: 20px;
+    transform-origin: top left;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
+/* === ЗАГОЛОВОК === */
 .tournament-header {
     text-align: left;
-    margin-bottom: 35px;
+    margin-bottom: 40px;
     font-family: var(--font-primary);
-    font-size: 64px;
+    font-size: 72px;
     background-clip: text;
     -webkit-background-clip: text;
     background-image: var(--cell-gradient-l-bg);
-    background-clip: text;
-    -webkit-background-clip: text;
     color: transparent;
 }
 
+/* === КОЛОНКА РАУНДОВ === */
 .round-column {
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
-	width: 100%;
-	gap: 0px;
+    width: 100%;
+    gap: 0px;
 }
 
+/* === СЕТКА РАУНДА === */
 .bracket-grid {
     display: flex;
     flex-direction: column;
     justify-content: space-evenly; 
-    gap: 10px; /* Расстояние между контейнерами */
-    width: 540px;
+    gap: 12px;
+    width: 600px;
     max-width: 100%;
 }
 
-.round-column-2 {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    position: relative;
-	grid-row: span 5;
-
-}
-
-.round-column-2:nth-child(1) div:nth-child(odd) { 
-    grid-row: span 2; 
-
-}
-
+/* === НАЗВАНИЕ ЭТАПА === */
 .places {
-	text-transform: uppercase;
-	font-size: 25px;
-	color: #FFFFFF;
-	text-align: center;
-}
-
-.round-column-win {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    position: relative;
-	
-}
-
-.round-header {
-    font-size: 35px;
-    color: #2c3e50;
+    text-transform: uppercase;
+    font-size: 28px;
+    color: #FFFFFF;
     text-align: center;
-    position: relative;
-    
-    margin-bottom: 20px;
+    opacity: 0;
+    animation: fadeInDown 0.5s ease-out forwards;
+    animation-delay: 0.1s;
 }
 
-.round-matches{
-    margin-bottom: 30px;
-}
-/* Базовые стили контейнера и шрифтов */
+/* === КОНТЕЙНЕР МАТЧА === */
 .container {
     display: flex;
     flex-direction: column;
-    width: auto; /* Ширина из Figma для Rectangle 158/159 */
+    width: auto;
     font-family: 'Onest', sans-serif;
-    margin-bottom: 20px; /* расстояние снизу каждого контейнера */
-	margin-left: 20px;
+    margin-bottom: 20px;
+    margin-left: 20px;
+    
+    /* Анимация появления */
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeInUp 0.4s ease-out forwards;
 }
 
+/* Задержка анимации для каждого матча */
+.bracket-grid .container:nth-child(1) { animation-delay: 0.1s; }
+.bracket-grid .container:nth-child(2) { animation-delay: 0.15s; }
+.bracket-grid .container:nth-child(3) { animation-delay: 0.2s; }
+.bracket-grid .container:nth-child(4) { animation-delay: 0.25s; }
+.bracket-grid .container:nth-child(5) { animation-delay: 0.3s; }
+.bracket-grid .container:nth-child(6) { animation-delay: 0.35s; }
+.bracket-grid .container:nth-child(7) { animation-delay: 0.4s; }
+.bracket-grid .container:nth-child(8) { animation-delay: 0.45s; }
+
+/* === СТРОКА КОМАНДЫ === */
 .row {
     display: flex;
-    align-items: center; /* Выравнивает все элементы по центру вертикали */
-    height: 42px; /* Высота строки из Figma */
-    /* Удаляем padding из .row, чтобы границы .names и .rank совпадали с краями .container */
+    align-items: center;
+    height: 56px;
+    transition: background var(--transition-fast);
 }
 
-/* Стили для верхнего и нижнего фонов */
 .row-top {
     background: linear-gradient(180deg, #202020 0%, #080808 100%);
     border-radius: var(--b-radius) var(--b-radius) 0px 0px;
@@ -155,14 +158,16 @@ body {
     background: linear-gradient(180deg, #202020 0%, #080808 100%);
     border-radius: 0px 0px var(--b-radius) var(--b-radius);
 }
-/* Блоки общий счет (Rectangle 160/161) */
+
+/* === БЛОК ОБЩЕГО СЧЁТА === */
 .rank {
-    width: 44px;
-    height: 42px;
+    width: 56px;
+    height: 56px;
     display: flex;
     align-items: center;
-    justify-content: center; /* Центрируем число внутри зеленого блока */
+    justify-content: center;
     background: linear-gradient(180deg, #AED35B 0%, #88BD00 100%);
+    transition: transform var(--transition-fast);
 }
 
 .rank-top {
@@ -175,59 +180,133 @@ body {
 
 .rank-number {
     font-weight: 700;
-    font-size: 32px;
+    font-size: 36px;
     color: #040404;
+    transition: transform var(--transition-normal);
 }
 
-/* Блоки с именами */
+/* === БЛОК ИМЁН === */
 .names {
-    /* Автоматически займет оставшееся пространство */
     flex-grow: 1; 
     display: flex;
     align-items: center;
-    padding-left: 10px; /* Добавляем отступ слева для текста */
-	overflow: hidden;
+    padding-left: 16px;
+	padding-right: 36px;
+    overflow: hidden;
 }
 
 .name-main {
     font-weight: 700;
-    font-size: 22px;
-    line-height: 28px;
+    font-size: 26px;
+    line-height: 36px;
     color: #FFFFFF;
     text-transform: uppercase;
-	white-space: nowrap;
-	text-overflow: ellipsis;
-	overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    transition: color var(--transition-normal), opacity var(--transition-normal);
 }
 
-.lost {
-    /*  color: #969696; */
-	color: var(--text-light)
+/* Проигравший - затемнённый */
+.name-main.lost {
+    color: #FFFFFF;
+    opacity: 0.8;
 }
 
-/* Блоки со счетом сетов*/
-.set-score {
-    display: inline-block; /* Позволяет задавать ширину */
-    width: 21px;           /* Фиксированная ширина */
-    text-align: right; 
-    padding-right: 10px;
-}
-
+/* === БЛОК СЧЁТА СЕТОВ === */
 .score {
     font-weight: 700;
-    font-size: 22px;
-    line-height: 28px;
+    font-size: 26px;
+    line-height: 36px;
+	padding-right: 12px;
     color: #969696;
+    display: flex;
+    gap: 4px;
 }
 
-/* Автообновление страницы каждые 30 секунд */
-body::after {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 0;
-    height: 0;
-    z-index: -1;
-    animation: autoRefresh 30s infinite;
+.set-score {
+    display: inline-block;
+    width: 28px;
+    text-align: right;
+    padding-right: 12px;
+    transition: color var(--transition-fast), transform var(--transition-fast);
+}
+
+/* === АНИМАЦИИ === */
+
+/* Появление снизу */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Появление сверху */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Подсветка при обновлении */
+@keyframes highlightUpdate {
+    0% {
+        box-shadow: 0 0 0 0 rgba(174, 211, 91, 0.8);
+    }
+    30% {
+        box-shadow: 0 0 20px 6px rgba(174, 211, 91, 0.6);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(174, 211, 91, 0);
+    }
+}
+
+/* Пульсация счёта */
+@keyframes scorePulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+}
+
+/* Класс обновления (добавляется JS) */
+.container.updated {
+    animation: highlightUpdate 1.5s ease-out;
+}
+
+.container.updated .rank-number {
+    animation: scorePulse 0.5s ease-out;
+}
+
+/* Fade out */
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+.fade-out {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
+/* === АДАПТИВНЫЕ СТИЛИ === */
+
+/* Hover эффекты (для desktop) */
+@media (hover: hover) {
+    .container:hover {
+        transform: translateX(4px);
+        transition: transform var(--transition-fast);
+    }
+    
+    .container:hover .rank {
+        transform: scale(1.05);
+    }
 }

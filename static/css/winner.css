@@ -1,4 +1,4 @@
-/* winner.css - Страница победителя 16:9 */
+/* winner.css - Страница победителя */
 /* Базовое разрешение: FHD 1920x1080 */
 
 @font-face {
@@ -180,8 +180,8 @@ html, body {
     position: absolute;
     left: 75px;
     top: 840px;
-    width: 1675px;
-    height: 135px;
+    width: 1750px;
+    height: 160px;
     padding: 14px 0 14px 75px;
     background: var(--green-solid);
     border-radius: 2px;
