@@ -1,6 +1,6 @@
 /**
  * Smart Scoreboard - AJAX обновление без перезагрузки страницы
- * Используется для scoreboard и fullscreen_scoreboard
+ * Используется для scoreboard
  */
 
 (function() {

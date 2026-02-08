@@ -12,7 +12,7 @@
     const container = document.querySelector('.vs-container');
     
     /**
-     * Масштабирование контейнера под размер окна
+     * Масштабирование контейнера под размер окна с центрированием
      */
     function scaleToFit() {
         if (!container) return;
@@ -20,25 +20,21 @@
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
         
-        // Вычисляем масштаб
+        // Вычисляем масштаб с сохранением пропорций 16:9
         const scaleX = windowWidth / BASE_WIDTH;
         const scaleY = windowHeight / BASE_HEIGHT;
-        
-        // Используем меньший масштаб чтобы сохранить пропорции 16:9
         const scale = Math.min(scaleX, scaleY);
         
-        container.style.transform = `scale(${scale})`;
+        // Устанавливаем фиксированные размеры
+        container.style.width = BASE_WIDTH + 'px';
+        container.style.height = BASE_HEIGHT + 'px';
         
-        // Центрируем
-        const scaledWidth = BASE_WIDTH * scale;
-        const scaledHeight = BASE_HEIGHT * scale;
-        
-        const offsetX = (windowWidth - scaledWidth) / 2;
-        const offsetY = (windowHeight - scaledHeight) / 2;
-        
+        // Центрируем через transform-origin и позиционирование
         container.style.position = 'absolute';
-        container.style.left = offsetX + 'px';
-        container.style.top = offsetY + 'px';
+        container.style.left = '50%';
+        container.style.top = '50%';
+        container.style.transformOrigin = 'center center';
+        container.style.transform = `translate(-50%, -50%) scale(${scale})`;
     }
     
     /**
@@ -94,10 +90,6 @@
     function init() {
         scaleToFit();
         window.addEventListener('resize', scaleToFit);
-        
-        // Опционально: периодическое обновление
-        // const updateInterval = container?.dataset.updateInterval || 2000;
-        // setInterval(updateData, updateInterval);
     }
     
     if (document.readyState === 'loading') {

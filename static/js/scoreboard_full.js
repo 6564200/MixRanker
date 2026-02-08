@@ -78,6 +78,8 @@
         if (updateTimer) {
             clearInterval(updateTimer);
         }
+        // Первое обновление сразу
+        checkForUpdates();
         updateTimer = setInterval(checkForUpdates, CONFIG.updateInterval);
     }
 
@@ -86,6 +88,7 @@
      */
     async function checkForUpdates() {
         try {
+            // ИСПРАВЛЕНО: используем правильный endpoint
             const url = `/api/court/${tournamentId}/${courtId}/data`;
             const response = await fetch(url);
             
@@ -173,14 +176,14 @@
      */
     function updateSetScores(data) {
         const sets = data.detailed_result || [];
-        const tableHeader = document.querySelector('.table-header');
+        const tableHeader = document.querySelector('.table-header-block');
         const team1Row = document.querySelector('.team-row[data-team="1"] .scores-block');
         const team2Row = document.querySelector('.team-row[data-team="2"] .scores-block');
         
         if (!tableHeader || !team1Row || !team2Row) return;
         
-        // Получаем текущее количество сетов в DOM (исключая game-score и total)
-        const currentSetHeaders = tableHeader.querySelectorAll('.header-cell:not(.total):not(.game-score)');
+        // Получаем текущее количество сетов в DOM (исключая total)
+        const currentSetHeaders = tableHeader.querySelectorAll('.header-cell:not(.total)');
         const currentSetCount = currentSetHeaders.length;
         
         // Если количество сетов изменилось - перестраиваем
@@ -197,74 +200,48 @@
                 updateCellValue(`[data-field="team2_set${i + 1}"]`, score2);
             }
         }
-        
-        // Обновляем ИТОГ (счёт по сетам)
-        const team1SetsWon = sets.filter(s => (s.firstParticipantScore || 0) > (s.secondParticipantScore || 0)).length;
-        const team2SetsWon = sets.filter(s => (s.secondParticipantScore || 0) > (s.firstParticipantScore || 0)).length;
-        
-        updateCellValue('[data-field="team1_total"]', team1SetsWon);
-        updateCellValue('[data-field="team2_total"]', team2SetsWon);
     }
 
     /**
-     * Обновление текущего счёта в геймах
+     * ИСПРАВЛЕНО: Получение счёта текущего гейма из detailed_result
+     * В тай-брейке показывает очки тай-брейка, иначе теннисный формат (0, 15, 30, 40, AD)
+     */
+    function getGameScore(detailed, fallbackScore, participant) {
+        if (!detailed || !detailed.length) {
+            return fallbackScore || 0;
+        }
+        
+        const lastSet = detailed[detailed.length - 1];
+        if (!lastSet) {
+            return fallbackScore || 0;
+        }
+        
+        // gameScore содержит теннисный счет: "0", "15", "30", "40", "AD"
+        // или в тай-брейке: "1", "2", "3"...
+        const gameScore = lastSet.gameScore;
+        if (gameScore && gameScore[participant] !== undefined) {
+            return gameScore[participant];
+        }
+        
+        return fallbackScore || 0;
+    }
+
+    /**
+     * ИСПРАВЛЕНО: Обновление текущего счёта (СЧЁТ в total колонке)
+     * Показывает теннисный счет текущего гейма
      */
     function updateGameScore(data) {
-        const gameScore1 = data.team1_score ?? 0;
-        const gameScore2 = data.team2_score ?? 0;
+        const detailed = data.detailed_result || [];
         const eventState = (data.event_state || '').toLowerCase();
         const isFinished = eventState === 'finished';
         
-        // Показывать колонку СЧЁТ если матч не окончен и счёт не 0-0
-        const showGameScore = !isFinished && (gameScore1 !== 0 || gameScore2 !== 0);
+        // ИСПРАВЛЕНО: Получаем теннисный счёт из gameScore
+        const gameScore1 = getGameScore(detailed, data.team1_score, 'first');
+        const gameScore2 = getGameScore(detailed, data.team2_score, 'second');
         
-        const tableHeader = document.querySelector('.table-header');
-        const team1Row = document.querySelector('.team-row[data-team="1"] .scores-block');
-        const team2Row = document.querySelector('.team-row[data-team="2"] .scores-block');
-        
-        if (!tableHeader || !team1Row || !team2Row) return;
-        
-        const existingGameHeader = tableHeader.querySelector('.header-cell.game-score');
-        const existingGameCell1 = team1Row.querySelector('.score-cell.game-score');
-        const existingGameCell2 = team2Row.querySelector('.score-cell.game-score');
-        
-        if (showGameScore) {
-            if (!existingGameHeader) {
-                // Добавляем колонку СЧЁТ
-                const totalHeader = tableHeader.querySelector('.header-cell.total');
-                const totalCell1 = team1Row.querySelector('.score-cell.total');
-                const totalCell2 = team2Row.querySelector('.score-cell.total');
-                
-                const gameHeader = document.createElement('div');
-                gameHeader.className = 'header-cell game-score';
-                gameHeader.textContent = 'СЧЁТ';
-                tableHeader.insertBefore(gameHeader, totalHeader);
-                
-                const gameCell1 = document.createElement('div');
-                gameCell1.className = 'score-cell game-score';
-                gameCell1.dataset.field = 'team1_game';
-                gameCell1.textContent = gameScore1;
-                team1Row.insertBefore(gameCell1, totalCell1);
-                
-                const gameCell2 = document.createElement('div');
-                gameCell2.className = 'score-cell game-score';
-                gameCell2.dataset.field = 'team2_game';
-                gameCell2.textContent = gameScore2;
-                team2Row.insertBefore(gameCell2, totalCell2);
-                
-                animateUpdate(gameCell1);
-                animateUpdate(gameCell2);
-            } else {
-                // Обновляем значения
-                updateCellValue('[data-field="team1_game"]', gameScore1);
-                updateCellValue('[data-field="team2_game"]', gameScore2);
-            }
-        } else {
-            // Удаляем колонку СЧЁТ если она есть
-            if (existingGameHeader) existingGameHeader.remove();
-            if (existingGameCell1) existingGameCell1.remove();
-            if (existingGameCell2) existingGameCell2.remove();
-        }
+        // Обновляем колонку СЧЁТ (это текущий гейм)
+        updateCellValue('[data-field="team1_total"]', gameScore1);
+        updateCellValue('[data-field="team2_total"]', gameScore2);
     }
 
     /**
@@ -287,20 +264,20 @@
      * Перестроение сетов при изменении количества
      */
     function rebuildSets(sets, tableHeader, team1Row, team2Row) {
-        // Удаляем старые заголовки сетов (кроме ИТОГ и game-score)
-        const oldHeaders = tableHeader.querySelectorAll('.header-cell:not(.total):not(.game-score)');
+        // Удаляем старые заголовки сетов (кроме СЧЁТ/total)
+        const oldHeaders = tableHeader.querySelectorAll('.header-cell:not(.total)');
         oldHeaders.forEach(el => el.remove());
         
         // Удаляем старые ячейки счёта сетов
-        const oldCells1 = team1Row.querySelectorAll('.score-cell:not(.total):not(.game-score)');
-        const oldCells2 = team2Row.querySelectorAll('.score-cell:not(.total):not(.game-score)');
+        const oldCells1 = team1Row.querySelectorAll('.score-cell:not(.total)');
+        const oldCells2 = team2Row.querySelectorAll('.score-cell:not(.total)');
         oldCells1.forEach(el => el.remove());
         oldCells2.forEach(el => el.remove());
         
-        // Находим точку вставки (перед game-score или total)
-        const insertBeforeHeader = tableHeader.querySelector('.header-cell.game-score') || tableHeader.querySelector('.header-cell.total');
-        const insertBeforeCell1 = team1Row.querySelector('.score-cell.game-score') || team1Row.querySelector('.score-cell.total');
-        const insertBeforeCell2 = team2Row.querySelector('.score-cell.game-score') || team2Row.querySelector('.score-cell.total');
+        // Находим точку вставки (перед total)
+        const insertBeforeHeader = tableHeader.querySelector('.header-cell.total');
+        const insertBeforeCell1 = team1Row.querySelector('.score-cell.total');
+        const insertBeforeCell2 = team2Row.querySelector('.score-cell.total');
         
         // Добавляем новые сеты
         for (let i = 0; i < sets.length; i++) {
@@ -410,6 +387,18 @@
             element.classList.remove('updating');
         }, CONFIG.animationDuration);
     }
+
+    // Автопауза при скрытии вкладки
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            if (updateTimer) {
+                clearInterval(updateTimer);
+                updateTimer = null;
+            }
+        } else {
+            startUpdates();
+        }
+    });
 
     // Запуск при загрузке
     if (document.readyState === 'loading') {

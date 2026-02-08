@@ -1155,8 +1155,6 @@ function copyAllLiveXML() {
 function updateXMLTypes() {
     const tournamentId = document.getElementById('xmlTournamentSelect').value;
     const showLiveXMLBtn = document.getElementById('showLiveXMLBtn');
-    const generateAllBtn = document.getElementById('generateAllBtn');
-    const testAllBtn = document.getElementById('testAllBtn');
     
     // Получаем кнопки HTML расписания
     const generateScheduleBtn = document.getElementById('generateScheduleBtn');
@@ -1164,10 +1162,9 @@ function updateXMLTypes() {
     
     if (!tournamentId) {
         if (showLiveXMLBtn) showLiveXMLBtn.disabled = true;
-        if (generateAllBtn) generateAllBtn.disabled = true;
-        if (testAllBtn) testAllBtn.disabled = true;
         if (generateScheduleBtn) generateScheduleBtn.disabled = true;
         if (openLiveScheduleBtn) openLiveScheduleBtn.disabled = true;
+        enableCompositeButtons(false);
         
         document.getElementById('liveXMLList').innerHTML = `
             <div class="text-center text-muted py-5">
@@ -1180,10 +1177,9 @@ function updateXMLTypes() {
     }
 
     if (showLiveXMLBtn) showLiveXMLBtn.disabled = false;
-    if (generateAllBtn) generateAllBtn.disabled = false;
-    if (testAllBtn) testAllBtn.disabled = false;
     if (generateScheduleBtn) generateScheduleBtn.disabled = false;
     if (openLiveScheduleBtn) openLiveScheduleBtn.disabled = false;
+    enableCompositeButtons(true);
     
     loadLiveXMLList(tournamentId);
 }
@@ -1667,64 +1663,40 @@ function showLiveXMLList() {
     }
 }
 
-async function testAllLiveXML() {
+// === КОМПОЗИТНЫЕ СТРАНИЦЫ ===
+
+function openCompositePage(pageType, slotNumber) {
     const tournamentId = document.getElementById('xmlTournamentSelect').value;
     if (!tournamentId) {
-        showAlert('Выберите турнир для тестирования', 'warning');
+        showAlert('Выберите турнир', 'warning');
         return;
     }
-    
-    showLoading(true);
-    
-    try {
-        const response = await fetch(`/api/tournament/${tournamentId}/live-xml-info`);
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        
-        const liveXMLInfo = await response.json();
-        
-        if (!liveXMLInfo.live_xml_types || liveXMLInfo.live_xml_types.length === 0) {
-            showAlert('Нет доступных Live XML для тестирования', 'info');
-            return;
-        }
-        
-        let successCount = 0;
-        let errorCount = 0;
-        
-        for (const xmlType of liveXMLInfo.live_xml_types) {
-            try {
-                const testResponse = await fetch(xmlType.live_url);
-                if (testResponse.ok) {
-                    successCount++;
-                } else {
-                    errorCount++;
-                }
-            } catch (error) {
-                errorCount++;
-            }
-        }
-        
-        if (errorCount === 0) {
-            showAlert(`Все Live XML работают корректно! (${successCount}/${successCount})`, 'success');
-        } else {
-            showAlert(`Результат тестирования: ${successCount} работают, ${errorCount} с ошибками`, 'warning');
-        }
-                      
-    } catch (error) {
-        console.error('Test all live XML error:', error);
-        showAlert(`Ошибка тестирования Live XML: ${error.message}`, 'danger');
-    } finally {
-        showLoading(false);
-    }
+    window.open(`/composite/${tournamentId}/${pageType}/${slotNumber}`, '_blank');
 }
 
-function generateAllXMLForTournament() {
+function openCompositeEditor(pageType, slotNumber) {
     const tournamentId = document.getElementById('xmlTournamentSelect').value;
-    if (tournamentId) {
-        generateAllXML(tournamentId);
-    } else {
-        showAlert('Выберите турнир для генерации статических XML', 'warning');
+    if (!tournamentId) {
+        showAlert('Выберите турнир', 'warning');
+        return;
+    }
+    window.open(`/composite/editor/${tournamentId}/${pageType}/${slotNumber}`, '_blank');
+}
+
+function enableCompositeButtons(enabled) {
+    // Round buttons
+    for (let i = 1; i <= 3; i++) {
+        const btn = document.getElementById(`compositeRound${i}Btn`);
+        const editBtn = document.getElementById(`compositeRound${i}EditBtn`);
+        if (btn) btn.disabled = !enabled;
+        if (editBtn) editBtn.disabled = !enabled;
+    }
+    // Elimination buttons
+    for (let i = 1; i <= 3; i++) {
+        const btn = document.getElementById(`compositeElimination${i}Btn`);
+        const editBtn = document.getElementById(`compositeElimination${i}EditBtn`);
+        if (btn) btn.disabled = !enabled;
+        if (editBtn) editBtn.disabled = !enabled;
     }
 }
 
