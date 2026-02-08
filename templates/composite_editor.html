@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактор - {{ page_type | capitalize }} {{ slot_number }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/composite_editor.css">
+</head>
+<body>
+    <!-- Header -->
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand">
+                <i class="fas fa-layer-group me-2"></i>
+                Редактор: {{ page_type | capitalize }} {{ slot_number }}
+                <small class="text-muted ms-2">— {{ tournament_name }}</small>
+            </span>
+            <div class="d-flex gap-2">
+                <a href="/composite/{{ tournament_id }}/{{ page_type }}/{{ slot_number }}" 
+                   target="_blank" class="btn btn-outline-success btn-sm">
+                    <i class="fas fa-external-link-alt me-1"></i>Открыть страницу
+                </a>
+                <button class="btn btn-primary btn-sm" onclick="saveComposite()">
+                    <i class="fas fa-save me-1"></i>Сохранить
+                </button>
+                <a href="/" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i>Назад
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="editor-container">
+        <!-- Панель настроек -->
+        <div class="settings-panel">
+            <!-- Фоновый слой -->
+            <div class="card">
+                <div class="card-header py-2">
+                    <h6 class="mb-0"><i class="fas fa-image me-2"></i>Фон</h6>
+                </div>
+                <div class="card-body py-2">
+                    <p class="small text-muted mb-2">
+                        Фон: <strong>{{ page_type | capitalize }}</strong>
+                    </p>
+                    <p class="small text-muted mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Название турнира и логотипы отображаются автоматически
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Слои -->
+            <div class="card flex-grow-1">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-layer-group me-2"></i>Слои</h6>
+                    <button class="btn btn-success btn-sm" onclick="addLayer()">
+                        <i class="fas fa-plus me-1"></i>Добавить
+                    </button>
+                </div>
+                <div class="card-body p-2" id="layersList" style="overflow-y: auto;">
+                    <!-- Слои рендерятся динамически -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Область предпросмотра -->
+        <div class="preview-panel">
+            <div class="preview-wrapper" id="previewWrapper">
+                <div class="preview-frame" id="previewFrame">
+                    <div class="preview-background" id="previewBackground">
+                        <!-- Фон загрузится динамически -->
+                    </div>
+                    <div id="previewLayers">
+                        <!-- Слои загрузятся динамически -->
+                    </div>
+                </div>
+            </div>
+            <div class="mt-2 d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Перетаскивайте слои для позиционирования. Базовое разрешение: 1920×1080
+                </small>
+                <span class="badge bg-secondary" id="previewScale">100%</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно выбора страницы -->
+    <div class="modal fade" id="selectPageModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-list me-2"></i>Выбор страницы</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="selectPageTarget">
+                    
+                    <ul class="nav nav-tabs mb-3" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#roundRobinPages">
+                                Round Robin
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#eliminationPages">
+                                Elimination
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="roundRobinPages">
+                            <div class="list-group" id="roundRobinList">
+                                <p class="text-muted small">Загрузка...</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="eliminationPages">
+                            <div class="list-group" id="eliminationList">
+                                <p class="text-muted small">Загрузка...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/composite_editor.js"></script>
+    <script>
+        // Инициализация редактора с данными из шаблона
+        document.addEventListener('DOMContentLoaded', function() {
+            initCompositeEditor({
+                tournamentId: '{{ tournament_id }}',
+                pageType: '{{ page_type }}',
+                slotNumber: {{ slot_number }},
+                layers: {{ page.layers | tojson | safe if page and page.layers else '[]' }}
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Pool {{ slot_number }}</title>
+    <link rel="stylesheet" href="/static/css/display.css">
+</head>
+<body>
+    <div class="display-container" 
+         data-type="pool" 
+         data-slot="{{ slot_number }}"
+         data-mode="{{ window.mode if window else 'auto' }}">
+        
+        <!-- Фоновое изображение/видео -->
+        <div class="display-background">
+            <img src="/static/images/pool_bg.png" alt="Background" class="bg-image">
+        </div>
+        
+        <!-- Заглушка (empty state) -->
+        <div class="empty-state" style="display: none;">
+            <img src="/static/images/bg_001.png" alt="Заглушка" class="empty-image">
+        </div>
+        
+        <!-- Контейнер для iframe -->
+        <div class="display-content">
+            <iframe id="display-frame" 
+                    src="about:blank" 
+                    frameborder="0" 
+                    allowtransparency="true"
+                    class="display-iframe"></iframe>
+        </div>
+        
+        <!-- Оверлей для fade эффекта -->
+        <div class="fade-overlay"></div>
+        
+        <!-- Индикатор загрузки -->
+        <div class="loading-indicator" style="display: none;">
+            <div class="spinner"></div>
+        </div>
+    </div>
+    
+    <script src="/static/js/display_pool.js"></script>
+</body>
+</html>

@@ -64,6 +64,11 @@
                         <i class="fas fa-cog me-2"></i>Настройки
                     </button>
                 </li>
+		
+					<button class="btn btn-outline-info" onclick="openDisplayManager()" title="Окна трансляции">
+						<i class="fas fa-tv me-1"></i>Трансляции
+					</button>				
+			
             </ul>
 
             <!-- Tab Content -->
@@ -181,16 +186,58 @@
 										</small>
 									</div>
 									
-									<!-- Дополнительные функции -->
+									<!-- Композитные страницы -->
 									<div class="border-top pt-3">
-										<h6 class="text-muted mb-2">Дополнительные функции:</h6>
-										<div class="d-grid gap-2">
-											<button class="btn btn-outline-primary btn-sm" onclick="generateAllXMLForTournament()" id="generateAllBtn" disabled>
-												<i class="fas fa-layer-group me-1"></i>Создать статические XML
-											</button>
-											<button class="btn btn-outline-secondary btn-sm" onclick="testAllLiveXML()" id="testAllBtn" disabled>
-												<i class="fas fa-play me-1"></i>Тестировать все Live XML
-											</button>
+										<h6 class="text-muted mb-2">Композитные страницы:</h6>
+										
+										<!-- Round Robin -->
+										<div class="mb-2">
+											<small class="text-muted">Round Robin (групповые таблицы):</small>
+											<div class="btn-group btn-group-sm w-100 mt-1">
+												<button class="btn btn-outline-primary" onclick="openCompositePage('round', 1)" id="compositeRound1Btn" disabled title="Открыть">
+													<i class="fas fa-external-link-alt me-1"></i>1
+												</button>
+												<button class="btn btn-outline-secondary" onclick="openCompositeEditor('round', 1)" id="compositeRound1EditBtn" disabled title="Настройки">
+													<i class="fas fa-cog"></i>
+												</button>
+												<button class="btn btn-outline-primary" onclick="openCompositePage('round', 2)" id="compositeRound2Btn" disabled title="Открыть">
+													<i class="fas fa-external-link-alt me-1"></i>2
+												</button>
+												<button class="btn btn-outline-secondary" onclick="openCompositeEditor('round', 2)" id="compositeRound2EditBtn" disabled title="Настройки">
+													<i class="fas fa-cog"></i>
+												</button>
+												<button class="btn btn-outline-primary" onclick="openCompositePage('round', 3)" id="compositeRound3Btn" disabled title="Открыть">
+													<i class="fas fa-external-link-alt me-1"></i>3
+												</button>
+												<button class="btn btn-outline-secondary" onclick="openCompositeEditor('round', 3)" id="compositeRound3EditBtn" disabled title="Настройки">
+													<i class="fas fa-cog"></i>
+												</button>
+											</div>
+										</div>
+										
+										<!-- Elimination -->
+										<div class="mb-2">
+											<small class="text-muted">Elimination (сетки плей-офф):</small>
+											<div class="btn-group btn-group-sm w-100 mt-1">
+												<button class="btn btn-outline-info" onclick="openCompositePage('elimination', 1)" id="compositeElimination1Btn" disabled title="Открыть">
+													<i class="fas fa-external-link-alt me-1"></i>1
+												</button>
+												<button class="btn btn-outline-secondary" onclick="openCompositeEditor('elimination', 1)" id="compositeElimination1EditBtn" disabled title="Настройки">
+													<i class="fas fa-cog"></i>
+												</button>
+												<button class="btn btn-outline-info" onclick="openCompositePage('elimination', 2)" id="compositeElimination2Btn" disabled title="Открыть">
+													<i class="fas fa-external-link-alt me-1"></i>2
+												</button>
+												<button class="btn btn-outline-secondary" onclick="openCompositeEditor('elimination', 2)" id="compositeElimination2EditBtn" disabled title="Настройки">
+													<i class="fas fa-cog"></i>
+												</button>
+												<button class="btn btn-outline-info" onclick="openCompositePage('elimination', 3)" id="compositeElimination3Btn" disabled title="Открыть">
+													<i class="fas fa-external-link-alt me-1"></i>3
+												</button>
+												<button class="btn btn-outline-secondary" onclick="openCompositeEditor('elimination', 3)" id="compositeElimination3EditBtn" disabled title="Настройки">
+													<i class="fas fa-cog"></i>
+												</button>
+											</div>
 										</div>
 									</div>
 								</div>
@@ -569,6 +616,7 @@
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/photo-editor.js"></script>
+	<script src="/static/js/display_manager.js"></script>
     <script src="/static/js/main.js"></script>
 </body>
 </html>
