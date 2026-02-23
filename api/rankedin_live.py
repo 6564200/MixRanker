@@ -15,6 +15,8 @@ from datetime import datetime
 import requests
 import websocket
 
+from .score_parser import extract_players, parse_detailed_result
+
 logger = logging.getLogger(__name__)
 
 # Константы SignalR
@@ -107,7 +109,7 @@ class RankedinLiveClient:
             elif msg_type == 6:
                 try:
                     ws.send(json.dumps({"type": 6}) + PROTOCOL_SEPARATOR)
-                except:
+                except Exception:
                     pass
     
     def _handle_match_update(self, updates: List[Dict]):
@@ -235,82 +237,12 @@ class RankedinLiveClient:
     
     def _extract_players(self, players: List) -> List[Dict]:
         """Извлечение данных игроков"""
-        if not isinstance(players, list):
-            return []
-        
-        result = []
-        for p in players:
-            if not isinstance(p, dict):
-                continue
-            result.append({
-                "id": p.get("id", ""),
-                "firstName": (p.get("firstName") or "").strip(),
-                "lastName": (p.get("lastName") or "").strip(),
-                "countryCode": p.get("countryCode", ""),
-                "fullName": f"{(p.get('firstName') or '').strip()} {(p.get('lastName') or '').strip()}".strip(),
-                "initialLastName": f"{(p.get('firstName') or '').strip()[:1]}. {(p.get('lastName') or '').strip()}".strip() if p.get('firstName') and p.get('lastName') else ""
-            })
-        return result
+        return extract_players(players)
     
     def _parse_detailed_result(self, detailed: List[Dict], is_tiebreak: bool = False, 
                                 is_super_tiebreak: bool = False) -> List[Dict]:
         """Парсинг detailed_result из SignalR формата"""
-        result = []
-        num_sets = len(detailed)
-        
-        for i, set_data in enumerate(detailed):
-            if not isinstance(set_data, dict):
-                continue
-            
-            is_last_set = (i == num_sets - 1)
-            
-            set_info = {
-                "firstParticipantScore": set_data.get("firstParticipantScore", 0),
-                "secondParticipantScore": set_data.get("secondParticipantScore", 0),
-                "loserTiebreak": set_data.get("loserTiebreak")
-            }
-            
-            games = set_data.get("detailedResult", [])
-            if games and isinstance(games, list):
-                last_game = games[-1] if isinstance(games[-1], dict) else {}
-                g1 = last_game.get("firstParticipantScore", 0)
-                g2 = last_game.get("secondParticipantScore", 0)
-                
-                set_score1 = set_data.get("firstParticipantScore", 0)
-                set_score2 = set_data.get("secondParticipantScore", 0)
-                
-                # Проверяем тай-брейк:
-                # 1. Обычный тай-брейк (6:6 в сете)
-                # 2. Супер тай-брейк (3-й сет с счётом 0:0 и флаг is_tiebreak/is_super_tiebreak)
-                # 3. loserTiebreak указан
-                is_set_tiebreak = (
-                    (set_score1 == 6 and set_score2 == 6) or  # Обычный тай-брейк 6:6
-                    (set_score1 == 0 and set_score2 == 0 and is_last_set and (is_tiebreak or is_super_tiebreak)) or  # Супер тай-брейк
-                    last_game.get("loserTiebreak") is not None
-                )
-                
-                if is_set_tiebreak:
-                    # В тай-брейке показываем очки как есть
-                    set_info["gameScore"] = {"first": str(g1), "second": str(g2)}
-                    set_info["isTieBreak"] = True
-                    if is_last_set and is_super_tiebreak:
-                        set_info["isSuperTieBreak"] = True
-                else:
-                    # Обычный гейм - конвертируем в теннисный формат (0, 15, 30, 40, AD)
-                    def conv(v, other):
-                        if v <= 3:
-                            return {0: "0", 1: "15", 2: "30", 3: "40"}.get(v, str(v))
-                        else:
-                            # При преимуществе - лидер AD, отстающий 40
-                            if v > other:
-                                return "AD"
-                            else:
-                                return "40"
-                    set_info["gameScore"] = {"first": conv(g1, g2), "second": conv(g2, g1)}
-            
-            result.append(set_info)
-        
-        return result
+        return parse_detailed_result(detailed, is_tiebreak, is_super_tiebreak)
     
     def _on_open(self, ws):
         """Обработка открытия соединения"""
@@ -396,7 +328,7 @@ class RankedinLiveClient:
         if self.ws:
             try:
                 self.ws.close()
-            except:
+            except Exception:
                 pass
         
         logger.info(f"Court {self.court_id}: live client stopped")

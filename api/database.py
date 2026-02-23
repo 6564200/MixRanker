@@ -201,9 +201,6 @@ def init_database():
             
             CREATE INDEX IF NOT EXISTS idx_display_type_slot ON display_windows(type, slot_number);
             
-            -- Пересоздаём composite_pages с правильным constraint
-            DROP TABLE IF EXISTS composite_pages;
-            
             CREATE TABLE IF NOT EXISTS composite_pages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tournament_id TEXT NOT NULL,
@@ -521,36 +518,34 @@ def get_court_ids_for_tournament(tournament_id: str) -> List[str]:
 
 def get_settings() -> Dict:
     """Получение настроек"""
-    try:
-        conn = get_db_connection()
+    defaults = {
+        "refreshInterval": 30,
+        "autoRefresh": True,
+        "debugMode": False,
+        "theme": "light",
+        "finishedMatchesCount": 3
+    }
+
+    def transaction(conn):
         cursor = conn.cursor()
         cursor.execute('SELECT key, value FROM settings')
-        
         settings = {}
         for row in cursor.fetchall():
             try:
                 settings[row['key']] = json.loads(row['value'])
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, TypeError):
                 settings[row['key']] = row['value']
-        
-        conn.close()
-        
-        defaults = {
-            "refreshInterval": 30,
-            "autoRefresh": True,
-            "debugMode": False,
-            "theme": "light",
-            "finishedMatchesCount": 3  # Количество последних сыгранных матчей в расписании
-        }
         
         for key, value in defaults.items():
             if key not in settings:
                 settings[key] = value
-        
         return settings
+
+    try:
+        return execute_with_retry(transaction)
     except Exception as e:
         logger.error(f"Ошибка получения настроек: {e}")
-        return {"refreshInterval": 30, "autoRefresh": True}
+        return defaults
 
 
 def save_settings(settings: Dict):
@@ -585,15 +580,13 @@ def save_tournament_matches(tournament_id: str, matches_data: Dict):
 
 def get_tournament_matches(tournament_id: str) -> Optional[Dict]:
     """Получение матчей турнира из БД"""
-    try:
-        conn = get_db_connection()
+    def transaction(conn):
         cursor = conn.cursor()
         cursor.execute('''
             SELECT matches_data, are_matches_published, is_schedule_published, updated_at
             FROM tournament_matches WHERE tournament_id = ?
         ''', (tournament_id,))
         row = cursor.fetchone()
-        conn.close()
         
         if not row:
             return None
@@ -604,6 +597,9 @@ def get_tournament_matches(tournament_id: str) -> Optional[Dict]:
             "IsSchedulePublished": bool(row[2]),
             "updated_at": row[3]
         }
+
+    try:
+        return execute_with_retry(transaction)
     except Exception as e:
         logger.error(f"Ошибка получения матчей турнира {tournament_id}: {e}")
         return None

@@ -133,14 +133,14 @@ class AutoRefreshService:
             if auto_row:
                 try:
                     auto_refresh = json.loads(auto_row[0])
-                except:
+                except (json.JSONDecodeError, TypeError):
                     pass
 
             interval = 30
             if interval_row:
                 try:
                     interval = json.loads(interval_row[0])
-                except:
+                except (json.JSONDecodeError, TypeError):
                     pass
 
             cursor.execute('SELECT id FROM tournaments WHERE status = ?', ('active',))
@@ -186,15 +186,22 @@ class AutoRefreshService:
                                 INSERT OR REPLACE INTO courts_data 
                                 (tournament_id, court_id, court_name, event_state, current_match_state, class_name,
                                  first_participant_score, second_participant_score, 
-                                 detailed_result, first_participant, second_participant, updated_at)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                                 detailed_result, first_participant, second_participant,
+                                 is_tiebreak, is_super_tiebreak, is_first_participant_serving, is_serving_left, match_id,
+                                 updated_at)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                             ''', (
-                                tid, str(court["court_id"]), court["court_name"],
-                                court["event_state"], court["current_match_state"],
-                                court["class_name"],
-                                court["first_participant_score"], court["second_participant_score"],
-                                json.dumps(court["detailed_result"]), json.dumps(court["first_participant"]),
-                                json.dumps(court["second_participant"])
+                                tid, str(court["court_id"]), court.get("court_name", ""),
+                                court.get("event_state", ""), court.get("current_match_state", ""),
+                                court.get("class_name", ""),
+                                court.get("first_participant_score", 0), court.get("second_participant_score", 0),
+                                json.dumps(court.get("detailed_result", [])), json.dumps(court.get("first_participant", [])),
+                                json.dumps(court.get("second_participant", [])),
+                                1 if court.get("is_tiebreak") else 0,
+                                1 if court.get("is_super_tiebreak") else 0,
+                                1 if court.get("is_first_participant_serving") else (0 if court.get("is_first_participant_serving") is False else None),
+                                1 if court.get("is_serving_left") else (0 if court.get("is_serving_left") is False else None),
+                                court.get("match_id", "")
                             ))
                             updated += 1
 

@@ -62,7 +62,7 @@ def register_auth_routes(app):
             else:
                 try:
                     data = request.get_json(force=True)
-                except:
+                except Exception:
                     return jsonify({'error': 'Неверный формат данных'}), 400
 
             username = data.get('username', '').strip()

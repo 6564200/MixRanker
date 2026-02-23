@@ -3,6 +3,7 @@
 """Модуль для работы с API rankedin.com"""
 
 from .rankedin_api_base import RankedinAPI as BaseAPI
+from .score_parser import extract_players, parse_detailed_result
 from typing import Dict, List, Optional
 from datetime import datetime
 import logging
@@ -119,71 +120,11 @@ class RankedinAPI(BaseAPI):
         }
 
     def _extract_players(self, players) -> List[Dict]:
-        if not isinstance(players, list):
-            return []
-        return [{
-            "id": p.get("id", ""),
-            "firstName": (p.get("firstName") or "").strip(),
-            "lastName": (p.get("lastName") or "").strip(),
-            "countryCode": p.get("countryCode", ""),
-            "fullName": f"{(p.get('firstName') or '').strip()} {(p.get('lastName') or '').strip()}".strip(),
-            "initialLastName": f"{(p.get('firstName') or '').strip()[:1]}. {(p.get('lastName') or '').strip()}".strip() if p.get('firstName') and p.get('lastName') else ""
-        } for p in players]
+        return extract_players(players)
 
     def _parse_detailed(self, detailed: List[Dict], is_tiebreak: bool = False, 
                         is_super_tiebreak: bool = False, tiebreak_score: tuple = None) -> List[Dict]:
-        result = []
-        for i, s in enumerate(detailed):
-            if not isinstance(s, dict):
-                continue
-            info = {
-                "firstParticipantScore": s.get("firstParticipantScore", 0), 
-                "secondParticipantScore": s.get("secondParticipantScore", 0), 
-                "loserTiebreak": s.get("loserTiebreak")
-            }
-            
-            games = s.get("detailedResult", [])
-            is_last_set = (i == len(detailed) - 1)
-            
-            if games:
-                # Берём последний элемент из вложенного detailedResult
-                last = games[-1]
-                g1, g2 = last.get("firstParticipantScore", 0), last.get("secondParticipantScore", 0)
-                
-                # Проверяем тай-брейк:
-                # 1. Супер тай-брейк (3-й сет с счётом 0:0 по сетам)
-                # 2. Обычный тай-брейк (6:6 в сете)
-                # 3. Флаг isTieBreak из state
-                set_score1 = s.get("firstParticipantScore", 0)
-                set_score2 = s.get("secondParticipantScore", 0)
-                
-                is_set_tiebreak = (
-                    (set_score1 == 6 and set_score2 == 6) or  # Обычный тай-брейк 6:6
-                    (set_score1 == 0 and set_score2 == 0 and is_last_set and (is_tiebreak or is_super_tiebreak)) or  # Супер тай-брейк
-                    last.get("loserTiebreak") is not None
-                )
-                
-                if is_set_tiebreak:
-                    # В тай-брейке показываем очки как есть
-                    info["gameScore"] = {"first": str(g1), "second": str(g2)}
-                    info["isTieBreak"] = True
-                    if is_last_set and is_super_tiebreak:
-                        info["isSuperTieBreak"] = True
-                else:
-                    # Обычный гейм - конвертируем в теннисный формат (0, 15, 30, 40, AD)
-                    def conv(v, other): 
-                        if v <= 3:
-                            return {0: "0", 1: "15", 2: "30", 3: "40"}.get(v, str(v))
-                        else:
-                            # При равенстве 40:40 (deuce) - оба 40
-                            # При преимуществе - лидер AD, отстающий 40
-                            if v > other:
-                                return "AD"
-                            else:
-                                return "40"
-                    info["gameScore"] = {"first": conv(g1, g2), "second": conv(g2, g1)}
-            result.append(info)
-        return result
+        return parse_detailed_result(detailed, is_tiebreak, is_super_tiebreak, tiebreak_score)
 
     # === DRAWS ===
     def get_all_draws_for_class(self, class_id: str) -> Dict[str, List[Dict]]:
