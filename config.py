@@ -5,7 +5,6 @@
 """
 
 import os
-from datetime import timedelta
 
 class Config:
     """Базовая конфигурация"""
@@ -69,11 +68,6 @@ class ProductionConfig(Config):
     """Конфигурация для продакшена"""
     DEBUG = False
     
-    # Проверка обязательных переменных окружения
-    SECRET_KEY = os.environ.get('SECRET_KEY')
-    if not SECRET_KEY:
-        raise ValueError("Установите переменную окружения SECRET_KEY для продакшена")
-    
     # Более консервативные настройки для продакшена
     AUTO_REFRESH_INTERVAL = 60  # Реже обновляем в продакшене
     API_TIMEOUT = 15  # Больший таймаут
@@ -82,6 +76,10 @@ class ProductionConfig(Config):
     @staticmethod
     def init_app(app):
         Config.init_app(app)
+        
+        # Проверка обязательных переменных окружения
+        if not os.environ.get('SECRET_KEY'):
+            raise ValueError("Установите переменную окружения SECRET_KEY для продакшена")
         
         # Настройка логирования для продакшена
         import logging
@@ -138,55 +136,4 @@ DEFAULT_SETTINGS = {
     "xml_cleanup_hours": Config.XML_CLEANUP_HOURS,
     "max_tournaments": Config.MAX_TOURNAMENTS,
     "api_timeout": Config.API_TIMEOUT
-}
-
-# Спорты поддерживаемые rankedin.com
-SUPPORTED_SPORTS = {
-    1: {"name": "Tennis", "icon": "fa-tennis-ball"},
-    2: {"name": "Squash", "icon": "fa-square"},
-    3: {"name": "Badminton", "icon": "fa-shuttlecock"},
-    4: {"name": "Table Tennis", "icon": "fa-ping-pong-paddle-ball"},
-    5: {"name": "Padel", "icon": "fa-table-tennis-paddle-ball"},
-    6: {"name": "Beach Tennis", "icon": "fa-volleyball"},
-    7: {"name": "Pickle Ball", "icon": "fa-baseball"}
-}
-
-# Статусы турниров
-TOURNAMENT_STATUSES = {
-    "active": {"name": "Активный", "class": "success"},
-    "finished": {"name": "Завершен", "class": "secondary"},
-    "pending": {"name": "Ожидание", "class": "warning"},
-    "error": {"name": "Ошибка", "class": "danger"}
-}
-
-# XML типы
-XML_TYPES = {
-    "tournament_table": {
-        "name": "Турнирная таблица",
-        "description": "Групповые этапы и игры на выбывание",
-        "icon": "fa-table"
-    },
-    "schedule": {
-        "name": "Расписание матчей",
-        "description": "График игр по дням и времени",
-        "icon": "fa-calendar"
-    },
-    "court_score": {
-        "name": "Счет на корте",
-        "description": "Текущий счет и информация о матче",
-        "icon": "fa-scoreboard"
-    }
-}
-
-# Страны (основные)
-COUNTRIES = {
-    1: "United States",
-    7: "Canada",
-    33: "France", 
-    34: "Spain",
-    39: "Italy",
-    44: "United Kingdom",
-    49: "Germany", 
-    146: "Russia",
-    # Добавить больше по необходимости
 }

@@ -6,18 +6,15 @@ vMixRanker v2.6
 """
 
 import os
-import sys
 import logging
 import json
 import time
 from datetime import datetime
 from flask import Flask, request, jsonify, send_file, render_template, Response, session
 from werkzeug.utils import secure_filename
-from typing import Dict, List, Optional
+from typing import Dict
 from config import get_config
 from api.html_generator import HTMLGenerator
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Создание директорий
 for d in ['logs', 'data', 'xml_files', 'api', 'static/css', 'static/js', 'templates', 'static/fonts', 'static/photos']:
@@ -80,13 +77,8 @@ def set_secure_headers(response):
 def index():
     try:
         return render_template('index.html')
-    except:
+    except Exception:
         return "<html><body><h1>vMixRanker</h1></body></html>"
-
-@app.route('/static/<path:filename>')
-def static_files(filename):
-    from flask import send_from_directory
-    return send_from_directory('static', filename)
 
 
 # === API: ТУРНИРЫ ===
@@ -258,7 +250,7 @@ def _enrich_courts_with_next_match(courts_data: list, tournament_data: dict) -> 
                 try:
                     match_dt = datetime.fromisoformat(match_date_str.replace('Z', ''))
                     pending_matches.append((match_dt, match))
-                except:
+                except (ValueError, TypeError):
                     continue
         
         # Сортируем по времени
@@ -636,6 +628,12 @@ def serve_xml_file(filename):
 def get_live_court_html(tournament_id, court_id):
     """Live HTML корта с AJAX-обновлением"""
     try:
+        # Авто-подписка на WebSocket для live-обновлений
+        try:
+            live_manager.subscribe_court(int(court_id))
+        except Exception as e:
+            logger.debug(f"WebSocket subscribe failed: {e}")
+        
         tournament_data = get_tournament_data(tournament_id)
         if not tournament_data:
             return "<html><body><h1>Турнир не найден</h1></body></html>", 404
@@ -656,6 +654,12 @@ def get_live_court_html(tournament_id, court_id):
 def get_live_court_score_html(tournament_id, court_id):
     """Fullscreen scoreboard с AJAX-обновлением"""
     try:
+        # Авто-подписка на WebSocket для live-обновлений
+        try:
+            live_manager.subscribe_court(int(court_id))
+        except Exception as e:
+            logger.debug(f"WebSocket subscribe failed: {e}")
+        
         tournament_data = get_tournament_data(tournament_id)
         court_data = get_court_data(tournament_id, str(court_id))
         if not tournament_data or not court_data:
@@ -700,7 +704,7 @@ def get_court_data_api(tournament_id, court_id):
         # Продлеваем подписку WebSocket при каждом запросе
         try:
             live_manager.touch(int(court_id))
-        except:
+        except Exception:
             pass
         
         court_data = get_court_data(tournament_id, str(court_id))
@@ -1097,16 +1101,6 @@ def refresh_all_data():
 def subscribe_live_court(court_id):
     """Подписка на live-обновления корта"""
     try:
-        from api.rankedin_live import live_manager
-        from database import update_court_live_score
-        
-        # Устанавливаем callback для обновления БД
-        def on_live_update(tournament_id: str, court_data: Dict):
-            update_court_live_score(tournament_id, court_data)
-            logger.info(f"Live update for court {court_data.get('court_id')}: score updated")
-        
-        live_manager.set_update_callback(on_live_update)
-        
         success = live_manager.subscribe_court(court_id)
         return jsonify({"success": success, "court_id": court_id})
     except Exception as e:
@@ -1118,7 +1112,6 @@ def subscribe_live_court(court_id):
 def unsubscribe_live_court(court_id):
     """Отписка от live-обновлений корта"""
     try:
-        from api.rankedin_live import live_manager
         live_manager.unsubscribe_court(court_id)
         return jsonify({"success": True, "court_id": court_id})
     except Exception as e:
@@ -1129,7 +1122,6 @@ def unsubscribe_live_court(court_id):
 def get_live_subscriptions():
     """Получение списка подписанных кортов"""
     try:
-        from api.rankedin_live import live_manager
         courts = live_manager.get_subscribed_courts()
         return jsonify({"courts": courts, "count": len(courts)})
     except Exception as e:
@@ -1140,10 +1132,6 @@ def get_live_subscriptions():
 def subscribe_tournament_courts(tournament_id):
     """Подписка на все корты турнира"""
     try:
-        from api.rankedin_live import live_manager
-        from database import update_court_live_score
-        
-        # Получаем список кортов
         tournament_data = get_tournament_data(tournament_id)
         if not tournament_data:
             return jsonify({"error": "Турнир не найден"}), 404
@@ -1151,11 +1139,6 @@ def subscribe_tournament_courts(tournament_id):
         courts = tournament_data.get("courts", [])
         court_ids = [int(c.get("Item1")) for c in courts if c.get("Item1")]
         
-        # Устанавливаем callback
-        def on_live_update(tid: str, court_data: Dict):
-            update_court_live_score(tid, court_data)
-        
-        live_manager.set_update_callback(on_live_update)
         live_manager.subscribe_courts(court_ids)
         
         return jsonify({
@@ -1176,47 +1159,6 @@ def serve_html_file(filename):
         return send_file(f'xml_files/{filename}', mimetype='text/html')
     except FileNotFoundError:
         return "<html><body><h1>Файл не найден</h1></body></html>", 404
-
-
-@app.route('/api/html/schedule/<tournament_id>')
-def generate_schedule_html(tournament_id):
-    """Генерация HTML расписания"""
-    try:
-        tournament_data = get_tournament_data(tournament_id)
-        if not tournament_data:
-            return jsonify({"error": "Турнир не найден"}), 404
-
-        target_date = request.args.get('date')
-        file_info = xml_manager.generate_and_save_schedule_html(tournament_data, target_date)
-        return jsonify(file_info)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route('/api/html/<tournament_id>/<court_id>')
-def generate_court_html(tournament_id, court_id):
-    """Генерация HTML scoreboard для корта (файл)"""
-    try:
-        tournament_data = get_tournament_data(tournament_id)
-        if not tournament_data:
-            return jsonify({"error": "Турнир не найден"}), 404
-
-        court_data = api.get_court_scoreboard(str(court_id))
-        if "error" in court_data:
-            return jsonify({"error": "Ошибка получения данных корта"}), 500
-
-        xml_type_info = {
-            "id": f"court_{court_id}",
-            "name": f"Корт {court_id} - Scoreboard HTML",
-            "type": "court_score",
-            "court_id": court_id,
-            "court_name": court_data.get("court_name", f"Корт {court_id}")
-        }
-
-        file_info = xml_manager.generate_and_save_html(xml_type_info, tournament_data, court_data)
-        return jsonify(file_info)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 
 # === ОТЛАДКА ===
