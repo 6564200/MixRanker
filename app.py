@@ -41,9 +41,11 @@ from api import (
     AutoRefreshService,
     enrich_court_data_with_photos, get_participant_info, get_photo_urls_for_ids,
     get_sport_name, get_xml_type_description, get_update_frequency, get_uptime,
-    save_tournament_matches, get_tournament_matches
+    save_tournament_matches, get_tournament_matches,
+    update_court_live_score
 )
 from api.xml_generator import XMLFileManager
+from api.rankedin_live import live_manager
 
 # Flask приложение
 app = Flask(__name__)
@@ -671,6 +673,12 @@ def get_live_court_score_html(tournament_id, court_id):
 def get_live_court_score_full_html(tournament_id, court_id):
     """Полноэкранный scoreboard 4K/FHD/HD с логотипами и флагами"""
     try:
+        # Авто-подписка на WebSocket для live-обновлений
+        try:
+            live_manager.subscribe_court(int(court_id))
+        except Exception as e:
+            logger.debug(f"WebSocket subscribe failed: {e}")
+        
         tournament_data = get_tournament_data(tournament_id)
         court_data = get_court_data(tournament_id, str(court_id))
         if not tournament_data or not court_data:
@@ -689,6 +697,12 @@ def get_live_court_score_full_html(tournament_id, court_id):
 def get_court_data_api(tournament_id, court_id):
     """JSON данные корта для AJAX обновления scoreboard"""
     try:
+        # Продлеваем подписку WebSocket при каждом запросе
+        try:
+            live_manager.touch(int(court_id))
+        except:
+            pass
+        
         court_data = get_court_data(tournament_id, str(court_id))
         if not court_data:
             return jsonify({"error": "Корт не найден"}), 404
@@ -718,7 +732,11 @@ def get_court_data_api(tournament_id, court_id):
             "team2_score": team2_score,
             "event_state": court_data.get("event_state", ""),
             "court_name": court_data.get("court_name", ""),
-            "class_name": court_data.get("class_name", "")
+            "class_name": court_data.get("class_name", ""),
+            "is_first_participant_serving": court_data.get("is_first_participant_serving"),
+            "is_serving_left": court_data.get("is_serving_left"),
+            "is_tiebreak": court_data.get("is_tiebreak", False),
+            "is_super_tiebreak": court_data.get("is_super_tiebreak", False)
         })
     except Exception as e:
         logger.error(f"Ошибка получения данных корта: {e}")
@@ -1074,6 +1092,82 @@ def refresh_all_data():
         return jsonify({"error": str(e)}), 500
 
 
+# === LIVE WEBSOCKET ===
+@app.route('/api/live/subscribe/<int:court_id>', methods=['POST'])
+def subscribe_live_court(court_id):
+    """Подписка на live-обновления корта"""
+    try:
+        from api.rankedin_live import live_manager
+        from database import update_court_live_score
+        
+        # Устанавливаем callback для обновления БД
+        def on_live_update(tournament_id: str, court_data: Dict):
+            update_court_live_score(tournament_id, court_data)
+            logger.info(f"Live update for court {court_data.get('court_id')}: score updated")
+        
+        live_manager.set_update_callback(on_live_update)
+        
+        success = live_manager.subscribe_court(court_id)
+        return jsonify({"success": success, "court_id": court_id})
+    except Exception as e:
+        logger.error(f"Error subscribing to court {court_id}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/live/unsubscribe/<int:court_id>', methods=['POST'])
+def unsubscribe_live_court(court_id):
+    """Отписка от live-обновлений корта"""
+    try:
+        from api.rankedin_live import live_manager
+        live_manager.unsubscribe_court(court_id)
+        return jsonify({"success": True, "court_id": court_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/live/subscriptions')
+def get_live_subscriptions():
+    """Получение списка подписанных кортов"""
+    try:
+        from api.rankedin_live import live_manager
+        courts = live_manager.get_subscribed_courts()
+        return jsonify({"courts": courts, "count": len(courts)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/live/subscribe/tournament/<tournament_id>', methods=['POST'])
+def subscribe_tournament_courts(tournament_id):
+    """Подписка на все корты турнира"""
+    try:
+        from api.rankedin_live import live_manager
+        from database import update_court_live_score
+        
+        # Получаем список кортов
+        tournament_data = get_tournament_data(tournament_id)
+        if not tournament_data:
+            return jsonify({"error": "Турнир не найден"}), 404
+        
+        courts = tournament_data.get("courts", [])
+        court_ids = [int(c.get("Item1")) for c in courts if c.get("Item1")]
+        
+        # Устанавливаем callback
+        def on_live_update(tid: str, court_data: Dict):
+            update_court_live_score(tid, court_data)
+        
+        live_manager.set_update_callback(on_live_update)
+        live_manager.subscribe_courts(court_ids)
+        
+        return jsonify({
+            "success": True,
+            "tournament_id": tournament_id,
+            "courts_subscribed": court_ids
+        })
+    except Exception as e:
+        logger.error(f"Error subscribing tournament {tournament_id}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 # === ФАЙЛЫ ===
 @app.route('/html/<filename>')
 def serve_html_file(filename):
@@ -1148,23 +1242,46 @@ def internal_error(error):
 
 
 # === ЗАПУСК ===
+# Глобальный auto_refresh
+auto_refresh = None
+_services_started = False
+
 def create_app():
+    """Создание и настройка приложения Flask"""
+    global auto_refresh, _services_started
+    
     init_database()
+    
+    # Запускаем сервисы только один раз (важно для gunicorn с несколькими воркерами)
+    if not _services_started:
+        _services_started = True
+        
+        # Запуск AutoRefresh (polling)
+        auto_refresh = AutoRefreshService()
+        auto_refresh.configure(app, api)
+        auto_refresh.start()
+        logger.info("AutoRefresh service started")
+        
+        # Запуск LiveManager (WebSocket) с callback для обновления БД
+        def on_live_update(tournament_id: str, court_data: Dict):
+            try:
+                update_court_live_score(tournament_id, court_data)
+                logger.debug(f"Live update: court {court_data.get('court_id')}")
+            except Exception as e:
+                logger.error(f"Live update error: {e}")
+        
+        live_manager.set_update_callback(on_live_update)
+        live_manager.start()
+        logger.info("LiveManager (WebSocket) service started")
+    
     return app
 
 
-# Глобальный auto_refresh
-auto_refresh = None
-
 if __name__ == '__main__':
-    init_database()
-    
-    auto_refresh = AutoRefreshService()
-    auto_refresh.configure(app, api)
-    auto_refresh.start()
+    application = create_app()
     
     cfg = get_config()
-    app.run(
+    application.run(
         host=getattr(cfg, 'HOST', '0.0.0.0'),
         port=getattr(cfg, 'PORT', 5000),
         debug=getattr(cfg, 'DEBUG', False),
