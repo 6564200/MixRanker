@@ -7,12 +7,18 @@
 (function() {
     'use strict';
 
+    // Защита от двойной инициализации
+    if (window._scheduleLiveInitialized) {
+        console.log('Schedule Live: already initialized, skipping');
+        return;
+    }
+    window._scheduleLiveInitialized = true;
+
     // Конфигурация
     const CONFIG = {
         BASE_WIDTH: 1920,
         BASE_HEIGHT: 1080,
         updateInterval: 10000,  // 10 секунд - проверка изменений
-        fullReloadInterval: 60000,  // 60 секунд - полная перезагрузка
         animationDuration: 300,
         retryDelay: 5000
     };
@@ -23,8 +29,8 @@
     let tournamentId = null;
     let targetDate = null;
     let updateTimer = null;
-    let reloadTimer = null;
     let isUpdating = false;
+    let isInitialized = false;
 
     /**
      * Масштабирование контейнера под размер окна
@@ -58,6 +64,12 @@
      * Инициализация
      */
     function init() {
+        if (isInitialized) {
+            console.log('Schedule Live: init already called, skipping');
+            return;
+        }
+        isInitialized = true;
+
         container = document.querySelector('.schedule-container');
         if (!container) {
             console.error('Schedule container not found');
@@ -77,7 +89,7 @@
             return;
         }
 
-        console.log(`Schedule Live: initialized for tournament ${tournamentId}`);
+        console.log(`Schedule Live: initialized for tournament ${tournamentId}, version ${currentVersion}`);
         
         startUpdates();
     }
@@ -89,16 +101,12 @@
         if (updateTimer) {
             clearInterval(updateTimer);
         }
-        if (reloadTimer) {
-            clearInterval(reloadTimer);
-        }
         
+        // Первая проверка через 1 секунду (даём странице загрузиться)
+        setTimeout(checkForUpdates, 1000);
+        
+        // Периодическая проверка
         updateTimer = setInterval(checkForUpdates, CONFIG.updateInterval);
-        
-        reloadTimer = setInterval(() => {
-            console.log('Schedule Live: full page reload');
-            location.reload();
-        }, CONFIG.fullReloadInterval);
     }
 
     /**
@@ -368,7 +376,7 @@
 
         el.innerHTML = `
             <div class="match-content">
-                <div class="match-number">${data.episode}</div>
+                <div class="match-number">:</div>
                 <div class="match-teams-wrapper">
                     ${createTeamHtml(challengerPlayers, challengerWO, data.challenger_score)}
                     ${createTeamHtml(challengedPlayers, challengedWO, data.challenged_score)}

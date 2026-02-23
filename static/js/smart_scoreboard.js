@@ -114,14 +114,15 @@
      * Обновление обычного scoreboard
      */
     function updateScoreboard(court) {
-        const team1 = court.first_participant || [];
-        const team2 = court.second_participant || [];
+        const team1 = court.team1_players || court.first_participant || [];
+        const team2 = court.team2_players || court.second_participant || [];
         const detailed = court.detailed_result || [];
         const hasMatch = team1.length > 0;
         
-        const hasScoreData = detailed.length > 0 || 
-            court.first_participant_score > 0 || 
-            court.second_participant_score > 0;
+        const score1Raw = court.team1_score ?? court.first_participant_score ?? 0;
+        const score2Raw = court.team2_score ?? court.second_participant_score ?? 0;
+        
+        const hasScoreData = detailed.length > 0 || score1Raw > 0 || score2Raw > 0;
         const showScore = hasMatch && hasScoreData;
 
         // Показываем/скрываем блоки
@@ -136,8 +137,8 @@
         // Обновляем данные
         const team1Name = formatTeamName(team1);
         const team2Name = formatTeamName(team2);
-        const score1 = showScore ? getGameScore(detailed, court.first_participant_score, 'first') : '-';
-        const score2 = showScore ? getGameScore(detailed, court.second_participant_score, 'second') : '-';
+        const score1 = showScore ? getGameScore(detailed, score1Raw, 'first') : '-';
+        const score2 = showScore ? getGameScore(detailed, score2Raw, 'second') : '-';
         const sets1Html = showScore ? renderSets(detailed, 'first') : '*';
         const sets2Html = showScore ? renderSets(detailed, 'second') : '*';
 
@@ -147,6 +148,37 @@
         updateElement('[data-field="team2_score"]', score2);
         updateElement('[data-field="team1_sets"]', sets1Html);
         updateElement('[data-field="team2_sets"]', sets2Html);
+        
+        // Обновляем индикатор подачи
+        updateServeIndicator(court);
+    }
+
+    // Последнее известное значение подачи
+    let lastServeState = null;
+
+    /**
+     * Обновление индикатора подачи
+     */
+    function updateServeIndicator(court) {
+        const isFirstServing = court.is_first_participant_serving;
+        
+        // Если значение null/undefined — сохраняем предыдущее состояние
+        if (isFirstServing === null || isFirstServing === undefined) {
+            return;
+        }
+        
+        lastServeState = isFirstServing;
+        
+        const team1Row = document.querySelector('.team-row[data-team="1"]');
+        const team2Row = document.querySelector('.team-row[data-team="2"]');
+        
+        if (team1Row) {
+            team1Row.classList.toggle('serving', isFirstServing === true);
+        }
+        
+        if (team2Row) {
+            team2Row.classList.toggle('serving', isFirstServing === false);
+        }
     }
 
     /**
@@ -223,14 +255,13 @@
      */
     async function update() {
         try {
-            const response = await fetch(`/api/tournament/${CONFIG.tournamentId}/courts`);
+            const response = await fetch(`/api/court/${CONFIG.tournamentId}/${CONFIG.courtId}/data`);
             if (!response.ok) throw new Error('Network error');
             
-            const courts = await response.json();
-            const court = courts.find(c => String(c.court_id) === String(CONFIG.courtId));
+            const court = await response.json();
             
-            if (!court) {
-                console.warn('Court not found:', CONFIG.courtId);
+            if (court.error) {
+                console.warn('Court error:', court.error);
                 return;
             }
 

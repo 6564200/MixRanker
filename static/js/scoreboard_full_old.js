@@ -127,37 +127,6 @@
         
         // Обновляем флаги
         updateFlags(data);
-        
-        // Обновляем индикатор подачи
-        updateServeIndicator(data);
-    }
-
-    // Последнее известное значение подачи
-    let lastServeState = null;
-
-    /**
-     * Обновление индикатора подачи
-     */
-    function updateServeIndicator(data) {
-        const isFirstServing = data.is_first_participant_serving;
-        
-        // Если значение null/undefined — сохраняем предыдущее состояние
-        if (isFirstServing === null || isFirstServing === undefined) {
-            return;
-        }
-        
-        lastServeState = isFirstServing;
-        
-        const team1Row = document.querySelector('.team-row[data-team="1"]');
-        const team2Row = document.querySelector('.team-row[data-team="2"]');
-        
-        if (team1Row) {
-            team1Row.classList.toggle('serving', isFirstServing === true);
-        }
-        
-        if (team2Row) {
-            team2Row.classList.toggle('serving', isFirstServing === false);
-        }
     }
 
     /**

@@ -1096,7 +1096,7 @@ function confirmDatePicker() {
 
 function openCourtHTML(tournamentId, courtId) {
     const liveUrl = `/api/html-live/${tournamentId}/${courtId}`;
-    window.open(liveUrl, '_blank', 'width=490,height=120,resizable=no,scrollbars=no,menubar=no,toolbar=no');
+    window.open(liveUrl, '_blank', 'width=600, height=200, resizable=yes, scrollbars=no,menubar=no,toolbar=no');
 }
 
 function getXMLTypeIcon(type) {
