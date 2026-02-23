@@ -11,11 +11,12 @@
 }
 
 @font-face {
-    font-family: 'TT_Bluescreens';
-    src: url('../fonts/TT-Bluescreens-Trial-Bold-Italic.ttf') format('truetype');
-    font-weight: 700;
-    font-style: italic;
+    font-family: 'Bluescreens';
+    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
+    /* font-weight: bold; */
+    
 }
+
 
 * {
     margin: 0;
@@ -78,7 +79,7 @@ html, body {
 .tournament-name {
     flex: 1;
     max-width: 900px;
-    font-family: 'TT_Bluescreens', sans-serif;
+    font-family: 'Bluescreens', sans-serif;
     font-style: italic;
     font-weight: 800;
     font-size: 72px;

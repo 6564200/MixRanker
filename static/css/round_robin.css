@@ -3,7 +3,7 @@
 
 @font-face {
     font-family: 'Bluescreens';
-    src: url('/static/fonts/TT-Bluescreens-Trial-Bold-Italic.ttf') format('truetype');
+    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
     font-weight: 700;
     font-style: italic;
 }
@@ -100,7 +100,7 @@ html, body {
     align-items: center;
     justify-content: flex-start;
     font-weight: 700;
-    font-size: 32px;
+    font-size: 27px;
     line-height: 1;
     color: var(--text-dark);
     padding-left: 15px;
@@ -155,7 +155,7 @@ html, body {
 .team-number-cell {
     display: flex;
     align-items: center;
-    height: 85px;
+    height: 80px;
 }
 
 .team-num {
@@ -173,10 +173,10 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    height: 85px;
-    padding-left: 15px;
+    height: 80px;
+    padding-left: 1px;
     font-weight: 700;
-    font-size: 32px;
+    font-size: 30px;
     color: var(--text-light);
     white-space: nowrap;
     overflow: hidden;
@@ -223,17 +223,18 @@ html, body {
 }
 
 .match-score {
-    font-weight: 700;
-    font-size: 36px;
-    color: var(--text-light);
-    margin-bottom: 4px;
-}
-
-.match-sets {
-    font-family: var(--font-onest-med);
+	font-family: var(--font-onest-med);
     font-weight: 500;
     font-size: 20px;
     color: var(--text-muted);
+    margin-bottom: -3px;
+}
+
+.match-sets {
+    
+    font-weight: 700;
+    font-size: 36px;
+    color: var(--text-light);
 }
 
 /* Ячейки очков и места */
@@ -246,7 +247,18 @@ html, body {
     background: var(--cell-dark-gradient);
 }
 
-.points-z,
+.points-z{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-weight: 700;
+    font-size: 36px;
+    color: var(--text-light);
+
+}
+
 .place-z {
     display: flex;
     align-items: center;
@@ -256,6 +268,7 @@ html, body {
     font-weight: 700;
     font-size: 36px;
     color: var(--text-light);
+	opacity: 1;
 }
 
 /* Hidden */

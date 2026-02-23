@@ -12,7 +12,7 @@
 
 @font-face {
     font-family: 'TT_Bluescreens';
-    src: url('../fonts/TT-Bluescreens-Trial-Bold-Italic.ttf') format('truetype');
+    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
     font-weight: 700;
     font-style: italic;
 }
@@ -56,8 +56,8 @@ html, body {
 .header {
     position: absolute;
     top: 15px;
-    left: 15px;
-    right: 15px;
+    left: 115px;
+    right: 115px;
     height: 130px;
     display: flex;
     flex-direction: row;
@@ -72,11 +72,11 @@ html, body {
 /* === НАЗВАНИЕ ТУРНИРА === */
 .tournament-name {
     flex: 1;
-    max-width: 900px;
-    font-family: 'TT_Bluescreens', sans-serif;
+    max-width: 1100px;
+    font-family: 'TT_Bluescreens';
     font-style: italic;
     font-weight: 800;
-    font-size: 72px;
+    font-size: 110px;
     line-height: 1.1;
     letter-spacing: -0.02em;
     color: #FFFFFF;
@@ -88,13 +88,53 @@ html, body {
     -webkit-box-orient: vertical;
 }
 
+.olimpic_9_10 {
+	font-family: 'TT_Bluescreens';
+    font-weight: 800;
+    font-size: 40px;	
+	color: #FFFFFF;
+
+	left: 115px;
+	top: 155px;
+}
+
+.olimpic_5_8 {
+	font-family: 'TT_Bluescreens';
+    font-weight: 800;
+    font-size: 40px;	
+	color: #FFFFFF;
+
+	left: 115px;
+	top: 705px;
+}
+
+.olimpic_3_4 {
+	font-family: 'TT_Bluescreens';
+    font-weight: 800;
+    font-size: 40px;	
+	color: #FFFFFF;
+
+	left: 995px;
+	top: 560px;
+}
+
+.olimpic_FIN {
+	font-family: 'TT_Bluescreens';
+    font-weight: 800;
+    font-size: 40px;	
+	color: #FFFFFF;
+    opacity: 0;
+	left: 996px;
+	top: 160px;
+}
+
 .tournament-name.long-name {
-    font-size: 56px;
+    font-size: 90px;
     line-height: 1.15;
 }
 
 .tournament-name.very-long-name {
-    font-size: 44px;
+    font-size: 60px;
     line-height: 1.2;
 }
 
@@ -117,16 +157,15 @@ html, body {
     animation: fadeInScale 0.5s ease-out forwards;
 }
 
-.logo1 { width: 140px; animation-delay: 0.3s; }
-.logo2 { width: 145px; animation-delay: 0.4s; }
-.logo3 { width: 170px; animation-delay: 0.5s; }
-.logo4 { width: 145px; animation-delay: 0.6s; }
+
+.logo2 { width: 120px; animation-delay: 0.4s; }
+.logo1 { width: 150px; animation-delay: 0.3s; }
 
 /* === ДЕКОРАТИВНАЯ ЛИНИЯ === */
 .header-line {
     position: absolute;
-    top: 155px;
-    left: 15px;
+    top: 135px;
+    left: 10px;
     right: 15px;
     height: 3px;
     background: linear-gradient(90deg, #5B8DEE 0%, #3D6DD8 50%, transparent 100%);

@@ -12,7 +12,7 @@
 
 @font-face {
     font-family: 'TT_Bluescreens';
-    src: url('../fonts/TT-Bluescreens-Trial-Bold-Italic.ttf') format('truetype');
+    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
     font-weight: 700;
     font-style: italic;
 }

@@ -3,7 +3,7 @@
 
 @font-face {
     font-family: 'Onest';
-    src: url('/static/fonts/Onest-Bold.ttf') format('truetype');
+    src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
     font-weight: 700;
     font-style: normal;
 }
@@ -31,7 +31,7 @@ html, body {
     height: 100%;
     overflow: hidden;
     background: transparent;
-    font-family: 'Onest', Arial, sans-serif;
+    font-family: 'Onest';
 }
 
 /* Контейнер с масштабированием */
@@ -82,7 +82,7 @@ html, body {
     flex-direction: column;
     align-items: center;
     width: 1800px;
-    height: 219px;
+    height: 200px;
 }
 
 .intro-frame {
@@ -91,7 +91,7 @@ html, body {
     justify-content: center;
     align-items: center;
     width: 1800px;
-    height: 219px;
+    height: 185px;
     background: var(--green-frame);
     border-radius: 8px;
 }
@@ -99,9 +99,9 @@ html, body {
 .intro-info {
     position: relative;
     width: 1800px;
-    height: 205px;
+    height: 175px;
     background: var(--black-bg);
-    border-radius: 3px;
+    border-radius: 5px;
 }
 
 /* Команда 1 (слева) */
@@ -111,7 +111,7 @@ html, body {
     height: 63px;
     left: 130px;
     top: 27px;
-    font-family: 'Onest', Arial, sans-serif;
+    font-family: 'Onest';
     font-weight: 700;
     font-size: 50px;
     line-height: 63px;
@@ -128,8 +128,8 @@ html, body {
     width: 781px;
     height: 63px;
     left: 130px;
-    top: 116px;
-    font-family: 'Onest', Arial, sans-serif;
+    top: 100px;
+    font-family: 'Onest';
     font-weight: 700;
     font-size: 50px;
     line-height: 63px;
@@ -150,6 +150,7 @@ html, body {
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
+	opacity: 0.0;
 }
 
 .team1-flag2 {
@@ -157,10 +158,11 @@ html, body {
     width: 52px;
     height: 36px;
     left: 52px;
-    top: 129px;
+    top: 110px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
+	opacity: 0.0;
 }
 
 /* Команда 2 (справа) */
@@ -188,7 +190,7 @@ html, body {
     width: 781px;
     height: 63px;
     left: 885px;
-    top: 116px;
+    top: 100px;
     font-family: 'Onest', Arial, sans-serif;
     font-weight: 700;
     font-size: 50px;
@@ -211,6 +213,7 @@ html, body {
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
+	opacity: 0.0;
 }
 
 .team2-flag2 {
@@ -218,10 +221,11 @@ html, body {
     width: 52px;
     height: 36px;
     left: 1700px;
-    top: 129px;
+    top: 110px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
+	opacity: 0.0;
 }
 
 /* === ANIMATIONS === */

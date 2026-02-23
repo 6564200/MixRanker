@@ -63,12 +63,12 @@ html, body {
 
 .tournament-name {
     flex: 1;
-    max-width: 1683px;
+    max-width: 1383px;
     height: 452px;
     font-family: 'TT_Bluescreens';
     font-style: italic;
     font-weight: 800;
-    font-size: 170px;
+    font-size: 200px;
     line-height: 226px;
     letter-spacing: -0.04em;
     color: var(--text-white);
@@ -96,7 +96,7 @@ html, body {
 .logo1 { width: 360px; }
 .logo2 { width: 230px; }
 .logo3 { width: 230px; }
-.logo4 { width: 0px; }
+.logo4 { width: 350px; }
 
 /* === TABLE === */
 .table {
@@ -386,26 +386,4 @@ html, body {
 
 .team-row.winner .player-name {
     color: var(--green-line);
-}
-
-/* === SERVE INDICATOR === */
-.serve-indicator {
-    width: 80px;
-    height: 70px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-	margin-top: 100px;
-}
-
-.serve-indicator img {
-    width: 120px;
-    height: 120px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.team-row.serving .serve-indicator img {
-    opacity: 1;
 }

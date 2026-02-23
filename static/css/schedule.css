@@ -7,7 +7,7 @@
 
 @font-face {
     font-family: 'TT_Bluescreens';
-    src: url('../fonts/TT-Bluescreens-Trial-Bold-Italic.ttf') format('truetype');
+    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
     font-weight: 700;
     font-style: italic;
 }
@@ -56,10 +56,10 @@ body {
 
 .tournament-name {
     flex: 1;
-    font-family: 'TT_Bluescreens', sans-serif;
+    font-family: 'TT_Bluescreens';
     font-style: italic;
     font-weight: 800;
-    font-size: 90px;
+    font-size: 120px;
     line-height: 1.1;
     letter-spacing: -0.04em;
     color: #FFFFFF;
@@ -70,16 +70,17 @@ body {
     text-overflow: ellipsis;
     text-align: left;
     text-transform: uppercase;
-    padding-right: 30px; /* Отступ от логотипов */
+    padding-right: 0px; /* Отступ от логотипов */
+	margin-left: 100px;
 }
 
 /* Авто-уменьшение шрифта для длинных названий */
 .tournament-name.long-name {
-    font-size: 90px;
+    font-size: 110px;
 }
 
 .tournament-name.very-long-name {
-    font-size: 50px;
+    font-size: 60px;
 }
 
 .logos {
@@ -98,9 +99,9 @@ body {
 }
 
 .logo1 { width: 145px; }
-.logo2 { width: 100px; }
-.logo3 { width: 100px; }
-.logo4 { width: 145px; }
+.logo2 { width: 120px; }
+.logo3 { width: 0px; }
+
 
 /* === MAIN GRID === */
 .main-grid {
@@ -111,7 +112,7 @@ body {
     max-height: 900px;
     overflow: hidden;
     position: relative;
-	margin-left: 30px;
+	margin-left: 00px;
 }
 
 /* === TIME SCALE === */
@@ -123,6 +124,7 @@ body {
     padding-top: 36px;
     max-height: 900px;
     overflow: hidden;
+	opacity: 0;
 }
 
 .time-slot {

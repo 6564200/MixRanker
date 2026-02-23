@@ -1,12 +1,15 @@
 @font-face {
-    font-family: 'Onest Bol';
-    src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
+    font-family: 'Onest';
+    src: url('../fonts/OnestBold1602-hint.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
 }
 
 @font-face {
-    font-family: 'Onest Med';
-    src: url('/static/fonts/OnestLight1602-hint') format('truetype');
-    font-weight: medium;
+    font-family: 'TT_Bluescreens';
+    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
 }
 
 :root {
@@ -29,14 +32,15 @@ body {
     margin: 0;
     padding: 10px;
     background-color: transparent;
-    font-family: 'Onest', sans-serif;
+    font-family: 'Onest';
     display: flex;
 }
 
 
 .scoreboard-container {
-    width: 575px;
+    width: 600px;
     height: 150px;
+	padding: 30px;
 }
 
 .scoreboard {
@@ -79,8 +83,9 @@ body {
 
 
 .bg-team {
-    display: flex; /* Используем flexbox внутри строки для расположения имени и счета */
-    position: relative; /* Чтобы спозиционировать элементы счета внутри */
+    display: flex; 
+    align-items: center;
+    position: relative; 
     width: 100%;
     height: 100%;
     background: var(--cell-gradient-b-bg);
@@ -89,9 +94,9 @@ body {
 
 .divider-bar {
     width: 100%;
-    height: 3px; /* Ширина 3px */
-    background-color: var(--cell-line-bg); /* Цвет из ваших переменных */
-    /* Убедитесь, что она находится между двумя .team-row в HTML */
+    height: 3px; 
+    background-color: var(--cell-line-bg); 
+
 }
 
 /* bg_score1 & bg_score2 */
@@ -115,7 +120,7 @@ body {
 /* team1 & team2 text styles */
 .team-name {
     padding-left: 18px;
-    /* Остальное позиционирование убрано, т.к. используется flexbox */
+
     font-weight: 700;
     font-size: 22px;
     line-height: 28px;
@@ -123,9 +128,9 @@ body {
     align-items: center;
     color: #FFFFFF;
     text-transform: uppercase;
-    /* Позволяем тексту занимать все доступное место до счета */
+
     flex-grow: 1; 
-    /* Добавляем обрезку текста, если он слишком длинный */
+
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -182,4 +187,26 @@ body {
     justify-content: center;
     text-align: center;
     color: #080609;
+}
+
+/* === SERVE INDICATOR === */
+.serve-indicator {
+    width: 28px;
+    height: 43px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.serve-indicator img {
+    width: 20px;
+    height: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+	margin-left: 20px;
+}
+
+.team-row.serving .serve-indicator img {
+    opacity: 1;
 }

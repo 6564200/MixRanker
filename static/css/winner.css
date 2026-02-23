@@ -15,9 +15,10 @@
 
 @font-face {
     font-family: 'Bluescreens';
-    src: url('/static/fonts/TT-Bluescreens-Trial-Bold-Italic.ttf') format('truetype');
+    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
     font-weight: 700;
     font-style: italic;
+    
 }
 
 * {
@@ -112,6 +113,7 @@ html, body {
     height: 49px;
     flex-shrink: 0;
     margin-top: 13px;
+	opacity: 0.0;
 }
 
 .win_name {
@@ -134,6 +136,7 @@ html, body {
     color: var(--text-white);
     text-transform: uppercase;
     margin: 0;
+	opacity: 0.0;
 }
 
 .player-info {

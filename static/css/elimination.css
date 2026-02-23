@@ -109,11 +109,12 @@ body {
 .places {
     text-transform: uppercase;
     font-size: 28px;
-    color: #FFFFFF;
+    color: transparent;
     text-align: center;
-    opacity: 0;
+
     animation: fadeInDown 0.5s ease-out forwards;
     animation-delay: 0.1s;
+	opacity: 0;
 }
 
 /* === КОНТЕЙНЕР МАТЧА === */
