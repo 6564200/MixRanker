@@ -165,12 +165,13 @@ class ScheduleHTMLGenerator(HTMLBase):
                 if challenged_result == "Won W.O.":
                     challenged_wo = "W.O."
                     challenged_result = ""
-
+                                                                            #<div class="match-number">{episode_number}</div>
 
                 html_content += f'''
                         <div class="match-item {status_class}">
                             <div class="match-content">
-                                <div class="match-number">{episode_number}</div>
+                                
+                                <div class="match-number">:</div>
                                 <div class="match-teams-wrapper">
                                     <div class="match-team">
                                         <div class="match-team-name">{challenger_name}</div>

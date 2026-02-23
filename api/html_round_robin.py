@@ -304,12 +304,25 @@ class RoundRobinGenerator(HTMLBaseGenerator):
 
         return standings
 
+    #def _get_participant_place(self, participant: Dict, standings: List[Dict]) -> str:
+    #    """Получает место участника"""
+    #    for standing in standings:
+    #        if set(standing.get("player_ids", [])) == set(participant.get("player_ids", [])):
+    #            return str(standing.get("standing", "-"))
+    #    return "-"
+        
     def _get_participant_place(self, participant: Dict, standings: List[Dict]) -> str:
-        """Получает место участника"""
+        """Получает место участника. Пустое если нет сыгранных матчей."""
         for standing in standings:
             if set(standing.get("player_ids", [])) == set(participant.get("player_ids", [])):
-                return str(standing.get("standing", "-"))
-        return "-"
+                # Если 0 побед и 0 очков - значит ещё не играли
+                wins = standing.get("wins", 0)
+                points = standing.get("match_points", 0)
+                if wins == 0 and points == 0:
+                    return ""
+                return str(standing.get("standing", ""))
+        return ""
+
 
     def _get_participant_points(self, participant: Dict, standings: List[Dict]) -> str:
         """Получает очки участника"""

@@ -61,16 +61,11 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
         # Проверяем наличие матча
         has_match = match["show_current_match"]
         
-        # Классы для подачи
-        is_first_serving = match.get("is_first_participant_serving")
-        team1_serving_class = "serving" if is_first_serving is True else ""
-        team2_serving_class = "serving" if is_first_serving is False else ""
-        
         # Формируем контент таблицы
         if has_match:
             table_content = f'''
             <!-- Team 1 -->
-            <div class="team-row {team1_serving_class}" data-team="1">
+            <div class="team-row" data-team="1">
                 {team1_html}
                 <div class="scores-block">
                     {team1_sets_html}
@@ -82,7 +77,7 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
             <div class="green-line"></div>
             
             <!-- Team 2 -->
-            <div class="team-row {team2_serving_class}" data-team="2">
+            <div class="team-row" data-team="2">
                 {team2_html}
                 <div class="scores-block">
                     {team2_sets_html}
@@ -172,9 +167,6 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
         event_state = court_data.get("event_state", "").lower()
         show_match = bool(first_participant or second_participant) and event_state != "idle"
         
-        # Подача
-        is_first_serving = court_data.get("is_first_participant_serving")
-        
         return {
             "team1_players": first_participant,
             "team2_players": second_participant,
@@ -182,8 +174,7 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
             "team1_score": team1_score,
             "team2_score": team2_score,
             "show_current_match": show_match,
-            "event_state": event_state,
-            "is_first_participant_serving": is_first_serving
+            "event_state": event_state
         }
 
     def _empty_match_data(self) -> Dict:
@@ -195,8 +186,7 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
             "team1_score": 0,
             "team2_score": 0,
             "show_current_match": False,
-            "event_state": "",
-            "is_first_participant_serving": None
+            "event_state": ""
         }
 
     def _get_tournament_name(self, tournament_data: Dict) -> str:
@@ -231,7 +221,7 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
         return html
 
     def _render_team_block(self, players: List, team_prefix: str) -> str:
-        """Рендерит блок команды с именами, индикатором подачи и флагами"""
+        """Рендерит блок команды с именами и флагами"""
         player1 = players[0] if len(players) > 0 else {}
         player2 = players[1] if len(players) > 1 else {}
         
@@ -244,12 +234,10 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
         return f'''
             <div class="team-name-block">
                 <div class="player-row">
-                    <div class="serve-indicator" data-field="{team_prefix}_serve"><img src="/static/images/ball.png" alt=""></div>
                     <div class="player-flag" data-field="{team_prefix}_flag1" style="background-image: url('{flag1_url}');"></div>
                     <div class="player-name" data-field="{team_prefix}_player1">{name1}</div>
                 </div>
                 <div class="player-row">
-                    <div class="serve-indicator"></div>
                     <div class="player-flag" data-field="{team_prefix}_flag2" style="background-image: url('{flag2_url}');"></div>
                     <div class="player-name" data-field="{team_prefix}_player2">{name2}</div>
                 </div>

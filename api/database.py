@@ -102,6 +102,11 @@ def init_database():
                 detailed_result TEXT,
                 first_participant TEXT,
                 second_participant TEXT,
+                is_tiebreak INTEGER DEFAULT 0,
+                is_super_tiebreak INTEGER DEFAULT 0,
+                is_first_participant_serving INTEGER,
+                is_serving_left INTEGER,
+                match_id TEXT,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (tournament_id) REFERENCES tournaments(id),
                 UNIQUE(tournament_id, court_id)
@@ -222,6 +227,15 @@ def init_database():
             logger.info("Миграция: добавляем колонку current_match_state в courts_data")
             cursor.execute("ALTER TABLE courts_data ADD COLUMN current_match_state TEXT")
         
+        # Миграция: добавляем колонки для serve (подача)
+        for col in ['is_tiebreak', 'is_super_tiebreak', 'is_first_participant_serving', 'is_serving_left', 'match_id']:
+            try:
+                cursor.execute(f"SELECT {col} FROM courts_data LIMIT 1")
+            except sqlite3.OperationalError:
+                col_type = 'INTEGER' if col.startswith('is_') else 'TEXT'
+                logger.info(f"Миграция: добавляем колонку {col} в courts_data")
+                cursor.execute(f"ALTER TABLE courts_data ADD COLUMN {col} {col_type}")
+        
         # Создаём окна по умолчанию если их нет
         cursor.execute('SELECT COUNT(*) FROM display_windows WHERE type = "pool"')
         if cursor.fetchone()[0] == 0:
@@ -333,7 +347,9 @@ def get_court_data(tournament_id: str, court_id: str) -> Optional[Dict]:
         cursor.execute('''
             SELECT court_id, court_name, event_state, current_match_state, class_name,
                    first_participant_score, second_participant_score, 
-                   detailed_result, first_participant, second_participant, updated_at
+                   detailed_result, first_participant, second_participant,
+                   is_tiebreak, is_super_tiebreak, is_first_participant_serving, is_serving_left, match_id,
+                   updated_at
             FROM courts_data 
             WHERE tournament_id = ? AND court_id = ?
         ''', (tournament_id, court_id))
@@ -355,7 +371,12 @@ def get_court_data(tournament_id: str, court_id: str) -> Optional[Dict]:
             "detailed_result": _safe_json_loads(row[7], []),
             "first_participant": _safe_json_loads(row[8], []),
             "second_participant": _safe_json_loads(row[9], []),
-            "updated_at": row[10],
+            "is_tiebreak": bool(row[10]) if row[10] is not None else False,
+            "is_super_tiebreak": bool(row[11]) if row[11] is not None else False,
+            "is_first_participant_serving": bool(row[12]) if row[12] is not None else None,
+            "is_serving_left": bool(row[13]) if row[13] is not None else None,
+            "match_id": row[14],
+            "updated_at": row[15],
             "next_class_name": "",
             "next_first_participant": [],
             "next_second_participant": [],
@@ -378,20 +399,77 @@ def save_courts_data(tournament_id: str, courts_data: List[Dict]) -> int:
                     INSERT OR REPLACE INTO courts_data 
                     (tournament_id, court_id, court_name, event_state, current_match_state, class_name,
                      first_participant_score, second_participant_score, 
-                     detailed_result, first_participant, second_participant, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                     detailed_result, first_participant, second_participant,
+                     is_tiebreak, is_super_tiebreak, is_first_participant_serving, is_serving_left, match_id,
+                     updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ''', (
-                    tournament_id, str(court["court_id"]), court["court_name"],
+                    tournament_id, str(court["court_id"]), court.get("court_name", ""),
                     court.get("event_state", ""), court.get("current_match_state", ""),
                     court.get("class_name", ""),
                     court.get("first_participant_score", 0), court.get("second_participant_score", 0),
-                    json.dumps(court.get("detailed_result", [])), json.dumps(court.get("first_participant", [])),
-                    json.dumps(court.get("second_participant", []))
+                    json.dumps(court.get("detailed_result", [])), 
+                    json.dumps(court.get("first_participant", [])),
+                    json.dumps(court.get("second_participant", [])),
+                    1 if court.get("is_tiebreak") else 0,
+                    1 if court.get("is_super_tiebreak") else 0,
+                    1 if court.get("is_first_participant_serving") else (0 if court.get("is_first_participant_serving") is False else None),
+                    1 if court.get("is_serving_left") else (0 if court.get("is_serving_left") is False else None),
+                    court.get("match_id", "")
                 ))
                 count += 1
         return count
 
     return execute_with_retry(transaction)
+
+
+def update_court_live_score(tournament_id: str, court_data: Dict) -> bool:
+    """Обновление только счёта корта (для live-обновлений через WebSocket)
+    Не перезаписывает участников и название класса"""
+    def transaction(conn):
+        cursor = conn.cursor()
+        court_id = str(court_data.get("court_id"))
+        
+        logger.info(f"LiveScore UPDATE: tournament={tournament_id}, court={court_id}")
+        
+        cursor.execute('''
+            UPDATE courts_data SET
+                first_participant_score = ?,
+                second_participant_score = ?,
+                detailed_result = ?,
+                is_tiebreak = ?,
+                is_super_tiebreak = ?,
+                is_first_participant_serving = ?,
+                is_serving_left = ?,
+                match_id = ?,
+                current_match_state = ?,
+                event_state = COALESCE(NULLIF(?, ''), event_state),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE tournament_id = ? AND court_id = ?
+        ''', (
+            court_data.get("first_participant_score", 0),
+            court_data.get("second_participant_score", 0),
+            json.dumps(court_data.get("detailed_result", [])),
+            1 if court_data.get("is_tiebreak") else 0,
+            1 if court_data.get("is_super_tiebreak") else 0,
+            1 if court_data.get("is_first_participant_serving") else (0 if court_data.get("is_first_participant_serving") is False else None),
+            1 if court_data.get("is_serving_left") else (0 if court_data.get("is_serving_left") is False else None),
+            court_data.get("match_id", ""),
+            court_data.get("current_match_state", "live"),
+            court_data.get("event_state", ""),
+            tournament_id,
+            court_id
+        ))
+        
+        rows_affected = cursor.rowcount
+        logger.info(f"LiveScore UPDATE result: {rows_affected} rows affected")
+        return rows_affected > 0
+
+    try:
+        return execute_with_retry(transaction)
+    except Exception as e:
+        logger.error(f"Ошибка обновления live-счёта корта {court_data.get('court_id')}: {e}")
+        return False
 
 
 def save_xml_file_info(tournament_id: str, file_info: Dict):

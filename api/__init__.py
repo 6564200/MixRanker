@@ -23,7 +23,8 @@ from .database import (
     get_tournament_data, get_court_data, save_courts_data,
     save_xml_file_info, get_active_tournament_ids,
     get_court_ids_for_tournament, get_settings, save_settings,
-    save_tournament_matches, get_tournament_matches
+    save_tournament_matches, get_tournament_matches,
+    update_court_live_score
 )
 
 # Аутентификация

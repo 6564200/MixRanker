@@ -90,6 +90,7 @@ class AutoRefreshService:
         self.cycle_interval = max(base_interval // 2, 5)
         self.tables_update_frequency = max(base_interval // self.cycle_interval, 1)
         self.schedule_update_frequency = max((base_interval * 2) // self.cycle_interval, 1)
+        logger.info(f"base_interval: {self.base_interval}, cycle_interval: {self.cycle_interval}")
 
     def _execute_updates(self, tournament_ids: List[str]):
         """Выполнение обновлений"""

@@ -184,7 +184,7 @@ def get_court_display_page(tournament_id: str, court_id: str) -> Dict:
     first_participant = court_data.get('first_participant', [])
     second_participant = court_data.get('second_participant', [])
     detailed_result = court_data.get('detailed_result', [])
-    logger.error(f'event_state: {event_state} current_match_state: {current_match_state}')
+
     # Корт пуст
     if not first_participant and not second_participant:
         return {

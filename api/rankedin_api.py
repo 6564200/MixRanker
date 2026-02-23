@@ -41,6 +41,9 @@ class RankedinAPI(BaseAPI):
                 current_score1 = s.get("firstParticipantScore", 0)
                 current_score2 = s.get("secondParticipantScore", 0)
                 
+                # Данные о подаче
+                serve = state.get("serve", {})
+                
                 result.update({
                     "first_participant_score": current_score1,
                     "second_participant_score": current_score2,
@@ -52,6 +55,8 @@ class RankedinAPI(BaseAPI):
                     ),
                     "is_tiebreak": is_tiebreak,
                     "is_super_tiebreak": is_super_tiebreak,
+                    "is_first_participant_serving": serve.get("isFirstParticipantServing"),
+                    "is_serving_left": serve.get("isServingLeft"),
                     "current_match_state": "live"
                 })
             else:

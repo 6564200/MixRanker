@@ -27,7 +27,8 @@ class ScoreboardGenerator(HTMLBaseGenerator):
                 "team1_score": 0, "team2_score": 0,
                 "detailed_result": [], "class_name": "",
                 "show_current_match": False, "show_score": False,
-                "match_state": "free"
+                "match_state": "free",
+                "is_first_participant_serving": None
             }
 
         detailed = court_data.get("detailed_result", [])
@@ -46,7 +47,8 @@ class ScoreboardGenerator(HTMLBaseGenerator):
             "class_name": court_data.get("class_name", ""),
             "show_current_match": True,
             "show_score": show_score,
-            "match_state": court_data.get("event_state", "")
+            "match_state": court_data.get("event_state", ""),
+            "is_first_participant_serving": court_data.get("is_first_participant_serving")
         }
 
     def _format_team_name(self, players: List[Dict], use_initials: bool = True) -> str:
@@ -79,6 +81,11 @@ class ScoreboardGenerator(HTMLBaseGenerator):
 
         no_match_display = "none" if match["show_current_match"] else "block"
         match_display = "block" if match["show_current_match"] else "none"
+        
+        # Классы для подачи
+        is_first_serving = match.get("is_first_participant_serving")
+        team1_serving_class = "serving" if is_first_serving is True else ""
+        team2_serving_class = "serving" if is_first_serving is False else ""
 
         return f'''<!DOCTYPE html>
 <html lang="ru">
@@ -86,7 +93,7 @@ class ScoreboardGenerator(HTMLBaseGenerator):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{court_name} - Scoreboard</title>
-    <link rel="stylesheet" href="/static/css/scoreboard.css?v=0.0.3">
+    <link rel="stylesheet" href="/static/css/scoreboard.css?v=0.0.4">
     <style>
         .fade-update {{ transition: opacity 0.15s ease-in-out; }}
         .updating {{ opacity: 0.7; }}
@@ -98,8 +105,9 @@ class ScoreboardGenerator(HTMLBaseGenerator):
             <div class="cort"><span class="text-cort" data-field="court_name">{court_name}</span></div>
             
             <div id="match-content" style="display: {match_display};">
-                <div class="team-row">
+                <div class="team-row {team1_serving_class}" data-team="1">
                     <div class="bg-team">
+                        <div class="serve-indicator"><img src="/static/images/ball.png" alt=""></div>
                         <span class="team-name fade-update" data-field="team1_name">{team1_name}</span>
                         <div class="sets-container" data-field="team1_sets">{html_set1 if show_score else "*"}</div>
                         <div class="main-score-area bg-rad1">
@@ -108,8 +116,9 @@ class ScoreboardGenerator(HTMLBaseGenerator):
                     </div>
                 </div>
                 <div class="divider-bar"></div>
-                <div class="team-row">
+                <div class="team-row {team2_serving_class}" data-team="2">
                     <div class="bg-team">
+                        <div class="serve-indicator"><img src="/static/images/ball.png" alt=""></div>
                         <span class="team-name fade-update" data-field="team2_name">{team2_name}</span>
                         <div class="sets-container" data-field="team2_sets">{html_set2 if show_score else "*"}</div>
                         <div class="main-score-area bg-rad2">

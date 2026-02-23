@@ -66,7 +66,7 @@ def get_flag_url(country_code: str) -> str:
         return ""
     code = country_code.lower()
     code = COUNTRY_CODE_MAP.get(code, code)
-    return f"https://flagcdn.com/w160/{code}.png"
+    return f"/static/flags/4x3/{code}.svg"
 
 
 # XML типы описания

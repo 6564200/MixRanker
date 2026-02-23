@@ -448,7 +448,8 @@ class ScheduleGenerator(HTMLBaseGenerator):
         # Используем полные имена если есть, иначе сокращённые
         challenger_full = match.get("ChallengerFullName") or match.get("ChallengerName", "TBD")
         challenged_full = match.get("ChallengedFullName") or match.get("ChallengedName", "TBD")
-        episode = match.get("episode_number", 1)
+        #episode = match.get("episode_number", 1)
+        episode = ':'
 
         # Счёт из court_usage
         challenger_result = match.get("ChallengerResult", "") or ""
@@ -493,7 +494,7 @@ class ScheduleGenerator(HTMLBaseGenerator):
                         {team_html(challenged_players, challenged_wo, challenged_result)}
                     </div>
                 </div>
-            </div>'''
+            </div>''' #
 
     def _generate_empty_schedule_html(self, tournament_name: str, message: str) -> str:
         """Генерирует пустую страницу расписания"""
