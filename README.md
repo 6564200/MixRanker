@@ -106,3 +106,71 @@ sudo systemctl daemon-reload
 sudo systemctl restart mixranker
 sudo systemctl restart nginx
 
+
+FIRST START (SECURE)
+
+    # 1) Перейди в проект и активируй venv
+    cd /var/www/MixRanker
+    source venv/bin/activate
+
+    # 2) Сгенерируй SECRET_KEY (пример)
+    python3 - << 'PY'
+import secrets
+print(secrets.token_urlsafe(64))
+PY
+
+    # 3) Экспортируй обязательные переменные окружения
+    export SECRET_KEY="<вставь_сгенерированный_ключ>"
+    export FLASK_CONFIG=production
+
+    # 4) Создай первого администратора (только для первого запуска)
+    export BOOTSTRAP_ADMIN_USERNAME="admin"
+    export BOOTSTRAP_ADMIN_PASSWORD="<сложный_пароль>"
+
+    # 5) Запусти приложение
+    gunicorn --workers 3 --bind unix:/var/www/MixRanker/mixranker.sock wsgi:app
+
+    # 6) Войди под bootstrap-учеткой и сразу смени пароль в интерфейсе
+
+    # 7) После первого успешного входа удали bootstrap-переменные
+    unset BOOTSTRAP_ADMIN_USERNAME
+    unset BOOTSTRAP_ADMIN_PASSWORD
+
+NOTES
+
+    - Без SECRET_KEY приложение не запустится.
+    - Если БД пустая и не заданы BOOTSTRAP_ADMIN_USERNAME/BOOTSTRAP_ADMIN_PASSWORD,
+      администратор не создается.
+    - Для systemd добавь SECRET_KEY и bootstrap-переменные
+      в Environment= (bootstrap-переменные только на первый старт).
+
+FIRST START (WINDOWS POWERSHELL)
+
+    # 1) Перейди в проект и активируй venv
+    cd C:\WORK\programming\mixranker
+    .\venv\Scripts\Activate.ps1
+
+    # 2) Сгенерируй SECRET_KEY
+    python -c "import secrets; print(secrets.token_urlsafe(64))"
+
+    # 3) Задай обязательные переменные окружения (для текущей сессии)
+    $env:SECRET_KEY = "<вставь_сгенерированный_ключ>"
+    $env:FLASK_CONFIG = "production"
+
+    # 4) Создай первого администратора (только для первого запуска)
+    $env:BOOTSTRAP_ADMIN_USERNAME = "admin"
+    $env:BOOTSTRAP_ADMIN_PASSWORD = "<сложный_пароль>"
+
+    # 5) Запусти приложение
+    python app.py
+
+    # 6) Войди под bootstrap-учеткой и сразу смени пароль в интерфейсе
+
+    # 7) После первого успешного входа удали bootstrap-переменные
+    Remove-Item Env:BOOTSTRAP_ADMIN_USERNAME
+    Remove-Item Env:BOOTSTRAP_ADMIN_PASSWORD
+
+WINDOWS NOTES
+
+    - Для постоянных переменных используй setx (или системные переменные Windows).
+    - Если используешь Gunicorn, запускай проект в WSL/Linux (на чистом Windows обычно не используется).
