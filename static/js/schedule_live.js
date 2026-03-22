@@ -179,7 +179,7 @@
         // FHD размеры (увеличенные)
         matchesGrid.style.gridTemplateRows = `repeat(${timeSlots.length}, 86px)`;
         matchesGrid.style.gridTemplateColumns = `repeat(${courts.length}, 1fr)`;
-        
+        matchesGrid.style.gap = '38px';
         matchesGrid.innerHTML = '';
         
         matches.forEach(match => {
@@ -203,7 +203,7 @@
         }
 
         // Обновляем grid-template-rows (FHD размеры увеличенные)
-        timeScale.style.gridTemplateRows = `repeat(${timeSlots.length}, 86px)`;
+        timeScale.style.gridTemplateRows = `repeat(${timeSlots.length}, 116px)`;
 
         const fragment = document.createDocumentFragment();
         timeSlots.forEach((time, index) => {

@@ -32,6 +32,7 @@
         tournamentId = container.dataset.tournamentId;
         courtId = container.dataset.courtId;
         mode = container.dataset.mode || 'auto';
+        applyPlaceholderImage(container.dataset.placeholderUrl);
 
         console.log(`Display Court ${slotNumber}: initialized, tournament=${tournamentId}, court=${courtId}, mode=${mode}`);
 
@@ -51,6 +52,7 @@
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             
             const data = await response.json();
+            applyPlaceholderImage(data.placeholder_url);
             
             // Обновляем режим если изменился
             if (data.mode && data.mode !== mode) {
@@ -176,10 +178,20 @@
         try {
             const response = await fetch(`/api/display/window/court/${slotNumber}`);
             if (!response.ok) return null;
-            return await response.json();
+            const window = await response.json();
+            applyPlaceholderImage(window.placeholder_url);
+            return window;
         } catch (error) {
             console.error('Failed to fetch window config:', error);
             return null;
+        }
+    }
+
+    function applyPlaceholderImage(url) {
+        if (!url) return;
+        const emptyImage = document.querySelector('.empty-state .empty-image');
+        if (emptyImage && emptyImage.getAttribute('src') !== url) {
+            emptyImage.setAttribute('src', url);
         }
     }
 

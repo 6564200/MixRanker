@@ -76,7 +76,7 @@ html, body {
     font-family: 'TT_Bluescreens', sans-serif;
     font-style: italic;
     font-weight: 800;
-    font-size: 96px;
+    font-size: 75px;
     line-height: 1.1;
     letter-spacing: -0.02em;
     color: #FFFFFF;
@@ -94,7 +94,7 @@ html, body {
 }
 
 .tournament-name.very-long-name {
-    font-size: 64px;
+    font-size: 55px;
     line-height: 1.2;
 }
 
@@ -121,12 +121,12 @@ html, body {
 
 
 .logo2 { width: 90px; animation-delay: 0.4s; }
-.logo1 { width: 150px; animation-delay: 0.3s; }
+.logo1 { width: 120px; animation-delay: 0.3s; }
 
 /* === ДЕКОРАТИВНАЯ ЛИНИЯ === */
 .header-line {
     position: absolute;
-    top: 155px;
+    top: 125px;
     left: 110px;
     right: 45px;
     height: 3px;

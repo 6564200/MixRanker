@@ -1,25 +1,7 @@
 /* winner.css - Страница победителя */
 /* Базовое разрешение: FHD 1920x1080 */
 
-@font-face {
-    font-family: 'Onest';
-    src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
-    font-weight: 700;
-}
-
-@font-face {
-    font-family: 'Onest Med';
-    src: url('/static/fonts/OnestLight1602-hint.ttf') format('truetype');
-    font-weight: 500;
-}
-
-@font-face {
-    font-family: 'Bluescreens';
-    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
-    font-weight: 700;
-    font-style: italic;
-    
-}
+@import url('/static/css/broadcast_tokens.css');
 
 * {
     margin: 0;

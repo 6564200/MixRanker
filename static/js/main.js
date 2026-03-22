@@ -9,6 +9,7 @@ let isAuthenticated = false;
 let currentUsername = '';
 let pendingAuthAction = null;
 let xmlFiles = [];
+let mediaImages = [];
 
 document.addEventListener('DOMContentLoaded', function() {
     loadSettings();
@@ -22,11 +23,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Настройка обработчиков событий
 function setupEventListeners() {
+    initializeScheduleDateInput();
     document.getElementById('tournamentForm').addEventListener('submit', handleTournamentSubmit);
     document.getElementById('xmlTournamentSelect').addEventListener('change', updateXMLTypes);
     document.getElementById('refreshIntervalInput').addEventListener('change', updateRefreshInterval);
     document.getElementById('autoRefreshEnabled').addEventListener('change', toggleAutoRefresh);
     document.getElementById('themeSelect').addEventListener('change', handleThemeChange);
+    const mediaTab = document.getElementById('media-tab');
+    if (mediaTab) {
+        mediaTab.addEventListener('shown.bs.tab', loadMediaImages);
+    }
 
     // Обработчик формы авторизации
     document.getElementById('authForm').addEventListener('submit', async function(e) {
@@ -42,6 +48,37 @@ function setupEventListeners() {
         
         await performLogin(username, password);
     });
+
+    const changePasswordForm = document.getElementById('changePasswordForm');
+    if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await changePassword();
+        });
+    }
+}
+
+function initializeScheduleDateInput() {
+    const dateInput = document.getElementById('scheduleDateInput');
+    if (!dateInput || dateInput.value) {
+        return;
+    }
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    dateInput.value = `${now.getFullYear()}-${month}-${day}`;
+}
+
+function getSelectedScheduleDate() {
+    const dateInput = document.getElementById('scheduleDateInput');
+    if (!dateInput || !dateInput.value) {
+        return null;
+    }
+    const [year, month, day] = dateInput.value.split('-');
+    if (!year || !month || !day) {
+        return null;
+    }
+    return `${day}.${month}.${year}`;
 }
 
 // ФУНКЦИИ для аутентификации
@@ -70,12 +107,32 @@ function updateAuthUI(authenticated) {
     // Обновляет интерфейс в зависимости от статуса аутентификации
     const authUserInfo = document.getElementById('authUserInfo');
     const currentUsernameSpan = document.getElementById('currentUsername');
+    const settingsTab = document.getElementById('settings-tab');
+    const settingsPane = document.getElementById('settings-pane');
+    const mediaTab = document.getElementById('media-tab');
+    const mediaPane = document.getElementById('media-pane');
     
     if (authenticated && currentUsername) {
         authUserInfo.style.display = 'flex';
         currentUsernameSpan.textContent = currentUsername;
+        if (settingsTab) settingsTab.style.display = '';
+        if (settingsPane) settingsPane.style.display = '';
+        if (mediaTab) mediaTab.style.display = '';
+        if (mediaPane) mediaPane.style.display = '';
     } else {
         authUserInfo.style.display = 'none';
+        if (settingsTab) settingsTab.style.display = 'none';
+        if (settingsPane) settingsPane.style.display = 'none';
+        if (mediaTab) mediaTab.style.display = 'none';
+        if (mediaPane) mediaPane.style.display = 'none';
+        if (settingsPane && settingsPane.classList.contains('active')) {
+            const tournamentTab = document.getElementById('tournament-tab');
+            if (tournamentTab) tournamentTab.click();
+        }
+        if (mediaPane && mediaPane.classList.contains('active')) {
+            const tournamentTab = document.getElementById('tournament-tab');
+            if (tournamentTab) tournamentTab.click();
+        }
     }
 }
 
@@ -146,6 +203,70 @@ async function logout() {
     } catch (error) {
         console.error('Logout error:', error);
         showAlert('Ошибка выхода из системы', 'danger');
+    }
+}
+
+async function changePassword() {
+    if (!isAuthenticated) {
+        showAuthModal(changePassword);
+        return;
+    }
+
+    const currentPasswordInput = document.getElementById('currentPassword');
+    const newPasswordInput = document.getElementById('newPassword');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+
+    if (!currentPasswordInput || !newPasswordInput || !confirmPasswordInput) {
+        return;
+    }
+
+    const current_password = currentPasswordInput.value;
+    const new_password = newPasswordInput.value;
+    const confirm_password = confirmPasswordInput.value;
+
+    if (!current_password || !new_password || !confirm_password) {
+        showAlert('Заполните все поля пароля', 'warning');
+        return;
+    }
+
+    if (new_password !== confirm_password) {
+        showAlert('Новый пароль и подтверждение не совпадают', 'warning');
+        return;
+    }
+
+    if (new_password.length < 6) {
+        showAlert('Минимальная длина нового пароля: 6 символов', 'warning');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/auth/change-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ current_password, new_password, confirm_password })
+        });
+
+        if (response.status === 401) {
+            isAuthenticated = false;
+            updateAuthUI(false);
+            showAuthModal(changePassword);
+            return;
+        }
+
+        const data = await response.json();
+        if (response.ok && data.success) {
+            currentPasswordInput.value = '';
+            newPasswordInput.value = '';
+            confirmPasswordInput.value = '';
+            showAlert(data.message || 'Пароль изменен', 'success');
+        } else {
+            showAlert(data.error || 'Ошибка смены пароля', 'danger');
+        }
+    } catch (error) {
+        console.error('Change password error:', error);
+        showAlert('Ошибка подключения к серверу', 'danger');
     }
 }
 
@@ -507,10 +628,16 @@ async function uploadPhoto() {
             method: 'POST',
             body: formData
         });
-        
-        if (!response.ok) throw new Error('Ошибка сервера');
-        
+
+        if (response.status === 401) {
+            isAuthenticated = false;
+            updateAuthUI(false);
+            showAuthModal(uploadPhoto);
+            return;
+        }
+
         const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Ошибка сервера');
         
         if (result.success) {
             showAlert('Сохранено', 'success');
@@ -714,10 +841,6 @@ function renderCourts() {
 							<button class="btn btn-sm btn-warning" onclick="openCourtHTML('${currentTournamentId}', '${court.court_id}')" title="HTML Scoreboard">
 								<i class="fa-solid fa-address-card"></i>SM
 							</button>
-<button class="btn btn-sm btn-warning" onclick="openCourtHTML_BIG('${currentTournamentId}', '${court.court_id}')" title="HTML Scoreboard BIG">
-	<i class="fa-regular fa-address-card"></i>BIG
-</button>
-
 <button class="btn btn-sm btn-success" onclick="openCourtScoreFull('${currentTournamentId}', '${court.court_id}')" title="HTML Scoreboard Full 4K">
 	<i class="fas fa-tv me-1"></i>4K
 </button>
@@ -891,12 +1014,6 @@ function openCourtVS(tournamentId, courtId) {
     window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
 }
 
-function openCourtHTML_BIG(tournamentId, courtId) {
-   
-    const liveUrl = `/api/html-live/${tournamentId}/${courtId}/score`;
-    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
-}
-
 function openCourtScoreFull(tournamentId, courtId) {
     const liveUrl = `/api/html-live/${tournamentId}/${courtId}/score_full`;
     window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
@@ -912,24 +1029,6 @@ function openCourtINTRO(tournamentId, courtId) {
     window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
 }
 
-// generateScheduleHTML с календариком
-function generateScheduleHTML() {
-    const tournamentId = document.getElementById('xmlTournamentSelect').value;
-    if (!tournamentId) {
-        showAlert('Выберите турнир', 'warning');
-        return;
-    }
-    
-    console.log('generateScheduleHTML вызвана для турнира:', tournamentId);
-    
-    // Показываем календарик для выбора даты
-    showDatePickerModal('Выберите дату для статического расписания', function(selectedDate) {
-        console.log('Выбрана дата:', selectedDate);
-        generateScheduleHTMLFile(tournamentId, selectedDate);
-    });
-}
-
-
 function openRoundRobinHTML(tournamentId, classId, drawIndex, groupName) {
     const liveUrl = `/api/html-live/round-robin/${tournamentId}/${classId}/${drawIndex}`;
     window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
@@ -943,156 +1042,11 @@ function openScheduleHTML() {
         return;
     }
 
-    const liveUrl = `/api/html-live/schedule/${tournamentId}`;
+    const selectedDate = getSelectedScheduleDate();
+    const query = selectedDate ? `?date=${encodeURIComponent(selectedDate)}` : '';
+    const liveUrl = `/api/html-live/schedule/${tournamentId}${query}`;
     window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
 }
-
-function generateScheduleHTMLFile(tournamentId, date = null) {
-    console.log('generateScheduleHTMLFile вызвана:', tournamentId, date);
-    showLoading(true);
-    
-    let url = `/api/html/schedule/${tournamentId}`;
-    if (date) {
-        url += `?date=${encodeURIComponent(date)}`;
-    }
-    
-    console.log('Отправляем запрос на:', url);
-    
-    fetch(url)
-        .then(response => {
-            console.log('Получен ответ:', response.status, response.ok);
-            if (response.ok) {
-                return response.json();
-            } else {
-                throw new Error(`HTTP ${response.status}`);
-            }
-        })
-        .then(fileInfo => {
-            console.log('Файл создан:', fileInfo);
-            showAlert(`HTML расписание создано: ${fileInfo.filename}`, 'success');
-            
-            // Автоматически открываем файл
-            console.log('Открываем файл по URL:', fileInfo.url);
-            window.open(fileInfo.url, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
-        })
-        .catch(error => {
-            console.error('Ошибка создания расписания:', error);
-            showAlert(`Ошибка создания HTML расписания: ${error.message}`, 'danger');
-        })
-        .finally(() => {
-            showLoading(false);
-        });
-}
-
-function showScheduleHTMLDialog(tournamentId) {
-    // Показываем диалог с опциями для HTML расписания
-    const today = new Date().toLocaleDateString('ru-RU', {
-        day: '2-digit',
-        month: '2-digit', 
-        year: 'numeric'
-    });
-    
-    const userDate = prompt(
-        `Введите дату для расписания (DD.MM.YYYY) или оставьте пустым для сегодняшней даты (${today}):`,
-        ''
-    );
-    
-    if (userDate === null) return; // Пользователь отменил
-    
-    const targetDate = userDate.trim() || today;
-    
-    // Проверяем формат даты
-    const dateRegex = /^\d{2}\.\d{2}\.\d{4}$/;
-    if (!dateRegex.test(targetDate)) {
-        showAlert('Неверный формат даты. Используйте DD.MM.YYYY', 'warning');
-        return;
-    }
-    
-    // Показываем опции
-    const action = confirm('Нажмите OK для создания статического файла или Отмена для открытия Live версии');
-    
-    if (action) {
-        generateScheduleHTML(tournamentId, targetDate);
-    } else {
-        openScheduleHTML(tournamentId, targetDate);
-    }
-}
-
-// Показывает модальное окно с календариком
-function showDatePickerModal(title, callback) {
-    // Создаем модальное окно с календариком
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD формат для input[type="date"]
-    
-    const modalHtml = `
-        <div id="datePickerModal" class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">${title}</h5>
-                        <button type="button" class="btn-close" onclick="closeDatePickerModal()"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="datePicker" class="form-label">Выберите дату:</label>
-                            <input type="date" id="datePicker" class="form-control" value="${todayStr}">
-                        </div>
-                        <div class="text-muted small">
-                            <i class="fas fa-info-circle me-1"></i>
-                            По умолчанию выбрана сегодняшняя дата: ${today.toLocaleDateString('ru-RU')}
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" onclick="closeDatePickerModal()">
-                            <i class="fas fa-times me-1"></i>Отмена
-                        </button>
-                        <button type="button" class="btn btn-primary" onclick="confirmDatePicker()">
-                            <i class="fas fa-check me-1"></i>Подтвердить
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    window.currentDatePickerCallback = callback;
-    setTimeout(() => {
-        document.getElementById('datePicker').focus();
-    }, 100);
-
-    document.getElementById('datePicker').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            confirmDatePicker();
-        }
-    });
-}
-
-function closeDatePickerModal() {
-    const modal = document.getElementById('datePickerModal');
-    if (modal) {
-        modal.remove();
-    }
-    window.currentDatePickerCallback = null;
-}
-
-function confirmDatePicker() {
-    const datePicker = document.getElementById('datePicker');
-    if (!datePicker) return;
-    
-    const selectedDate = datePicker.value; // YYYY-MM-DD
-    if (!selectedDate) {
-        showAlert('Выберите дату', 'warning');
-        return;
-    }
-
-    const [year, month, day] = selectedDate.split('-');
-    const formattedDate = `${day}.${month}.${year}`;
-    closeDatePickerModal();
-    if (window.currentDatePickerCallback) {
-        window.currentDatePickerCallback(formattedDate);
-    }
-}
-
 
 function openCourtHTML(tournamentId, courtId) {
     const liveUrl = `/api/html-live/${tournamentId}/${courtId}`;
@@ -1155,14 +1109,10 @@ function copyAllLiveXML() {
 function updateXMLTypes() {
     const tournamentId = document.getElementById('xmlTournamentSelect').value;
     const showLiveXMLBtn = document.getElementById('showLiveXMLBtn');
-    
-    // Получаем кнопки HTML расписания
-    const generateScheduleBtn = document.getElementById('generateScheduleBtn');
     const openLiveScheduleBtn = document.getElementById('openLiveScheduleBtn');
     
     if (!tournamentId) {
         if (showLiveXMLBtn) showLiveXMLBtn.disabled = true;
-        if (generateScheduleBtn) generateScheduleBtn.disabled = true;
         if (openLiveScheduleBtn) openLiveScheduleBtn.disabled = true;
         enableCompositeButtons(false);
         
@@ -1177,7 +1127,6 @@ function updateXMLTypes() {
     }
 
     if (showLiveXMLBtn) showLiveXMLBtn.disabled = false;
-    if (generateScheduleBtn) generateScheduleBtn.disabled = false;
     if (openLiveScheduleBtn) openLiveScheduleBtn.disabled = false;
     enableCompositeButtons(true);
     
@@ -1677,7 +1626,11 @@ function openCompositePage(pageType, slotNumber) {
 function openCompositeEditor(pageType, slotNumber) {
     const tournamentId = document.getElementById('xmlTournamentSelect').value;
     if (!tournamentId) {
-        showAlert('Выберите турнир', 'warning');
+        showAlert('�������� ������', 'warning');
+        return;
+    }
+    if (!isAuthenticated) {
+        showAuthModal(() => openCompositeEditor(pageType, slotNumber));
         return;
     }
     window.open(`/composite/editor/${tournamentId}/${pageType}/${slotNumber}`, '_blank');
@@ -1685,14 +1638,14 @@ function openCompositeEditor(pageType, slotNumber) {
 
 function enableCompositeButtons(enabled) {
     // Round buttons
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= 4; i++) {
         const btn = document.getElementById(`compositeRound${i}Btn`);
         const editBtn = document.getElementById(`compositeRound${i}EditBtn`);
         if (btn) btn.disabled = !enabled;
         if (editBtn) editBtn.disabled = !enabled;
     }
     // Elimination buttons
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= 4; i++) {
         const btn = document.getElementById(`compositeElimination${i}Btn`);
         const editBtn = document.getElementById(`compositeElimination${i}EditBtn`);
         if (btn) btn.disabled = !enabled;
@@ -1729,4 +1682,199 @@ function updateRefreshInterval() {
 function openEliminationHTML(tournamentId, classId, drawIndex, stageName) {
     const liveUrl = `/api/html-live/elimination/${tournamentId}/${classId}/${drawIndex}`;
     window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+}
+
+// === MEDIA TAB ===
+async function loadMediaImages() {
+    try {
+        const response = await fetch('/api/media/images');
+        if (response.status === 401) {
+            isAuthenticated = false;
+            updateAuthUI(false);
+            showAuthModal(loadMediaImages);
+            return;
+        }
+        if (!response.ok) {
+            throw new Error('Failed to load media list');
+        }
+        mediaImages = await response.json();
+        renderMediaList();
+    } catch (error) {
+        console.error('Load media error:', error);
+        showAlert('Ошибка загрузки списка изображений', 'danger');
+    }
+}
+
+function renderMediaList() {
+    const container = document.getElementById('mediaList');
+    const count = document.getElementById('mediaCount');
+    const searchInput = document.getElementById('mediaSearchInput');
+    if (!container || !count) return;
+
+    const query = (searchInput?.value || '').trim().toLowerCase();
+    const items = mediaImages.filter(item => !query || item.name.toLowerCase().includes(query));
+    count.textContent = String(items.length);
+
+    if (items.length === 0) {
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-images fa-3x mb-3 opacity-50"></i>
+                    <p class="mb-0">Изображения не найдены</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = items.map(item => `
+        <div class="col-md-6 col-xl-4">
+            <div class="card h-100">
+                <img src="${item.url}" class="card-img-top" alt="${escapeHtml(item.name)}" style="height: 180px; object-fit: cover;">
+                <div class="card-body">
+                    <h6 class="card-title text-truncate mb-2" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</h6>
+                    <div class="d-flex justify-content-between gap-2">
+                        <a class="btn btn-sm btn-outline-primary" href="${item.url}" target="_blank" rel="noopener noreferrer" title="Открыть">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="renameMediaImage('${encodeURIComponent(item.name)}')" title="Переименовать">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteMediaImage('${encodeURIComponent(item.name)}')" title="Удалить">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function uploadMediaImage() {
+    const input = document.getElementById('mediaUploadInput');
+    if (!input || !input.files || input.files.length === 0) {
+        showAlert('Выберите файл для загрузки', 'warning');
+        return;
+    }
+
+    requireAuth(async () => {
+        const formData = new FormData();
+        formData.append('image', input.files[0]);
+
+        try {
+            showLoading(true);
+            const response = await fetch('/api/media/images', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (response.status === 401) {
+                isAuthenticated = false;
+                updateAuthUI(false);
+                showAuthModal(uploadMediaImage);
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Upload failed');
+            }
+
+            showAlert(data.replaced ? 'Файл заменён' : 'Файл загружен', 'success');
+            input.value = '';
+            await loadMediaImages();
+        } catch (error) {
+            console.error('Upload media error:', error);
+            showAlert(error.message || 'Ошибка загрузки файла', 'danger');
+        } finally {
+            showLoading(false);
+        }
+    });
+}
+
+function deleteMediaImage(encodedName) {
+    const name = decodeURIComponent(encodedName);
+    if (!confirm(`Удалить файл ${name}?`)) return;
+
+    requireAuth(async () => {
+        try {
+            showLoading(true);
+            const response = await fetch(`/api/media/images/${encodeURIComponent(name)}`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+
+            if (response.status === 401) {
+                isAuthenticated = false;
+                updateAuthUI(false);
+                showAuthModal(() => deleteMediaImage(encodedName));
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Delete failed');
+            }
+
+            showAlert('Файл удалён', 'success');
+            await loadMediaImages();
+        } catch (error) {
+            console.error('Delete media error:', error);
+            showAlert(error.message || 'Ошибка удаления файла', 'danger');
+        } finally {
+            showLoading(false);
+        }
+    });
+}
+
+function renameMediaImage(encodedName) {
+    const oldName = decodeURIComponent(encodedName);
+    const newName = prompt('Новое имя файла:', oldName);
+    if (!newName || newName === oldName) return;
+
+    requireAuth(async () => {
+        try {
+            showLoading(true);
+            const response = await fetch('/api/media/images/rename', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ old_name: oldName, new_name: newName })
+            });
+            const data = await response.json();
+
+            if (response.status === 401) {
+                isAuthenticated = false;
+                updateAuthUI(false);
+                showAuthModal(() => renameMediaImage(encodedName));
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Rename failed');
+            }
+
+            showAlert('Файл переименован', 'success');
+            await loadMediaImages();
+        } catch (error) {
+            console.error('Rename media error:', error);
+            showAlert(error.message || 'Ошибка переименования файла', 'danger');
+        } finally {
+            showLoading(false);
+        }
+    });
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function formatBytes(size) {
+    if (!Number.isFinite(size)) return '0 B';
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }

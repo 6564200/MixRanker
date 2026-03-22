@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Display Manager - управление окнами трансляции
  * Работает как на отдельной странице, так и в модальном окне
  */
@@ -7,12 +7,34 @@
 let displayWindows = { pool: [], court: [] };
 let displayTournaments = [];
 let currentRotationItems = [];
+let displayIsAuthenticated = false;
+let displayMediaImages = [];
+
+async function checkDisplayAuthStatus() {
+    try {
+        const response = await fetch('/api/auth/status');
+        if (!response.ok) return false;
+        const data = await response.json();
+        displayIsAuthenticated = !!data.authenticated;
+        return displayIsAuthenticated;
+    } catch {
+        displayIsAuthenticated = false;
+        return false;
+    }
+}
+
+function ensureDisplayAuth() {
+    if (displayIsAuthenticated) return true;
+    showAlert('Требуется авторизация для изменения настроек', 'warning');
+    return false;
+}
 
 /**
  * Загрузка менеджера окон (для отдельной страницы)
  */
 async function loadDisplayManager() {
     try {
+        await checkDisplayAuthStatus();
         await Promise.all([
             loadDisplayWindows(),
             loadDisplayTournaments()
@@ -50,6 +72,46 @@ async function loadDisplayTournaments() {
     const response = await fetch('/api/tournaments');
     if (!response.ok) throw new Error('Failed to load tournaments');
     displayTournaments = await response.json();
+}
+
+async function ensureDisplayMediaImages() {
+    if (displayMediaImages.length > 0) return;
+    const response = await fetch('/api/media/images');
+    if (response.status === 401) {
+        displayIsAuthenticated = false;
+        throw new Error('auth_required');
+    }
+    if (!response.ok) throw new Error('Failed to load media images');
+    displayMediaImages = await response.json();
+}
+
+function getWindowPlaceholderImage(windowData) {
+    return windowData?.placeholder_image || windowData?.settings?.placeholder_image || 'bg_001.png';
+}
+
+function getImageUrlByName(imageName) {
+    const match = displayMediaImages.find(item => item.name === imageName);
+    if (match?.url) return match.url;
+    return `/static/images/${encodeURIComponent(imageName)}`;
+}
+
+function setupPlaceholderPicker(selectId, previewId, selectedImage) {
+    const select = document.getElementById(selectId);
+    const preview = document.getElementById(previewId);
+    if (!select || !preview) return;
+
+    const normalized = selectedImage || 'bg_001.png';
+    const names = [...new Set(['bg_001.png', ...displayMediaImages.map(item => item.name), normalized])];
+    select.innerHTML = names
+        .map(name => `<option value="${name}" ${name === normalized ? 'selected' : ''}>${name}</option>`)
+        .join('');
+
+    const applyPreview = () => {
+        preview.src = getImageUrlByName(select.value || 'bg_001.png');
+    };
+
+    select.onchange = applyPreview;
+    applyPreview();
 }
 
 /**
@@ -121,7 +183,7 @@ function renderCourtWindows() {
                         <div class="btn-group btn-group-sm w-100 ${isAuto ? 'opacity-50' : ''}" role="group">
                             <button class="btn ${window.manual_page === 'empty' && !isAuto ? 'btn-success' : 'btn-outline-secondary'}" 
                                     onclick="setCourtPage(${window.slot_number}, 'empty')" 
-                                    ${isAuto ? 'disabled' : ''} title="Заглушка (bg_001.png)">
+                                    ${isAuto ? 'disabled' : ''} title="�������� (${getWindowPlaceholderImage(window)})">
                                 <i class="fas fa-image"></i> Заглушка
                             </button>
                             <button class="btn ${window.manual_page === 'custom' && !isAuto ? 'btn-success' : 'btn-outline-secondary'}" 
@@ -235,7 +297,7 @@ function renderPoolWindows() {
                         <div class="btn-group btn-group-sm w-100 ${isAuto ? 'opacity-50' : ''}" role="group">
                             <button class="btn ${window.manual_page === 'empty' && !isAuto ? 'btn-success' : 'btn-outline-secondary'}" 
                                     onclick="setPoolPage(${window.slot_number}, 'empty')" 
-                                    ${isAuto ? 'disabled' : ''} title="Заглушка (bg_001.png)">
+                                    ${isAuto ? 'disabled' : ''} title="�������� (${getWindowPlaceholderImage(window)})">
                                 <i class="fas fa-image"></i> Заглушка
                             </button>
                             <button class="btn ${window.manual_page === 'custom' && !isAuto ? 'btn-success' : 'btn-outline-secondary'}" 
@@ -273,13 +335,18 @@ function renderPoolWindows() {
  * Переключение режима корта (авто/ручной)
  */
 async function toggleCourtMode(slotNumber, isAuto) {
+    if (!ensureDisplayAuth()) return;
     try {
         const response = await fetch(`/api/display/window/court/${slotNumber}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mode: isAuto ? 'auto' : 'manual' })
         });
-        
+        if (response.status === 401) {
+            displayIsAuthenticated = false;
+            showAlert('Требуется авторизация для изменения настроек', 'warning');
+            return;
+        }
         if (!response.ok) throw new Error('Failed to update');
         
         await loadDisplayWindows();
@@ -295,13 +362,18 @@ async function toggleCourtMode(slotNumber, isAuto) {
  * Быстрая установка страницы для корта (ручной режим)
  */
 async function setCourtPage(slotNumber, page) {
+    if (!ensureDisplayAuth()) return;
     try {
         const response = await fetch(`/api/display/window/court/${slotNumber}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mode: 'manual', manual_page: page })
         });
-        
+        if (response.status === 401) {
+            displayIsAuthenticated = false;
+            showAlert('Требуется авторизация для изменения настроек', 'warning');
+            return;
+        }
         if (!response.ok) throw new Error('Failed to update');
         
         await loadDisplayWindows();
@@ -317,6 +389,7 @@ async function setCourtPage(slotNumber, page) {
  * Установка произвольного URL для корта
  */
 async function setCourtCustomUrl(slotNumber) {
+    if (!ensureDisplayAuth()) return;
     const window = displayWindows.court.find(w => w.slot_number === slotNumber);
     const currentUrl = window?.settings?.custom_url || '';
     
@@ -335,10 +408,18 @@ async function setCourtCustomUrl(slotNumber) {
             body: JSON.stringify({ 
                 mode: 'manual', 
                 manual_page: 'custom',
-                settings: { custom_url: url.trim() }
+                settings: {
+                    ...(window?.settings || {}),
+                    custom_url: url.trim(),
+                    placeholder_image: getWindowPlaceholderImage(window)
+                }
             })
         });
-        
+        if (response.status === 401) {
+            displayIsAuthenticated = false;
+            showAlert('Требуется авторизация для изменения настроек', 'warning');
+            return;
+        }
         if (!response.ok) throw new Error('Failed to update');
         
         await loadDisplayWindows();
@@ -355,13 +436,18 @@ async function setCourtCustomUrl(slotNumber) {
  * Переключение режима пула (авто/ручной)
  */
 async function togglePoolMode(slotNumber, isAuto) {
+    if (!ensureDisplayAuth()) return;
     try {
         const response = await fetch(`/api/display/window/pool/${slotNumber}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mode: isAuto ? 'auto' : 'manual' })
         });
-        
+        if (response.status === 401) {
+            displayIsAuthenticated = false;
+            showAlert('Требуется авторизация для изменения настроек', 'warning');
+            return;
+        }
         if (!response.ok) throw new Error('Failed to update');
         
         await loadDisplayWindows();
@@ -377,13 +463,18 @@ async function togglePoolMode(slotNumber, isAuto) {
  * Быстрая установка страницы для пула (ручной режим)
  */
 async function setPoolPage(slotNumber, page) {
+    if (!ensureDisplayAuth()) return;
     try {
         const response = await fetch(`/api/display/window/pool/${slotNumber}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mode: 'manual', manual_page: page })
         });
-        
+        if (response.status === 401) {
+            displayIsAuthenticated = false;
+            showAlert('Требуется авторизация для изменения настроек', 'warning');
+            return;
+        }
         if (!response.ok) throw new Error('Failed to update');
         
         await loadDisplayWindows();
@@ -399,6 +490,7 @@ async function setPoolPage(slotNumber, page) {
  * Установка произвольного URL для пула
  */
 async function setPoolCustomUrl(slotNumber) {
+    if (!ensureDisplayAuth()) return;
     const window = displayWindows.pool.find(w => w.slot_number === slotNumber);
     const currentUrl = window?.settings?.custom_url || '';
     
@@ -411,9 +503,6 @@ async function setPoolCustomUrl(slotNumber) {
     }
     
     try {
-        // Сохраняем существующие items
-        const existingItems = window?.settings?.items || [];
-        
         const response = await fetch(`/api/display/window/pool/${slotNumber}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -421,12 +510,18 @@ async function setPoolCustomUrl(slotNumber) {
                 mode: 'manual', 
                 manual_page: 'custom',
                 settings: { 
-                    items: existingItems,
-                    custom_url: url.trim() 
+                    ...(window?.settings || {}),
+                    items: window?.settings?.items || [],
+                    custom_url: url.trim(),
+                    placeholder_image: getWindowPlaceholderImage(window)
                 }
             })
         });
-        
+        if (response.status === 401) {
+            displayIsAuthenticated = false;
+            showAlert('Требуется авторизация для изменения настроек', 'warning');
+            return;
+        }
         if (!response.ok) throw new Error('Failed to update');
         
         await loadDisplayWindows();
@@ -443,8 +538,19 @@ async function setPoolCustomUrl(slotNumber) {
  * Редактирование окна корта
  */
 async function editCourtWindow(slotNumber) {
+    if (!ensureDisplayAuth()) return;
     const window = displayWindows.court.find(w => w.slot_number === slotNumber);
     if (!window) return;
+    try {
+        await ensureDisplayMediaImages();
+    } catch (error) {
+        if (error.message === 'auth_required') {
+            showAlert('��������� ����������� ��� ��������� ��������', 'warning');
+            return;
+        }
+        showAlert('������ �������� ������ �����������', 'danger');
+        return;
+    }
     
     document.getElementById('editCourtSlot').value = slotNumber;
     document.getElementById('editCourtName').value = window.name || '';
@@ -472,6 +578,12 @@ async function editCourtWindow(slotNumber) {
             document.getElementById('editCourtCourt').disabled = true;
         }
     };
+
+    setupPlaceholderPicker(
+        'editCourtPlaceholder',
+        'editCourtPlaceholderPreview',
+        getWindowPlaceholderImage(window)
+    );
     
     const modal = new bootstrap.Modal(document.getElementById('editCourtWindowModal'));
     modal.show();
@@ -504,12 +616,18 @@ async function loadCourtsForSelect(selectId, tournamentId, selectedCourtId = nul
  * Сохранение окна корта
  */
 async function saveCourtWindow() {
+    if (!ensureDisplayAuth()) return;
     const slotNumber = document.getElementById('editCourtSlot').value;
+    const currentWindow = displayWindows.court.find(w => w.slot_number == slotNumber);
     
     const data = {
         name: document.getElementById('editCourtName').value,
         tournament_id: document.getElementById('editCourtTournament').value || null,
-        court_id: document.getElementById('editCourtCourt').value || null
+        court_id: document.getElementById('editCourtCourt').value || null,
+        settings: {
+            ...(currentWindow?.settings || {}),
+            placeholder_image: document.getElementById('editCourtPlaceholder')?.value || getWindowPlaceholderImage(currentWindow)
+        }
     };
     
     try {
@@ -518,7 +636,11 @@ async function saveCourtWindow() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        
+        if (response.status === 401) {
+            displayIsAuthenticated = false;
+            showAlert('Требуется авторизация для изменения настроек', 'warning');
+            return;
+        }
         if (!response.ok) throw new Error('Failed to save');
         
         showAlert('Окно сохранено', 'success');
@@ -537,8 +659,19 @@ async function saveCourtWindow() {
  * Редактирование окна пула
  */
 async function editPoolWindow(slotNumber) {
+    if (!ensureDisplayAuth()) return;
     const window = displayWindows.pool.find(w => w.slot_number === slotNumber);
     if (!window) return;
+    try {
+        await ensureDisplayMediaImages();
+    } catch (error) {
+        if (error.message === 'auth_required') {
+            showAlert('��������� ����������� ��� ��������� ��������', 'warning');
+            return;
+        }
+        showAlert('������ �������� ������ �����������', 'danger');
+        return;
+    }
     
     // Инициализируем ротацию
     currentRotationItems = [...(window.settings?.items || [])];
@@ -548,6 +681,12 @@ async function editPoolWindow(slotNumber) {
     
     // Расписание ротации
     renderRotationItems(currentRotationItems);
+
+    setupPlaceholderPicker(
+        'editPoolPlaceholder',
+        'editPoolPlaceholderPreview',
+        getWindowPlaceholderImage(window)
+    );
     
     const modal = new bootstrap.Modal(document.getElementById('editPoolWindowModal'));
     modal.show();
@@ -619,6 +758,7 @@ function removeRotationItem(index) {
  * Сохранение окна пула
  */
 async function savePoolWindow() {
+    if (!ensureDisplayAuth()) return;
     const slotNumber = document.getElementById('editPoolSlot').value;
     
     // Получаем текущее окно для сохранения существующих настроек
@@ -627,8 +767,10 @@ async function savePoolWindow() {
     const data = {
         name: document.getElementById('editPoolName').value,
         settings: {
+            ...(currentWindow?.settings || {}),
             items: currentRotationItems.filter(item => item.url),
-            custom_url: currentWindow?.settings?.custom_url || null
+            custom_url: currentWindow?.settings?.custom_url || null,
+            placeholder_image: document.getElementById('editPoolPlaceholder')?.value || getWindowPlaceholderImage(currentWindow)
         }
     };
     
@@ -638,7 +780,11 @@ async function savePoolWindow() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        
+        if (response.status === 401) {
+            displayIsAuthenticated = false;
+            showAlert('Требуется авторизация для изменения настроек', 'warning');
+            return;
+        }
         if (!response.ok) throw new Error('Failed to save');
         
         showAlert('Плейлист сохранён', 'success');
@@ -706,3 +852,5 @@ function getPageName(page) {
     };
     return names[page] || page;
 }
+
+

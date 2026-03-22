@@ -1,49 +1,12 @@
-/* round_robin.css - Групповая таблица 16:9 */
-/* Базовое разрешение: FHD 1920x1080 */
+﻿/* round_robin.css - Р“СЂСѓРїРїРѕРІР°СЏ С‚Р°Р±Р»РёС†Р° 16:9 */
+/* Р‘Р°Р·РѕРІРѕРµ СЂР°Р·СЂРµС€РµРЅРёРµ: FHD 1920x1080 */
 
-@font-face {
-    font-family: 'Bluescreens';
-    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
-    font-weight: 700;
-    font-style: italic;
-}
-
-@font-face {
-    font-family: 'Onest';
-    src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
-    font-weight: 700;
-}
-
-@font-face {
-    font-family: 'Onest Med';
-    src: url('/static/fonts/OnestLight1602-hint.ttf') format('truetype');
-    font-weight: 500;
-}
+@import url('/static/css/broadcast_tokens.css');
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-}
-
-:root {
-    --font-primary: 'Bluescreens', sans-serif;
-    --font-onest: 'Onest', sans-serif;
-    --font-onest-med: 'Onest Med', sans-serif;
-    
-    /* Цвета текста */
-    --text-dark: #070707;
-    --text-light: #F9F9F9;
-    --text-muted: #b5b5b5;
-    
-    /* Цвета ячеек */
-    --cell-dark-gradient: linear-gradient(180deg, #202020 0%, #070707 100%);
-    --cell-green-line: #91bf1f;
-    --cell-green-gradient: linear-gradient(180deg, #b6d569 0%, #91bf1f 100%);
-    
-    /* FHD базовые размеры */
-    --base-width: 1920;
-    --base-height: 1080;
 }
 
 html, body {
@@ -55,7 +18,7 @@ html, body {
     color: var(--text-dark);
 }
 
-/* Контейнер с масштабированием */
+/* РљРѕРЅС‚РµР№РЅРµСЂ СЃ РјР°СЃС€С‚Р°Р±РёСЂРѕРІР°РЅРёРµРј */
 .round-robin-container {
     transform-origin: top left;
     display: flex;
@@ -73,7 +36,7 @@ html, body {
     overflow: hidden;
 }
 
-/* Заголовок таблицы */
+/* Р—Р°РіРѕР»РѕРІРѕРє С‚Р°Р±Р»РёС†С‹ */
 .table-title {
     display: flex;
     flex-direction: row;
@@ -106,7 +69,7 @@ html, body {
     padding-left: 15px;
 }
 
-/* Заголовки номеров команд */
+/* Р—Р°РіРѕР»РѕРІРєРё РЅРѕРјРµСЂРѕРІ РєРѕРјР°РЅРґ */
 .team-number-header {
     display: flex;
     align-items: center;
@@ -125,7 +88,7 @@ html, body {
     color: var(--text-dark);
 }
 
-/* Заголовки очков/места */
+/* Р—Р°РіРѕР»РѕРІРєРё РѕС‡РєРѕРІ/РјРµСЃС‚Р° */
 .points-header {
     display: flex;
     align-items: center;
@@ -144,7 +107,7 @@ html, body {
     color: var(--text-dark);
 }
 
-/* Строки таблицы */
+/* РЎС‚СЂРѕРєРё С‚Р°Р±Р»РёС†С‹ */
 .team-row {
     display: flex;
     flex-direction: row;
@@ -183,7 +146,7 @@ html, body {
     text-overflow: ellipsis;
 }
 
-/* Диагональная ячейка */
+/* Р”РёР°РіРѕРЅР°Р»СЊРЅР°СЏ СЏС‡РµР№РєР° */
 .diagonal-cell {
     display: flex;
     align-items: center;
@@ -192,7 +155,7 @@ html, body {
     background: var(--cell-green-gradient);
 }
 
-/* Ячейка матча */
+/* РЇС‡РµР№РєР° РјР°С‚С‡Р° */
 .match-cell {
     display: flex;
     flex-direction: column;
@@ -237,7 +200,7 @@ html, body {
     color: var(--text-light);
 }
 
-/* Ячейки очков и места */
+/* РЇС‡РµР№РєРё РѕС‡РєРѕРІ Рё РјРµСЃС‚Р° */
 .points-cell,
 .place-cell {
     display: flex;
@@ -386,3 +349,4 @@ html, body {
 .place-z {
     transition: all 0.3s ease;
 }
+

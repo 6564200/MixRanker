@@ -11,8 +11,8 @@
     const CONFIG = {
         BASE_WIDTH: 1920,
         BASE_HEIGHT: 1080,
-        updateInterval: 10000,      // 10 секунд - проверка изменений
-        fullReloadInterval: 120000, // 2 минуты - полная перезагрузка
+        updateInterval: 30000,      // 30 секунд - проверка изменений
+        fullReloadInterval: 300000, // 5 минут - полная перезагрузка
         animationDuration: 300,
         retryDelay: 5000
     };

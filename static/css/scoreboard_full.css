@@ -1,18 +1,6 @@
 /* scoreboard_full.css - Полноэкранный scoreboard 16:9 */
 
-@font-face {
-    font-family: 'Onest';
-    src: url('../fonts/OnestBold1602-hint.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'TT_Bluescreens';
-    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
-    font-weight: 700;
-    font-style: italic;
-}
+@import url('/static/css/broadcast_tokens.css');
 
 * {
     margin: 0;
@@ -63,18 +51,19 @@ html, body {
 
 .tournament-name {
     flex: 1;
-    max-width: 1683px;
-    height: 452px;
+    max-width: 2500px;
+    height: 450px;
     font-family: 'TT_Bluescreens';
     font-style: italic;
     font-weight: 800;
-    font-size: 170px;
+    font-size: 180px;
     line-height: 226px;
-    letter-spacing: -0.04em;
+    letter-spacing: 0em;
     color: var(--text-white);
     overflow: hidden;
     display: flex;
     align-items: center;
+	gap: 25px;
 }
 
 .logos {
@@ -94,8 +83,8 @@ html, body {
 }
 
 .logo1 { width: 360px; }
-.logo2 { width: 230px; }
-.logo3 { width: 230px; }
+.logo2 { width: 240px; }
+.logo3 { width: 0px; }
 .logo4 { width: 0px; }
 
 /* === TABLE === */
@@ -170,7 +159,7 @@ html, body {
     background-repeat: no-repeat;
     background-position: center;
     flex-shrink: 0;
-	opacity: 0.0;
+	opacity: 1;
 }
 
 .player-name {
@@ -390,8 +379,8 @@ html, body {
 
 /* === SERVE INDICATOR === */
 .serve-indicator {
-    width: 80px;
-    height: 70px;
+    width: 110px;
+    height: 100px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -400,10 +389,11 @@ html, body {
 }
 
 .serve-indicator img {
-    width: 120px;
-    height: 120px;
+    width: 180px;
+    height: 180px;
     opacity: 0;
     transition: opacity 0.3s ease;
+	margin-left: -100px;
 }
 
 .team-row.serving .serve-indicator img {

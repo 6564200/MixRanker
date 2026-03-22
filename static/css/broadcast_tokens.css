@@ -1,0 +1,76 @@
+/* Shared design tokens for generated/live pages */
+
+@font-face {
+    font-family: 'Onest';
+    src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Onest Med';
+    src: url('/static/fonts/OnestLight1602-hint.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Onest Bol';
+    src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Bluescreens';
+    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'TT_Bluescreens';
+    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+}
+
+:root {
+    /* Fonts */
+    --font-primary: 'Bluescreens', sans-serif;
+    --font-title: 'TT_Bluescreens', sans-serif;
+    --font-onest: 'Onest', sans-serif;
+    --font-onest-bold: 'Onest Bol', sans-serif;
+    --font-onest-med: 'Onest Med', sans-serif;
+
+    /* Text colors */
+    --text-dark: #070707;
+    --text-light: #f9f9f9;
+    --text-white: #ffffff;
+    --text-muted: #b5b5b5;
+    --text-m-light: #b5b5b5;
+
+    /* Core brand colors */
+    --green-line: #91bf1f;
+    --green-solid: #8dc900;
+    --green-frame: #80bd00;
+    --black-bg: #000000;
+
+    /* Common gradients */
+    --green-gradient: linear-gradient(180deg, #aed557 0%, #84c100 100%);
+    --dark-gradient: linear-gradient(180deg, #202020 0%, #070707 100%);
+    --gray-gradient: linear-gradient(360deg, #333333 0%, #737373 100%);
+
+    /* Legacy aliases used by older css files */
+    --cell-gradient-b-bg: var(--dark-gradient);
+    --cell-line-bg: var(--green-line);
+    --cell-gradient-l-bg: linear-gradient(180deg, #b6d569 0%, #91bf1f 100%);
+    --cell-dark-gradient: var(--dark-gradient);
+    --cell-green-line: var(--green-line);
+    --cell-green-gradient: var(--cell-gradient-l-bg);
+
+    --b-radius: 6px;
+    --transition-fast: 0.2s ease-out;
+    --transition-normal: 0.3s ease-out;
+    --transition-slow: 0.5s ease-out;
+}

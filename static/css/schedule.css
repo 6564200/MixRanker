@@ -1,16 +1,4 @@
-@font-face {
-    font-family: 'Onest';
-    src: url('../fonts/OnestBold1602-hint.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'TT_Bluescreens';
-    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
-    font-weight: 700;
-    font-style: italic;
-}
+@import url('/static/css/broadcast_tokens.css');
 
 * {
     margin: 0;
@@ -61,7 +49,7 @@ body {
     font-weight: 800;
     font-size: 120px;
     line-height: 1.1;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.00em;
     color: #FFFFFF;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -70,8 +58,9 @@ body {
     text-overflow: ellipsis;
     text-align: left;
     text-transform: uppercase;
+	text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
     padding-right: 0px; /* Отступ от логотипов */
-	margin-left: 100px;
+	margin-left: 150px;
 }
 
 /* Авто-уменьшение шрифта для длинных названий */
@@ -107,7 +96,7 @@ body {
 .main-grid {
     display: flex;
     flex: 1;
-    gap: 10px;
+    gap: 90px;
     width: 97%;
     max-height: 900px;
     overflow: hidden;
@@ -157,14 +146,14 @@ body {
 .courts-header {
     display: grid;
     margin-bottom: 8px;
-    gap: 8px;
+    gap: 35px;
     opacity: 1;
 }
 
 .court-header {
     background: linear-gradient(180deg, #AED557 0%, #84C100 100%);
     text-align: center;
-    height: 28px;
+    height: 38px;
     border-radius: 4px;
     display: flex;
     align-items: center;
@@ -175,7 +164,7 @@ body {
 }
 
 .court-header h3 {
-    font-size: 18px;
+    font-size: 23px;
     font-weight: 700;
     line-height: 24px;
     color: #080609;
@@ -188,7 +177,7 @@ body {
     flex: 1;
     position: relative;
     display: flex;
-    gap: 8px;
+    gap: 90px;
     max-height: 900px;
     overflow: hidden;
 }
@@ -199,24 +188,25 @@ body {
     min-width: 100px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 90px;
 }
 
 /* === MATCH ITEM - COMPACT === */
 .match-item {
     width: 100%;
-    height: 86px;
+    height: 116px;
     display: flex;
     position: relative;
     opacity: 0;
     transform: translateY(10px);
     animation: fadeInUp 0.5s ease-out forwards;
+
 }
 
 .match-number {
     background: linear-gradient(360deg, #333333 0%, #737373 100%);
     width: 36px;
-    height: 86px;
+    height: 116px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -246,7 +236,7 @@ body {
 }
 
 .match-team {
-    height: 43px;
+    height: 58px;
     display: flex;
     align-items: center;
     background: linear-gradient(180deg, #202020 0%, #070707 100%);
@@ -274,9 +264,9 @@ body {
 }
 
 .match-player-name {
-    font-size: 14px;
+    font-size: 20px;
     font-weight: 700;
-    line-height: 16px;
+    line-height: 26px;
     color: #8F8F8F;
     text-transform: uppercase;
     white-space: nowrap;
@@ -300,12 +290,12 @@ body {
 
 .match-team-score {
     width: 36px;
-    height: 43px;
+    height: 58px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: linear-gradient(180deg, #AED756 0%, #85C200 100%);
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 700;
     line-height: 32px;
     color: #080609;

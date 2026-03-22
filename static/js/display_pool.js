@@ -32,6 +32,7 @@
 
         slotNumber = parseInt(container.dataset.slot);
         mode = container.dataset.mode || 'auto';
+        applyPlaceholderImage(container.dataset.placeholderUrl);
 
         console.log(`Display Pool ${slotNumber}: initialized, mode=${mode}`);
 
@@ -51,6 +52,7 @@
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             
             const windowData = await response.json();
+            applyPlaceholderImage(windowData.placeholder_url);
             
             // Проверяем изменился ли режим
             if (windowData.mode !== mode) {
@@ -83,6 +85,14 @@
             
         } catch (error) {
             console.error('Failed to load settings:', error);
+        }
+    }
+
+    function applyPlaceholderImage(url) {
+        if (!url) return;
+        const emptyImage = document.querySelector('.empty-state .empty-image');
+        if (emptyImage && emptyImage.getAttribute('src') !== url) {
+            emptyImage.setAttribute('src', url);
         }
     }
 

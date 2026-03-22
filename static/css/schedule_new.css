@@ -1,9 +1,4 @@
-@font-face {
-    font-family: 'Onest';
-    src: url('/static/fonts/Onest-Bold.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-}
+@import url('/static/css/broadcast_tokens.css');
 
 * {
     margin: 0;

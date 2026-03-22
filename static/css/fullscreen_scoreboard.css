@@ -1,13 +1,4 @@
-@font-face {
-    font-family: 'Onest Bol';
-    src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
-}
-
-@font-face {
-    font-family: 'Onest Med';
-    src: url('/static/fonts/OnestLight1602-hint') format('truetype');
-    font-weight: medium;
-}
+@import url('/static/css/broadcast_tokens.css');
 
 body {
     margin: 0;
