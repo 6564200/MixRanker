@@ -244,7 +244,7 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
         return f'''
             <div class="team-name-block">
                 <div class="player-row">
-                    <div class="serve-indicator" data-field="{team_prefix}_serve"><img src="/static/images/ball.png" alt=""></div>
+                    <div class="serve-indicator" data-field="{team_prefix}_serve"><img src="/static/images/ball_animated.webp" alt=""></div>
                     <div class="player-flag" data-field="{team_prefix}_flag1" style="background-image: url('{flag1_url}');"></div>
                     <div class="player-name" data-field="{team_prefix}_player1">{name1}</div>
                 </div>

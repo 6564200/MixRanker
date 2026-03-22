@@ -6,7 +6,9 @@ import sqlite3
 import json
 import time
 import logging
+import os
 from typing import Dict, List, Optional, Any, Callable
+from werkzeug.security import generate_password_hash
 
 logger = logging.getLogger(__name__)
 
@@ -156,9 +158,6 @@ def init_database():
                 last_login TIMESTAMP
             );
             
-            INSERT OR IGNORE INTO users (username, password, role) 
-            VALUES ('admin', 'admin123', 'admin');
-            
             CREATE TABLE IF NOT EXISTS participants (
                 id INTEGER PRIMARY KEY,
                 rankedin_id TEXT UNIQUE,
@@ -205,7 +204,7 @@ def init_database():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tournament_id TEXT NOT NULL,
                 page_type TEXT NOT NULL CHECK(page_type IN ('round', 'elimination')),
-                slot_number INTEGER NOT NULL CHECK(slot_number BETWEEN 1 AND 3),
+                slot_number INTEGER NOT NULL CHECK(slot_number BETWEEN 1 AND 4),
                 name TEXT,
                 background_settings TEXT,
                 layers TEXT,
@@ -233,14 +232,83 @@ def init_database():
                 logger.info(f"Миграция: добавляем колонку {col} в courts_data")
                 cursor.execute(f"ALTER TABLE courts_data ADD COLUMN {col} {col_type}")
         
-        # Создаём окна по умолчанию если их нет
-        cursor.execute('SELECT COUNT(*) FROM display_windows WHERE type = "pool"')
-        if cursor.fetchone()[0] == 0:
-            for i in range(1, 4):
+        # Создаём окна пула (до 6) если их нет
+        for i in range(1, 7):
+            cursor.execute('SELECT COUNT(*) FROM display_windows WHERE type = "pool" AND slot_number = ?', (i,))
+            if cursor.fetchone()[0] == 0:
                 cursor.execute('''
                     INSERT INTO display_windows (type, slot_number, name, settings)
                     VALUES ('pool', ?, ?, '{"items": [], "current_index": 0}')
                 ''', (i, f'Пул {i}'))
+        
+        # Миграция: расширяем composite_pages CHECK constraint с 3 до 4 слотов
+        cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='composite_pages'")
+        row = cursor.fetchone()
+        if row and 'BETWEEN 1 AND 3' in (row[0] or ''):
+            logger.info("Миграция: расширяем composite_pages до 4 слотов")
+            cursor.execute('ALTER TABLE composite_pages RENAME TO composite_pages_old')
+            cursor.execute('''
+                CREATE TABLE composite_pages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    tournament_id TEXT NOT NULL,
+                    page_type TEXT NOT NULL CHECK(page_type IN ('round', 'elimination')),
+                    slot_number INTEGER NOT NULL CHECK(slot_number BETWEEN 1 AND 4),
+                    name TEXT,
+                    background_settings TEXT,
+                    layers TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(tournament_id, page_type, slot_number)
+                )
+            ''')
+            cursor.execute('''
+                INSERT INTO composite_pages (id, tournament_id, page_type, slot_number, name,
+                    background_settings, layers, created_at, updated_at)
+                SELECT id, tournament_id, page_type, slot_number, name,
+                    background_settings, layers, created_at, updated_at
+                FROM composite_pages_old
+            ''')
+            cursor.execute('DROP TABLE composite_pages_old')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_composite_tournament 
+                ON composite_pages(tournament_id)
+            ''')
+
+        # Optional secure bootstrap for the first admin account.
+        cursor.execute('SELECT COUNT(*) FROM users')
+        users_count = cursor.fetchone()[0]
+        if users_count == 0:
+            bootstrap_username = os.environ.get('BOOTSTRAP_ADMIN_USERNAME')
+            bootstrap_password = os.environ.get('BOOTSTRAP_ADMIN_PASSWORD')
+            if bootstrap_username and bootstrap_password:
+                cursor.execute(
+                    'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+                    (bootstrap_username, generate_password_hash(bootstrap_password), 'admin')
+                )
+                logger.info("Bootstrap admin user created from environment")
+            else:
+                logger.warning(
+                    "No users found. Set BOOTSTRAP_ADMIN_USERNAME and BOOTSTRAP_ADMIN_PASSWORD "
+                    "to create initial admin user."
+                )
+
+        # One-time migration for legacy plaintext user passwords.
+        cursor.execute('SELECT id, password FROM users')
+        users = cursor.fetchall()
+        migrated_count = 0
+        for user_id, password_value in users:
+            if not password_value:
+                continue
+            if isinstance(password_value, str) and password_value.startswith(('pbkdf2:', 'scrypt:', 'argon2:')):
+                continue
+            cursor.execute(
+                'UPDATE users SET password = ? WHERE id = ?',
+                (generate_password_hash(str(password_value)), user_id)
+            )
+            migrated_count += 1
+
+        if migrated_count:
+            logger.info(f"Password migration completed: {migrated_count} user(s) updated")
         
         cursor.execute('SELECT COUNT(*) FROM display_windows WHERE type = "court"')
         if cursor.fetchone()[0] == 0:

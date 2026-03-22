@@ -6,6 +6,8 @@
 
 from typing import Dict, List, Optional
 from .html_base import HTMLBaseGenerator
+import hashlib
+import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -13,6 +15,46 @@ logger = logging.getLogger(__name__)
 
 class RoundRobinGenerator(HTMLBaseGenerator):
     """Генератор групповых таблиц Round Robin"""
+
+    def get_round_robin_data(self, tournament_data: Dict, xml_type_info: Dict) -> Dict:
+        """Возвращает данные round robin в формате JSON для AJAX"""
+        class_id = xml_type_info.get("class_id")
+        draw_index = xml_type_info.get("draw_index", 0)
+
+        class_data = tournament_data.get("draw_data", {}).get(str(class_id), {})
+        round_robin_data = class_data.get("round_robin", [])
+
+        if draw_index >= len(round_robin_data):
+            return {"error": "Нет данных групповой таблицы", "matches": {}, "standings": []}
+
+        rr_data = round_robin_data[draw_index]
+        if not rr_data or "RoundRobin" not in rr_data:
+            return {"error": "Неверные данные групповой таблицы", "matches": {}, "standings": []}
+
+        group_data = rr_data["RoundRobin"]
+        participants = self._extract_participants(group_data)
+        matches_matrix = self._extract_matches_matrix(group_data, len(participants))
+        standings = self._extract_standings(group_data)
+
+        # Собираем standings с очками и местами
+        standings_out = []
+        for p in participants:
+            standings_out.append({
+                "points": self._get_participant_points(p, standings),
+                "place": self._get_participant_place(p, standings)
+            })
+
+        # Версия для определения изменений
+        data_str = json.dumps({"m": matches_matrix, "s": standings_out}, sort_keys=True, default=str)
+        version = hashlib.md5(data_str.encode()).hexdigest()[:8]
+
+        return {
+            "class_id": class_id,
+            "draw_index": draw_index,
+            "matches": matches_matrix,
+            "standings": standings_out,
+            "version": version
+        }
 
     def generate_round_robin_html(
         self, 

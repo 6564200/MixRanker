@@ -101,3 +101,7 @@ class HTMLGenerator:
     def get_elimination_data(self, tournament_data: Dict, xml_type_info: Dict) -> Dict:
         """Получение данных elimination для AJAX"""
         return self._elimination.get_elimination_data(tournament_data, xml_type_info)
+
+    def get_round_robin_data(self, tournament_data: Dict, xml_type_info: Dict) -> Dict:
+        """Получение данных round robin для AJAX"""
+        return self._round_robin.get_round_robin_data(tournament_data, xml_type_info)
