@@ -10,7 +10,8 @@
     <div class="display-container" 
          data-type="pool" 
          data-slot="{{ slot_number }}"
-         data-mode="{{ window.mode if window else 'auto' }}">
+         data-mode="{{ window.mode if window else 'auto' }}"
+         data-placeholder-url="{{ placeholder_url }}">
         
         <!-- Фоновое изображение/видео -->
         <div class="display-background">
@@ -19,7 +20,7 @@
         
         <!-- Заглушка (empty state) -->
         <div class="empty-state" style="display: none;">
-            <img src="/static/images/bg_001.png" alt="Заглушка" class="empty-image">
+            <img src="{{ placeholder_url }}" alt="Заглушка" class="empty-image">
         </div>
         
         <!-- Контейнер для iframe -->

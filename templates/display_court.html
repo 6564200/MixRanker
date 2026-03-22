@@ -12,7 +12,8 @@
          data-slot="{{ slot_number }}"
          data-tournament-id="{{ window.tournament_id if window else '' }}"
          data-court-id="{{ window.court_id if window else '' }}"
-         data-mode="{{ window.mode if window else 'auto' }}">
+         data-mode="{{ window.mode if window else 'auto' }}"
+         data-placeholder-url="{{ placeholder_url }}">
         
         <!-- Фоновое изображение/видео -->
         <div class="display-background">
@@ -21,7 +22,7 @@
         
         <!-- Заглушка когда корт пуст -->
         <div class="empty-state" style="display: none;">
-            <img src="/static/images/bg_001.png" alt="No match" class="empty-image">
+            <img src="{{ placeholder_url }}" alt="No match" class="empty-image">
         </div>
         
         <!-- Контейнер для iframe -->
