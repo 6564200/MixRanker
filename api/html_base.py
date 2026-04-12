@@ -5,7 +5,7 @@
 """
 
 from typing import Dict, List
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 
 from .constants import DEFAULT_RELOAD_INTERVAL, COUNTRY_CODE_MAP, get_flag_url
@@ -47,7 +47,7 @@ class HTMLBaseGenerator:
             now = datetime.now()
             duration = match.get("Duration", 30)
 
-            match_end = dt_obj.replace(minute=dt_obj.minute + duration)
+            match_end = dt_obj + timedelta(minutes=duration)
             
             if dt_obj <= now <= match_end:
                 return "active"

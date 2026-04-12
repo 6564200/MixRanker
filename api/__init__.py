@@ -24,7 +24,8 @@ from .database import (
     save_xml_file_info, get_active_tournament_ids,
     get_court_ids_for_tournament, get_settings, save_settings,
     save_tournament_matches, get_tournament_matches,
-    update_court_live_score
+    update_court_live_score,
+    get_court_has_referee, set_court_has_referee
 )
 
 # Аутентификация
@@ -67,6 +68,7 @@ __all__ = [
     'save_xml_file_info', 'get_active_tournament_ids',
     'get_court_ids_for_tournament', 'get_settings', 'save_settings',
     'save_tournament_matches', 'get_tournament_matches',
+    'get_court_has_referee', 'set_court_has_referee',
     'require_auth', 'check_user_credentials', 'register_auth_routes',
     'AutoRefreshService',
     'get_photo_urls_for_ids', 'extract_player_ids',

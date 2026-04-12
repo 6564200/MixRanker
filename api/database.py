@@ -214,6 +214,14 @@ def init_database():
             );
             
             CREATE INDEX IF NOT EXISTS idx_composite_tournament ON composite_pages(tournament_id);
+
+            CREATE TABLE IF NOT EXISTS court_settings (
+                tournament_id TEXT NOT NULL,
+                court_id TEXT NOT NULL,
+                has_referee INTEGER DEFAULT 1,
+                PRIMARY KEY (tournament_id, court_id),
+                FOREIGN KEY (tournament_id) REFERENCES tournaments(id)
+            );
         ''')
         
         # Миграция: добавляем колонку current_match_state если её нет
@@ -671,3 +679,36 @@ def get_tournament_matches(tournament_id: str) -> Optional[Dict]:
     except Exception as e:
         logger.error(f"Ошибка получения матчей турнира {tournament_id}: {e}")
         return None
+
+
+def get_court_has_referee(tournament_id: str, court_id: str) -> bool:
+    """Возвращает флаг наличия судьи на корте (по умолчанию True)"""
+    def transaction(conn):
+        cursor = conn.cursor()
+        cursor.execute(
+            'SELECT has_referee FROM court_settings WHERE tournament_id = ? AND court_id = ?',
+            (tournament_id, str(court_id))
+        )
+        row = cursor.fetchone()
+        return bool(row[0]) if row is not None else True
+
+    try:
+        return execute_with_retry(transaction)
+    except Exception as e:
+        logger.error(f"Ошибка получения настроек корта {court_id}: {e}")
+        return True
+
+
+def set_court_has_referee(tournament_id: str, court_id: str, has_referee: bool):
+    """Устанавливает флаг наличия судьи на корте"""
+    def transaction(conn):
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT OR REPLACE INTO court_settings (tournament_id, court_id, has_referee)
+            VALUES (?, ?, ?)
+        ''', (tournament_id, str(court_id), 1 if has_referee else 0))
+
+    try:
+        execute_with_retry(transaction)
+    except Exception as e:
+        logger.error(f"Ошибка сохранения настроек корта {court_id}: {e}")

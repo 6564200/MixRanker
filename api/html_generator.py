@@ -67,8 +67,8 @@ class HTMLGenerator:
 
     # === VS методы ===
 
-    def generate_court_vs_html(self, court_data: Dict, tournament_data: Dict = None) -> str:
-        return self._vs.generate_court_vs_html(court_data, tournament_data)
+    def generate_court_vs_html(self, court_data: Dict, tournament_data: Dict = None, tournament_id: str = None, court_id: str = None) -> str:
+        return self._vs.generate_court_vs_html(court_data, tournament_data, tournament_id, court_id)
 
     def generate_vs_page_html(self, court_data: Dict, id_url: List[Dict], tournament_data: Dict = None) -> str:
         return self._vs.generate_vs_page_html(court_data, id_url, tournament_data)
@@ -87,8 +87,11 @@ class HTMLGenerator:
     def generate_schedule_html_addreality(self, tournament_data: Dict, target_date: str = None, settings: Dict = None) -> str:
         return self._schedule.generate_schedule_html_addreality(tournament_data, target_date, settings)
 
-    def get_schedule_data(self, tournament_data: Dict, target_date: str = None, settings: Dict = None) -> Dict:
-        return self._schedule.get_schedule_data(tournament_data, target_date, settings)
+    def generate_schedule_half_html(self, tournament_data: Dict, half: int, target_date: str = None, settings: Dict = None) -> str:
+        return self._schedule.generate_schedule_half_html(tournament_data, half, target_date, settings)
+
+    def get_schedule_data(self, tournament_data: Dict, target_date: str = None, settings: Dict = None, half: int = None) -> Dict:
+        return self._schedule.get_schedule_data(tournament_data, target_date, settings, half)
 
     # === Bracket методы ===
 
