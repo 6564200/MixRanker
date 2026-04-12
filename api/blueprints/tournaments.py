@@ -15,6 +15,7 @@ from api import (
     save_tournament_matches,
     get_tournament_matches,
     get_sport_name,
+    get_court_has_referee,
 )
 def _extract_players(team_data: dict) -> list:
     if not team_data:
@@ -205,6 +206,10 @@ def create_tournaments_blueprint(api_client, upload_folder: str, logger):
             tournament_data = get_tournament_data(tournament_id)
             if tournament_data:
                 courts_data = _enrich_courts_with_next_match(courts_data, tournament_data)
+
+            for court in courts_data:
+                if "error" not in court:
+                    court["has_referee"] = get_court_has_referee(tournament_id, str(court.get("court_id", "")))
 
             return jsonify(courts_data)
         except Exception as e:

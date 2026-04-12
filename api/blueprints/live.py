@@ -14,6 +14,8 @@ from api import (
     get_photo_urls_for_ids,
     enrich_court_data_with_photos,
     require_auth,
+    get_court_has_referee,
+    set_court_has_referee,
 )
 
 
@@ -74,6 +76,80 @@ def _find_current_match_info(tournament_data: dict, court_id: str, logger) -> di
     return {}
 
 
+def _get_next_match_participants(tournament_data: dict, court_id: str) -> dict:
+    """Получает участников следующего запланированного матча для корта из расписания."""
+    court_usage = tournament_data.get("court_usage", [])
+    matches_data = tournament_data.get("matches_data", {})
+    matches_list = matches_data.get("Matches", []) if isinstance(matches_data, dict) else []
+    matches_index = {m.get("Id"): m for m in matches_list}
+
+    court_id_int = int(court_id) if str(court_id).isdigit() else 0
+    court_matches = [m for m in court_usage if m.get("CourtId") == court_id_int]
+
+    pending = []
+    for match in court_matches:
+        if match.get("ChallengerResult") or match.get("ChallengedResult"):
+            continue
+        date_str = match.get("MatchDate", "")
+        try:
+            pending.append((datetime.fromisoformat(date_str.replace('Z', '')), match))
+        except (ValueError, TypeError):
+            continue
+
+    if not pending:
+        return {}
+
+    pending.sort(key=lambda x: x[0])
+    next_match = pending[0][1]
+    rich_match = matches_index.get(next_match.get("ChallengeId"), {})
+
+    def extract_players(team_data: dict) -> list:
+        if not team_data:
+            return []
+        players = []
+        for name_key, country_key in [("Name", "CountryShort"), ("Player2Name", "Player2CountryShort")]:
+            name = team_data.get(name_key, "")
+            if not name:
+                continue
+            parts = name.split()
+            first = parts[0] if parts else ""
+            last = " ".join(parts[1:]) if len(parts) > 1 else ""
+            initial_last = f"{first[0]}. {last}" if first else last
+            players.append({
+                "firstName": first,
+                "lastName": last,
+                "fullName": name,
+                "initialLastName": initial_last,
+                "countryCode": team_data.get(country_key, ""),
+            })
+        return players
+
+    return {
+        "next_first_participant": extract_players(rich_match.get("Challenger", {})),
+        "next_second_participant": extract_players(rich_match.get("Challenged", {})),
+        "next_class_name": next_match.get("PoolName", "") or rich_match.get("Draw", ""),
+        "next_start_time": next_match.get("MatchDate", ""),
+    }
+
+
+def _apply_no_referee_mode(court_data: dict) -> dict:
+    """Подставляет участников следующего матча вместо текущих и убирает счёт."""
+    court_data = dict(court_data)
+    court_data["first_participant"] = court_data.get("next_first_participant", [])
+    court_data["second_participant"] = court_data.get("next_second_participant", [])
+    next_class = court_data.get("next_class_name", "")
+    if next_class:
+        court_data["class_name"] = next_class
+    court_data["first_participant_score"] = 0
+    court_data["second_participant_score"] = 0
+    court_data["detailed_result"] = []
+    court_data["is_tiebreak"] = False
+    court_data["is_super_tiebreak"] = False
+    court_data["is_first_participant_serving"] = None
+    court_data["event_state"] = ""
+    return court_data
+
+
 def create_live_blueprint(api_client, html_generator, live_manager, logger):
     bp = Blueprint("live_bp", __name__)
 
@@ -93,6 +169,11 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
             if not court_data or "error" in court_data:
                 return "<html><body><h1>Корт не найден</h1></body></html>", 500
 
+            if not get_court_has_referee(tournament_id, str(court_id)):
+                next_data = _get_next_match_participants(tournament_data, court_id)
+                court_data.update(next_data)
+                court_data = _apply_no_referee_mode(court_data)
+
             html = html_generator.generate_court_scoreboard_html(court_data, tournament_data, tournament_id, court_id)
             return Response(html, mimetype='text/html; charset=utf-8')
         except Exception as e:
@@ -111,6 +192,11 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
             if not tournament_data or not court_data:
                 return "<html><body><h1>Не найдено</h1></body></html>", 404
 
+            if not get_court_has_referee(tournament_id, str(court_id)):
+                next_data = _get_next_match_participants(tournament_data, court_id)
+                court_data.update(next_data)
+                court_data = _apply_no_referee_mode(court_data)
+
             html = html_generator.generate_scoreboard_full_html(court_data, tournament_data, tournament_id, court_id)
             return Response(html, mimetype='text/html; charset=utf-8')
         except Exception as e:
@@ -128,6 +214,13 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
             court_data = get_court_data(tournament_id, str(court_id))
             if not court_data:
                 return jsonify({"error": "Корт не найден"}), 404
+
+            if not get_court_has_referee(tournament_id, str(court_id)):
+                tournament_data = get_tournament_data(tournament_id)
+                if tournament_data:
+                    next_data = _get_next_match_participants(tournament_data, court_id)
+                    court_data.update(next_data)
+                court_data = _apply_no_referee_mode(court_data)
 
             first_participant = court_data.get("first_participant", [])
             second_participant = court_data.get("second_participant", [])
@@ -169,11 +262,66 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
             if not tournament_data or not court_data:
                 return "<html><body><h1>Не найдено</h1></body></html>", 404
 
+            if not get_court_has_referee(tournament_id, str(court_id)):
+                next_data = _get_next_match_participants(tournament_data, court_id)
+                court_data.update(next_data)
+                court_data = _apply_no_referee_mode(court_data)
+
             court_data = enrich_court_data_with_photos(court_data)
-            html = html_generator.generate_court_vs_html(court_data, tournament_data)
+            html = html_generator.generate_court_vs_html(
+                court_data, tournament_data, tournament_id, court_id
+            )
             return Response(html, mimetype='text/html; charset=utf-8')
         except Exception as e:
             return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
+
+    @bp.route('/api/court/<tournament_id>/<court_id>/vs-data')
+    def get_court_vs_data(tournament_id, court_id):
+        """Данные для AJAX-обновления VS страницы"""
+        try:
+            court_data = get_court_data(tournament_id, str(court_id))
+            if not court_data:
+                return jsonify({"error": "Корт не найден"}), 404
+
+            if not get_court_has_referee(tournament_id, str(court_id)):
+                tournament_data = get_tournament_data(tournament_id)
+                if tournament_data:
+                    next_data = _get_next_match_participants(tournament_data, court_id)
+                    court_data.update(next_data)
+                court_data = _apply_no_referee_mode(court_data)
+
+            team1 = court_data.get("first_participant", [])
+            team2 = court_data.get("second_participant", [])
+            detailed = court_data.get("detailed_result", [])
+
+            def player_name(player):
+                if not player:
+                    return ""
+                full = player.get("fullName", "")
+                if full:
+                    return full.upper()
+                return f"{player.get('firstName', '')} {player.get('lastName', '')}".strip().upper()
+
+            def set_score(idx, key):
+                if idx < len(detailed):
+                    return detailed[idx].get(key, "")
+                return ""
+
+            return jsonify({
+                "team1_player1": player_name(team1[0] if team1 else None),
+                "team1_player2": player_name(team1[1] if len(team1) > 1 else None),
+                "team2_player1": player_name(team2[0] if team2 else None),
+                "team2_player2": player_name(team2[1] if len(team2) > 1 else None),
+                "set1_score1": set_score(0, "firstParticipantScore"),
+                "set1_score2": set_score(0, "secondParticipantScore"),
+                "set2_score1": set_score(1, "firstParticipantScore"),
+                "set2_score2": set_score(1, "secondParticipantScore"),
+                "set3_score1": set_score(2, "firstParticipantScore"),
+                "set3_score2": set_score(2, "secondParticipantScore"),
+            })
+        except Exception as e:
+            logger.error(f"Ошибка vs-data: {e}")
+            return jsonify({"error": str(e)}), 500
 
     @bp.route('/api/html-live/<tournament_id>/<court_id>/introduction')
     def get_court_introduction_html(tournament_id, court_id):
@@ -184,6 +332,12 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 return "<html><body><h1>Не найдено</h1></body></html>", 404
 
             match_info = _find_current_match_info(tournament_data, court_id, logger)
+
+            if not get_court_has_referee(tournament_id, str(court_id)):
+                next_data = _get_next_match_participants(tournament_data, court_id)
+                court_data.update(next_data)
+                court_data = _apply_no_referee_mode(court_data)
+
             html = html_generator.generate_match_introduction_html(court_data, match_info)
             return Response(html, mimetype='text/html; charset=utf-8')
         except Exception as e:
@@ -263,6 +417,23 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
         except Exception as e:
             return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
 
+    @bp.route('/api/html-live/schedule/<tournament_id>/half/<int:half_num>')
+    def get_live_schedule_half_html(tournament_id, half_num):
+        try:
+            if half_num not in (1, 2):
+                return "<html><body><h1>Неверный номер половины (1 или 2)</h1></body></html>", 400
+            tournament_data = get_tournament_data(tournament_id)
+            if not tournament_data:
+                return "<html><body><h1>Турнир не найден</h1></body></html>", 404
+
+            target_date = request.args.get('date')
+            from api import get_settings
+            settings = get_settings()
+            html = html_generator.generate_schedule_half_html(tournament_data, half_num, target_date, settings)
+            return Response(html, mimetype='text/html; charset=utf-8')
+        except Exception as e:
+            return f"<html><body><h1>Ошибка: {e}</h1></body></html>", 500
+
     @bp.route('/api/schedule/<tournament_id>/data')
     def get_schedule_data(tournament_id):
         try:
@@ -271,10 +442,12 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 return jsonify({"error": "Турнир не найден"}), 404
 
             target_date = request.args.get('date')
+            half_param = request.args.get('half')
+            half = int(half_param) if half_param in ('1', '2') else None
             from api import get_settings
             settings = get_settings()
 
-            schedule_data = html_generator.get_schedule_data(tournament_data, target_date, settings)
+            schedule_data = html_generator.get_schedule_data(tournament_data, target_date, settings, half)
             data_str = json.dumps(schedule_data, sort_keys=True, default=str)
             version = hashlib.md5(data_str.encode()).hexdigest()[:12]
 
@@ -414,6 +587,26 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
             courts = live_manager.get_subscribed_courts()
             return jsonify({"courts": courts, "count": len(courts)})
         except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @bp.route('/api/court/<tournament_id>/<court_id>/settings', methods=['GET'])
+    def get_court_settings(tournament_id, court_id):
+        try:
+            has_referee = get_court_has_referee(tournament_id, str(court_id))
+            return jsonify({"has_referee": has_referee})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @bp.route('/api/court/<tournament_id>/<court_id>/settings', methods=['POST'])
+    @require_auth
+    def update_court_settings(tournament_id, court_id):
+        try:
+            data = request.get_json(force=True) or {}
+            has_referee = bool(data.get("has_referee", True))
+            set_court_has_referee(tournament_id, str(court_id), has_referee)
+            return jsonify({"success": True, "has_referee": has_referee})
+        except Exception as e:
+            logger.error(f"Ошибка сохранения настроек корта {court_id}: {e}")
             return jsonify({"error": str(e)}), 500
 
     @bp.route('/api/live/subscribe/tournament/<tournament_id>', methods=['POST'])
