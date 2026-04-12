@@ -1,4 +1,4 @@
-// static/js/main.js
+﻿// static/js/main.js
 // Глобальные переменные
 let tournaments = [];
 let courts = [];
@@ -699,6 +699,21 @@ async function refreshCourts() {
     }
 }
 
+async function toggleReferee(tournamentId, courtId, hasReferee) {
+    try {
+        const response = await fetch(`/api/court/${tournamentId}/${courtId}/settings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ has_referee: hasReferee })
+        });
+        if (!response.ok) throw new Error('Failed');
+        await refreshCourts();
+    } catch (error) {
+        console.error('toggleReferee error:', error);
+        showAlert('Ошибка изменения настройки судьи', 'danger');
+    }
+}
+
 function renderCourts() {
     const container = document.getElementById('courtGrid');
     const countBadge = document.getElementById('courtCount');
@@ -785,6 +800,12 @@ function renderCourts() {
                     <div class="d-flex align-items-center gap-2">
                         <span class="status-badge status-${getCourtStatus(court)}">
                             ${getCourtStatusText(court)}
+                        </span>
+                        <span class="badge ${court.has_referee === false ? 'bg-warning text-dark' : 'bg-light text-secondary border'}"
+                              style="cursor:pointer; font-size:0.7em;"
+                              onclick="toggleReferee('${currentTournamentId}', '${court.court_id}', ${court.has_referee === false})"
+                              title="${court.has_referee === false ? 'Режим: без судьи. Показываются участники следующего матча. Кликни чтобы вернуть режим с судьёй.' : 'Кликни чтобы переключить в режим без судьи'}">
+                            <i class="fas fa-user-tie me-1"></i>${court.has_referee === false ? 'Без судьи' : 'Судья'}
                         </span>
                         <small class="text-muted"><i class="fas fa-sync me-1"></i>${formatTime(new Date())}</small>
                     </div>
@@ -1048,6 +1069,19 @@ function openScheduleHTML() {
     window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
 }
 
+function openScheduleHalfHTML(half) {
+    const tournamentId = document.getElementById('xmlTournamentSelect').value;
+    if (!tournamentId) {
+        showAlert('Выберите турнир', 'warning');
+        return;
+    }
+
+    const selectedDate = getSelectedScheduleDate();
+    const query = selectedDate ? `?date=${encodeURIComponent(selectedDate)}` : '';
+    const liveUrl = `/api/html-live/schedule/${tournamentId}/half/${half}${query}`;
+    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+}
+
 function openCourtHTML(tournamentId, courtId) {
     const liveUrl = `/api/html-live/${tournamentId}/${courtId}`;
     window.open(liveUrl, '_blank', 'width=600, height=200, resizable=yes, scrollbars=no,menubar=no,toolbar=no');
@@ -1110,10 +1144,14 @@ function updateXMLTypes() {
     const tournamentId = document.getElementById('xmlTournamentSelect').value;
     const showLiveXMLBtn = document.getElementById('showLiveXMLBtn');
     const openLiveScheduleBtn = document.getElementById('openLiveScheduleBtn');
-    
+    const openScheduleHalf1Btn = document.getElementById('openScheduleHalf1Btn');
+    const openScheduleHalf2Btn = document.getElementById('openScheduleHalf2Btn');
+
     if (!tournamentId) {
         if (showLiveXMLBtn) showLiveXMLBtn.disabled = true;
         if (openLiveScheduleBtn) openLiveScheduleBtn.disabled = true;
+        if (openScheduleHalf1Btn) openScheduleHalf1Btn.disabled = true;
+        if (openScheduleHalf2Btn) openScheduleHalf2Btn.disabled = true;
         enableCompositeButtons(false);
         
         document.getElementById('liveXMLList').innerHTML = `
@@ -1128,6 +1166,8 @@ function updateXMLTypes() {
 
     if (showLiveXMLBtn) showLiveXMLBtn.disabled = false;
     if (openLiveScheduleBtn) openLiveScheduleBtn.disabled = false;
+    if (openScheduleHalf1Btn) openScheduleHalf1Btn.disabled = false;
+    if (openScheduleHalf2Btn) openScheduleHalf2Btn.disabled = false;
     enableCompositeButtons(true);
     
     loadLiveXMLList(tournamentId);
@@ -1337,34 +1377,6 @@ async function loadSettings() {
                 console.error('Ошибка из localStorage:', error);
             }
         }
-    }
-}
-
-function loadSettings() {
-    const saved = localStorage.getItem('vmixSettings');
-    if (saved) {
-        try {
-            const settings = JSON.parse(saved);
-            refreshInterval = (settings.refreshInterval || 30) * 1000;
-            if (document.getElementById('refreshIntervalInput')) {
-                document.getElementById('refreshIntervalInput').value = settings.refreshInterval || 30;
-            }
-            if (document.getElementById('autoRefreshEnabled')) {
-                document.getElementById('autoRefreshEnabled').checked = settings.autoRefresh !== false;
-            }
-            if (document.getElementById('debugMode')) {
-                document.getElementById('debugMode').checked = settings.debugMode || false;
-            }
-            if (document.getElementById('finishedMatchesCount')) {
-                document.getElementById('finishedMatchesCount').value = settings.finishedMatchesCount || 3;
-            }
-        } catch (error) {
-            console.error('Ошибка загрузки настроек:', error);
-        }
-    }
-    
-    if (document.getElementById('refreshInterval')) {
-        document.getElementById('refreshInterval').textContent = refreshInterval / 1000;
     }
 }
 
@@ -1878,3 +1890,4 @@ function formatBytes(size) {
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
+

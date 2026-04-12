@@ -90,8 +90,13 @@
     function init() {
         scaleToFit();
         window.addEventListener('resize', scaleToFit);
+
+        if (container?.dataset.tournamentId && container?.dataset.courtId) {
+            updateData();
+            setInterval(updateData, 3000);
+        }
     }
-    
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {

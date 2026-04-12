@@ -167,39 +167,17 @@
         const team1Players = data.team1_players || [];
         const team2Players = data.team2_players || [];
 
-        // Team 1
-        const team1Name1 = document.querySelector('[data-field="team1_player1"]');
-        const team1Name2 = document.querySelector('[data-field="team1_player2"]');
-        
-        if (team1Name1 && team1Players[0]) {
-            const newName = formatPlayerName(team1Players[0]);
-            if (team1Name1.textContent !== newName) {
-                team1Name1.textContent = newName;
-            }
-        }
-        if (team1Name2 && team1Players[1]) {
-            const newName = formatPlayerName(team1Players[1]);
-            if (team1Name2.textContent !== newName) {
-                team1Name2.textContent = newName;
-            }
+        function setName(selector, player) {
+            const el = document.querySelector(selector);
+            if (!el) return;
+            const newName = player ? formatPlayerName(player) : '';
+            if (el.textContent !== newName) el.textContent = newName;
         }
 
-        // Team 2
-        const team2Name1 = document.querySelector('[data-field="team2_player1"]');
-        const team2Name2 = document.querySelector('[data-field="team2_player2"]');
-        
-        if (team2Name1 && team2Players[0]) {
-            const newName = formatPlayerName(team2Players[0]);
-            if (team2Name1.textContent !== newName) {
-                team2Name1.textContent = newName;
-            }
-        }
-        if (team2Name2 && team2Players[1]) {
-            const newName = formatPlayerName(team2Players[1]);
-            if (team2Name2.textContent !== newName) {
-                team2Name2.textContent = newName;
-            }
-        }
+        setName('[data-field="team1_player1"]', team1Players[0]);
+        setName('[data-field="team1_player2"]', team1Players[1]);
+        setName('[data-field="team2_player1"]', team2Players[0]);
+        setName('[data-field="team2_player2"]', team2Players[1]);
     }
 
     /**
@@ -361,8 +339,11 @@
      */
     function updateFlag(selector, countryCode) {
         const element = document.querySelector(selector);
-        if (!element || !countryCode) return;
-        
+        if (!element) return;
+        if (!countryCode) {
+            element.style.backgroundImage = '';
+            return;
+        }
         const flagUrl = getFlagUrl(countryCode);
         element.style.backgroundImage = `url('${flagUrl}')`;
     }
