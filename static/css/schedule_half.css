@@ -1,0 +1,468 @@
+@import url('/static/css/broadcast_tokens.css');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Onest';
+    background: transparent;
+    color: #FFFFFF;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    position: relative;
+}
+
+.schedule-container {
+    width: 1920px;
+    height: 1080px;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    transform-origin: top left;
+}
+
+/* === HEADER === */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 100px;
+    max-height: 150px;
+    margin-top: 18px;
+    margin-bottom: 20px;
+    padding: 0 30px 10px 30px;
+    box-sizing: border-box;
+    opacity: 0;
+    animation: fadeIn 0.4s ease-out forwards;
+    animation-delay: 0.05s;
+}
+
+.tournament-name {
+    flex: 1;
+    font-family: 'TT_Bluescreens';
+    font-style: italic;
+    font-weight: 800;
+    font-size: 120px;
+    line-height: 1.1;
+    letter-spacing: -0.00em;
+    color: #FFFFFF;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+    text-transform: uppercase;
+	text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+    padding-right: 0px;
+	margin-left: 150px;
+}
+
+.tournament-name.long-name {
+    font-size: 110px;
+}
+
+.tournament-name.very-long-name {
+    font-size: 60px;
+}
+
+.logos {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    height: 100px;
+    flex-shrink: 0;
+}
+
+.logo {
+    height: 100px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.logo1 { width: 145px; }
+.logo2 { width: 120px; }
+.logo3 { width: 0px; }
+
+
+/* === MAIN GRID === */
+.main-grid {
+    display: flex;
+    flex: 1;
+    gap: 90px;
+    width: 97%;
+    max-height: 900px;
+    overflow: hidden;
+    position: relative;
+	margin-left: 00px;
+}
+
+/* === TIME SCALE === */
+.time-scale {
+    width: 90px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 36px;
+    max-height: 900px;
+    overflow: hidden;
+	opacity: 0;
+}
+
+.time-slot {
+    height: 86px;
+    min-height: 86px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg, #202020 0%, #070707 100%);
+    border-radius: 4px;
+    color: #FFFFFF;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 36px;
+    opacity: 0;
+    transform: translateX(-15px);
+    animation: slideInLeft 0.4s ease-out forwards;
+}
+
+/* === COURTS === */
+.courts-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    max-height: 930px;
+    overflow: hidden;
+}
+
+.courts-header {
+    display: grid;
+    margin-bottom: 8px;
+    gap: 35px;
+    opacity: 1;
+}
+
+.court-header {
+    background: linear-gradient(180deg, #AED557 0%, #84C100 100%);
+    text-align: center;
+    height: 38px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.court-header h3 {
+    font-size: 23px;
+    font-weight: 700;
+    line-height: 24px;
+    color: #080609;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+/* === MATCHES GRID === */
+.matches-grid {
+    flex: 1;
+    position: relative;
+    display: flex;
+    gap: 90px;
+    max-height: 900px;
+    overflow: hidden;
+}
+
+.court-column {
+    position: relative;
+    flex: 1;
+    min-width: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 90px;
+}
+
+/* === MATCH ITEM === */
+.match-item {
+    width: 100%;
+    height: 116px;
+    display: flex;
+    position: relative;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.match-number {
+    background: linear-gradient(360deg, #333333 0%, #737373 100%);
+    width: 36px;
+    height: 116px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 30px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 10;
+}
+
+.match-content {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    position: relative;
+}
+
+.match-teams-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.match-team {
+    height: 58px;
+    display: flex;
+    align-items: center;
+    background: linear-gradient(180deg, #202020 0%, #070707 100%);
+    position: relative;
+    border-radius: 4px 6px 6px 4px;
+}
+
+.match-team:first-child {
+    border-radius: 6px 6px 0px 6px;
+}
+
+.match-team:last-child {
+    border-radius: 6px 0px 6px 6px;
+}
+
+.match-team-names {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-left: 46px;
+    padding-right: 8px;
+    overflow: hidden;
+}
+
+.match-player-name {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 26px;
+    color: #8F8F8F;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.match-team-name {
+    flex: 1;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 22px;
+    padding-left: 46px;
+    color: #8F8F8F;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.match-team-score {
+    width: 36px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg, #AED756 0%, #85C200 100%);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 32px;
+    color: #080609;
+    flex-shrink: 0;
+}
+
+.match-team-wo {
+    padding-right: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 22px;
+    color: #8F8F8F;
+    display: flex;
+    align-items: center;
+}
+
+.match-team:first-child .match-team-score {
+    border-radius: 4px 4px 0 0;
+}
+
+.match-team:last-child .match-team-score {
+    border-radius: 0 0 4px 4px;
+}
+
+/* === MATCH STATUSES === */
+.match-finished .match-player-name,
+.match-finished .match-team-name {
+    color: #8F8F8F;
+}
+
+.match-finished.match-item {
+    animation: fadeInUpFinished 0.5s ease-out forwards;
+}
+
+.match-active .match-team {
+    background: linear-gradient(180deg, #2a2a2a 0%, #0f0f0f 100%);
+}
+
+.match-active .match-player-name,
+.match-active .match-team-name {
+    color: #FFFFFF;
+}
+
+.match-future .match-player-name,
+.match-future .match-team-name {
+    color: #FFFFFF;
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUpFinished {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 0.85;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(174, 213, 87, 0);
+    }
+    50% {
+        box-shadow: 0 0 10px 3px rgba(174, 213, 87, 0.4);
+    }
+}
+
+/* Animation delays for time slots */
+.time-slot:nth-child(1)  { animation-delay: 0.10s; }
+.time-slot:nth-child(2)  { animation-delay: 0.15s; }
+.time-slot:nth-child(3)  { animation-delay: 0.20s; }
+.time-slot:nth-child(4)  { animation-delay: 0.25s; }
+.time-slot:nth-child(5)  { animation-delay: 0.30s; }
+.time-slot:nth-child(6)  { animation-delay: 0.35s; }
+.time-slot:nth-child(7)  { animation-delay: 0.40s; }
+.time-slot:nth-child(8)  { animation-delay: 0.45s; }
+.time-slot:nth-child(9)  { animation-delay: 0.50s; }
+.time-slot:nth-child(10) { animation-delay: 0.55s; }
+.time-slot:nth-child(11) { animation-delay: 0.60s; }
+.time-slot:nth-child(12) { animation-delay: 0.65s; }
+.time-slot:nth-child(13) { animation-delay: 0.70s; }
+.time-slot:nth-child(14) { animation-delay: 0.75s; }
+.time-slot:nth-child(15) { animation-delay: 0.80s; }
+.time-slot:nth-child(16) { animation-delay: 0.85s; }
+.time-slot:nth-child(17) { animation-delay: 0.90s; }
+.time-slot:nth-child(18) { animation-delay: 0.95s; }
+
+/* Animation delays for match rows */
+.match-item.row-1  { animation-delay: 0.20s; }
+.match-item.row-2  { animation-delay: 0.25s; }
+.match-item.row-3  { animation-delay: 0.30s; }
+.match-item.row-4  { animation-delay: 0.35s; }
+.match-item.row-5  { animation-delay: 0.40s; }
+.match-item.row-6  { animation-delay: 0.45s; }
+.match-item.row-7  { animation-delay: 0.50s; }
+.match-item.row-8  { animation-delay: 0.55s; }
+.match-item.row-9  { animation-delay: 0.60s; }
+.match-item.row-10 { animation-delay: 0.65s; }
+.match-item.row-11 { animation-delay: 0.70s; }
+.match-item.row-12 { animation-delay: 0.75s; }
+.match-item.row-13 { animation-delay: 0.80s; }
+.match-item.row-14 { animation-delay: 0.85s; }
+.match-item.row-15 { animation-delay: 0.90s; }
+.match-item.row-16 { animation-delay: 0.95s; }
+.match-item.row-17 { animation-delay: 1.00s; }
+.match-item.row-18 { animation-delay: 1.05s; }
+
+/* Update animations */
+.hide-for-refresh {
+    animation: fadeOut 0.4s ease-out forwards !important;
+}
+
+.match-item.updated {
+    animation: highlightUpdate 1s ease-out;
+}
+
+@keyframes highlightUpdate {
+    0%   { box-shadow: 0 0 0 0 rgba(174, 213, 87, 0.7); }
+    50%  { box-shadow: 0 0 20px 5px rgba(174, 213, 87, 0.5); }
+    100% { box-shadow: 0 0 0 0 rgba(174, 213, 87, 0); }
+}
+
+/* === EMPTY MESSAGE === */
+.empty-message {
+    text-align: center;
+    margin-top: 100px;
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+.empty-message p {
+    font-size: 24px;
+    color: #CCCCCC;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
