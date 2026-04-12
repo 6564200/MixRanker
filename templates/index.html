@@ -175,9 +175,17 @@
 										<div class="mb-2">
 											<input type="date" class="form-control form-control-sm" id="scheduleDateInput" title="Дата расписания">
 										</div>
-										<button class="btn btn-outline-info btn-sm w-100" onclick="openScheduleHTML()" id="openLiveScheduleBtn" disabled>
-											<i class="fas fa-external-link-alt me-1"></i>Live расписание
-										</button>
+										<div class="d-flex gap-1">
+											<button class="btn btn-outline-info btn-sm flex-fill" onclick="openScheduleHTML()" id="openLiveScheduleBtn" disabled title="Полное расписание">
+												<i class="fas fa-external-link-alt me-1"></i>Все
+											</button>
+											<button class="btn btn-outline-secondary btn-sm flex-fill" onclick="openScheduleHalfHTML(1)" id="openScheduleHalf1Btn" disabled title="Первая половина кортов">
+												<i class="fas fa-table-columns me-1"></i>½&nbsp;лев
+											</button>
+											<button class="btn btn-outline-secondary btn-sm flex-fill" onclick="openScheduleHalfHTML(2)" id="openScheduleHalf2Btn" disabled title="Вторая половина кортов">
+												<i class="fas fa-table-columns me-1"></i>½&nbsp;прав
+											</button>
+										</div>
 									</div>
 									
 									<!-- Композитные страницы -->
