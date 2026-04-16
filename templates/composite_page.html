@@ -46,6 +46,7 @@
         .iframe-layer {
             position: absolute;
             overflow: hidden;
+
             z-index: 1;
         }
         
@@ -72,10 +73,10 @@
             {% if page and page.layers %}
                 {% for layer in page.layers %}
                 <div class="iframe-layer" 
-                     style="left: {{ layer.x }}px; top: {{ layer.y }}px; width: {{ layer.width }}px; height: {{ layer.height }}px;">
+                     style="left: {{ layer.x }}px; top: {{ layer.y }}px; width: {{ layer.width}}px; height: {{ layer.height }}px; box-sizing: border-box;">
                     <iframe src="{{ layer.url }}" 
                             allowtransparency="true"
-                            style="width: {{ (layer.width / layer.scale) | int }}px; height: {{ (layer.height / layer.scale) | int }}px; transform: scale({{ layer.scale }});"></iframe>
+                            style="width: {{ (layer.width / layer.scale ) | int }}px; height: {{ (layer.height / layer.scale) | int }}px; transform: scale({{ layer.scale }});"></iframe>
                 </div>
                 {% endfor %}
             {% endif %}
