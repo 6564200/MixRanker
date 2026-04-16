@@ -9,7 +9,7 @@
 
     // Конфигурация
     const CONFIG = {
-        BASE_WIDTH: 1920,
+        BASE_WIDTH: 2480,
         BASE_HEIGHT: 1080,
         updateInterval: 30000,      // 30 секунд - проверка изменений
         fullReloadInterval: 300000, // 5 минут - полная перезагрузка

@@ -85,46 +85,48 @@ html, body {
     -webkit-box-orient: vertical;
 }
 
-.olimpic_9_10 {
-	top: 145px;
+.olimpic_5_8 {
+	top: 245px;
     left: 110px;
 	max-width: 900px;
     font-family: 'TT_Bluescreens';
 	color: #F9F9F9;
-	font-size: 34px;
+	font-size: 38px;
     line-height: 1.2;
 }
 
 
-.olimpic_11_12 {
-	top: 615px;
+.olimpic_17_18 {
+	top: 545px;
     left: 110px;
 	max-width: 900px;
     font-family: 'TT_Bluescreens';
 	color: #F9F9F9;
-	font-size: 34px;
+	font-size: 38px;
     line-height: 1.2;
 }
 
-.olimpic_13_16 {
-	top: 775px;
-    left: 110px;
+.olimpic_3_4 {
+	top: 390px;
+    left: 1260px;
 	max-width: 900px;
     font-family: 'TT_Bluescreens';
 	color: #F9F9F9;
-	font-size: 34px;
+	font-size: 40px;
     line-height: 1.2;
+
 }
 
 
-.olimpic_15_16 {
-	top: 615px;
+.olimpic_7_8 {
+	top: 415px;
     left: 1110px;
 	max-width: 900px;
     font-family: 'TT_Bluescreens';
 	color: #F9F9F9;
 	font-size: 34px;
     line-height: 1.2;
+	opacity: 0;
 }
 
 .olimpic_FIN {

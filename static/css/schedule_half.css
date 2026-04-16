@@ -103,47 +103,20 @@ body {
 	margin-left: 00px;
 }
 
-/* === TIME SCALE === */
-.time-scale {
-    width: 90px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding-top: 36px;
-    max-height: 900px;
-    overflow: hidden;
-	opacity: 0;
-}
-
-.time-slot {
-    height: 86px;
-    min-height: 86px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(180deg, #202020 0%, #070707 100%);
-    border-radius: 4px;
-    color: #FFFFFF;
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 36px;
-    opacity: 0;
-    transform: translateX(-15px);
-    animation: slideInLeft 0.4s ease-out forwards;
-}
 
 /* === COURTS === */
 .courts-container {
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     position: relative;
-    max-height: 930px;
     overflow: hidden;
 }
 
 .courts-header {
     display: grid;
+    grid-template-columns: repeat(var(--court-cols, 1), 1fr);
     margin-bottom: 8px;
     gap: 35px;
     opacity: 1;
@@ -174,20 +147,18 @@ body {
 /* === MATCHES GRID === */
 .matches-grid {
     flex: 1;
-    position: relative;
-    display: flex;
-    gap: 90px;
-    max-height: 900px;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(var(--court-cols, 1), 1fr);
+    gap: 35px;
     overflow: hidden;
 }
 
 .court-column {
-    position: relative;
-    flex: 1;
-    min-width: 100px;
     display: flex;
     flex-direction: column;
-    gap: 90px;
+    gap: 15px;
+    overflow: hidden;
 }
 
 /* === MATCH ITEM === */
@@ -201,24 +172,6 @@ body {
     animation: fadeInUp 0.5s ease-out forwards;
 }
 
-.match-number {
-    background: linear-gradient(360deg, #333333 0%, #737373 100%);
-    width: 36px;
-    height: 116px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #FFFFFF;
-    font-size: 24px;
-    font-weight: 700;
-    line-height: 30px;
-    border-radius: 4px;
-    flex-shrink: 0;
-    position: absolute;
-    left: 0;
-    top: 0;
-    z-index: 10;
-}
 
 .match-content {
     flex: 1;
@@ -234,7 +187,8 @@ body {
 }
 
 .match-team {
-    height: 58px;
+    flex: 1;
+    min-height: 0;
     display: flex;
     align-items: center;
     background: linear-gradient(180deg, #202020 0%, #070707 100%);
@@ -255,7 +209,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding-left: 46px;
+    padding-left: 12px;
     padding-right: 8px;
     overflow: hidden;
 }
@@ -286,7 +240,7 @@ body {
 
 .match-team-score {
     width: 36px;
-    height: 58px;
+    align-self: stretch;
     display: flex;
     align-items: center;
     justify-content: center;

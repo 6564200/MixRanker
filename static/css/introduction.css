@@ -142,7 +142,8 @@ html, body {
     height: 36px;
     left: 52px;
     top: 40px;
-    background-size: contain;
+	background-size: 0%;
+    /* background-size: contain; */
     background-repeat: no-repeat;
     background-position: center;
 	opacity: 0.0;
@@ -155,6 +156,7 @@ html, body {
     left: 52px;
     top: 110px;
     background-size: contain;
+	background-size: 0%;
     background-repeat: no-repeat;
     background-position: center;
 	opacity: 0.0;
@@ -206,6 +208,7 @@ html, body {
     left: 1700px;
     top: 40px;
     background-size: contain;
+	background-size: 0%;
     background-repeat: no-repeat;
     background-position: center;
 	opacity: 0.0;
@@ -218,6 +221,7 @@ html, body {
     left: 1700px;
     top: 110px;
     background-size: contain;
+	background-size: 0%;
     background-repeat: no-repeat;
     background-position: center;
 	opacity: 0.0;

@@ -105,46 +105,38 @@
     }
 
     async function updateSchedule(data) {
-        const { time_slots, courts, matches } = data;
+        const { courts, matches } = data;
         const mainGrid = container.querySelector('.main-grid');
         if (mainGrid) {
             mainGrid.style.opacity = '0';
             mainGrid.style.transition = 'opacity 0.3s ease-out';
+            mainGrid.style.setProperty('--court-cols', courts.length);
         }
         await new Promise(resolve => setTimeout(resolve, 300));
-        updateTimeSlots(time_slots);
         updateCourtHeaders(courts);
-        rebuildMatches(matches, time_slots, courts);
+        rebuildMatches(matches);
         if (mainGrid) mainGrid.style.opacity = '1';
     }
 
-    function rebuildMatches(matches, timeSlots, courts) {
+    function rebuildMatches(matches) {
         const matchesGrid = document.querySelector('.matches-grid');
         if (!matchesGrid) return;
-        matchesGrid.style.gridTemplateRows    = `repeat(${timeSlots.length}, 86px)`;
-        matchesGrid.style.gridTemplateColumns = `repeat(${courts.length}, 1fr)`;
-        matchesGrid.style.gap = '38px';
-        matchesGrid.innerHTML = '';
-        matches.forEach(match => matchesGrid.appendChild(createMatchElement(match)));
-    }
 
-    function updateTimeSlots(timeSlots) {
-        const timeScale = document.querySelector('.time-scale');
-        if (!timeScale) return;
-        const currentTimes = Array.from(timeScale.querySelectorAll('.time-slot'))
-            .map(el => el.textContent.trim());
-        if (JSON.stringify(currentTimes) === JSON.stringify(timeSlots)) return;
-        timeScale.style.gridTemplateRows = `repeat(${timeSlots.length}, 116px)`;
-        const fragment = document.createDocumentFragment();
-        timeSlots.forEach((time, index) => {
-            const slot = document.createElement('div');
-            slot.className = 'time-slot';
-            slot.textContent = time;
-            slot.style.animationDelay = `${0.1 + index * 0.05}s`;
-            fragment.appendChild(slot);
+        const byCourt = {};
+        matches.forEach(m => {
+            if (!byCourt[m.col]) byCourt[m.col] = [];
+            byCourt[m.col].push(m);
         });
-        Array.from(timeScale.querySelectorAll('.time-slot')).forEach(s => s.classList.add('fade-out'));
-        setTimeout(() => { timeScale.innerHTML = ''; timeScale.appendChild(fragment); }, 200);
+
+        matchesGrid.innerHTML = '';
+        Object.keys(byCourt).sort((a, b) => a - b).forEach(col => {
+            const courtCol = document.createElement('div');
+            courtCol.className = 'court-column';
+            byCourt[col]
+                .sort((a, b) => a.row - b.row)
+                .forEach(m => courtCol.appendChild(createMatchElement(m)));
+            matchesGrid.appendChild(courtCol);
+        });
     }
 
     function updateCourtHeaders(courts) {
@@ -153,7 +145,6 @@
         const currentCourts = Array.from(courtsHeader.querySelectorAll('.court-header h3'))
             .map(el => el.textContent.trim());
         if (JSON.stringify(currentCourts) === JSON.stringify(courts)) return;
-        courtsHeader.style.gridTemplateColumns = `repeat(${courts.length}, 1fr)`;
         const fragment = document.createDocumentFragment();
         courts.forEach(court => {
             const header = document.createElement('div');
@@ -173,8 +164,7 @@
 
     function createMatchElement(data) {
         const el = document.createElement('div');
-        el.className = `match-item match-${data.status} row-${data.row}`;
-        el.style.cssText = `grid-row: ${data.row}; grid-column: ${data.col};`;
+        el.className = `match-item match-${data.status}`;
 
         const challengerWO = data.challenger_score === 'Won W.O.';
         const challengedWO = data.challenged_score === 'Won W.O.';
@@ -187,18 +177,11 @@
             if (players.length === 1) {
                 return `<div class="match-team"><div class="match-team-name">${players[0]}</div>${woHtml}${scoreHtml}</div>`;
             }
-            const playersHtml = players.slice(0, 2).map(p => `<div class="match-player-name">${p}</div>`).join('');
-            return `<div class="match-team"><div class="match-team-names">${playersHtml}</div>${woHtml}${scoreHtml}</div>`;
+            const ph = players.slice(0, 2).map(p => `<div class="match-player-name">${p}</div>`).join('');
+            return `<div class="match-team"><div class="match-team-names">${ph}</div>${woHtml}${scoreHtml}</div>`;
         }
 
-        el.innerHTML = `
-            <div class="match-content">
-                <div class="match-number">:</div>
-                <div class="match-teams-wrapper">
-                    ${teamHtml(challengerPlayers, challengerWO, data.challenger_score)}
-                    ${teamHtml(challengedPlayers, challengedWO, data.challenged_score)}
-                </div>
-            </div>`;
+        el.innerHTML = `<div class="match-content"><div class="match-teams-wrapper">${teamHtml(challengerPlayers, challengerWO, data.challenger_score)}${teamHtml(challengedPlayers, challengedWO, data.challenged_score)}</div></div>`;
         return el;
     }
 

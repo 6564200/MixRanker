@@ -47,17 +47,17 @@ html, body {
 .header-title {
     font-family: 'Bluescreens';
     font-style: italic;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 100px;
     line-height: 70px;
-    letter-spacing: 0.17em;
+    letter-spacing: 0.02em;
     color: #FFFFFF;
 }
 
 /* Teams container */
 .teams-wrapper {
     position: absolute;
-    bottom: 25px;
+    bottom: 0px;
     left: 0;
     right: 0;
     display: flex;

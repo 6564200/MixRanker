@@ -95,7 +95,7 @@ html, body {
     height: 49px;
     flex-shrink: 0;
     margin-top: 13px;
-	opacity: 0.0;
+	opacity: 0;
 }
 
 .win_name {

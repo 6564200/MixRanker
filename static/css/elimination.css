@@ -30,13 +30,14 @@ body {
 
 /* === РљРћРќРўР•Р™РќР•Р  === */
 .elimination-container {
-    width: 2120px;
-    height: 1180px;
+    width: 3840px;
+    height: 2160px;
     display: flex;
     flex-direction: column;
     padding: 0px;
     transform-origin: top left;
     position: absolute;
+	transform: scale(0.15);
     top: 0;
     left: 0;
 }
@@ -113,7 +114,7 @@ body {
 .row {
     display: flex;
     align-items: center;
-    height: 45px; /* 56 РїРѕ РґРёР·Р°Р№РЅСѓ */
+    height: 56px; /* 56 РїРѕ РґРёР·Р°Р№РЅСѓ */
     transition: background var(--transition-fast);
 }
 
@@ -196,7 +197,7 @@ body {
     display: inline-block;
     width: 28px;
     text-align: right;
-    padding-right: 12px;
+    padding-right: 40px;
     transition: color var(--transition-fast), transform var(--transition-fast);
 }
 

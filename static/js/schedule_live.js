@@ -148,78 +148,48 @@
      * Обновление расписания
      */
     async function updateSchedule(data) {
-        const { time_slots, courts, matches } = data;
-        
-        const container = document.querySelector('.schedule-container');
+        const { courts, matches } = data;
+
         const mainGrid = container.querySelector('.main-grid');
-        
         if (mainGrid) {
             mainGrid.style.opacity = '0';
             mainGrid.style.transition = 'opacity 0.3s ease-out';
+            mainGrid.style.setProperty('--court-cols', courts.length);
         }
-        
+
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        updateTimeSlots(time_slots);
         updateCourtHeaders(courts);
-        rebuildMatches(matches, time_slots, courts);
-        
+        rebuildMatches(matches);
+
         if (mainGrid) {
             mainGrid.style.opacity = '1';
         }
     }
-    
+
     /**
-     * Полная перестройка матчей
+     * Перестройка матчей по колонкам (без привязки к времени)
      */
-    function rebuildMatches(matches, timeSlots, courts) {
+    function rebuildMatches(matches) {
         const matchesGrid = document.querySelector('.matches-grid');
         if (!matchesGrid) return;
-        
-        // FHD размеры (увеличенные)
-        matchesGrid.style.gridTemplateRows = `repeat(${timeSlots.length}, 86px)`;
-        matchesGrid.style.gridTemplateColumns = `repeat(${courts.length}, 1fr)`;
-        matchesGrid.style.gap = '38px';
+
+        // Группируем по col, сортируем внутри по row
+        const byCourt = {};
+        matches.forEach(m => {
+            if (!byCourt[m.col]) byCourt[m.col] = [];
+            byCourt[m.col].push(m);
+        });
+
         matchesGrid.innerHTML = '';
-        
-        matches.forEach(match => {
-            const el = createMatchElement(match);
-            matchesGrid.appendChild(el);
+        Object.keys(byCourt).sort((a, b) => a - b).forEach(col => {
+            const courtCol = document.createElement('div');
+            courtCol.className = 'court-column';
+            byCourt[col]
+                .sort((a, b) => a.row - b.row)
+                .forEach(m => courtCol.appendChild(createMatchElement(m)));
+            matchesGrid.appendChild(courtCol);
         });
-    }
-
-    /**
-     * Обновление временных слотов
-     */
-    function updateTimeSlots(timeSlots) {
-        const timeScale = document.querySelector('.time-scale');
-        if (!timeScale) return;
-
-        const currentSlots = Array.from(timeScale.querySelectorAll('.time-slot'));
-        const currentTimes = currentSlots.map(el => el.textContent.trim());
-
-        if (JSON.stringify(currentTimes) === JSON.stringify(timeSlots)) {
-            return;
-        }
-
-        // Обновляем grid-template-rows (FHD размеры увеличенные)
-        timeScale.style.gridTemplateRows = `repeat(${timeSlots.length}, 116px)`;
-
-        const fragment = document.createDocumentFragment();
-        timeSlots.forEach((time, index) => {
-            const slot = document.createElement('div');
-            slot.className = 'time-slot';
-            slot.textContent = time;
-            slot.style.animationDelay = `${0.1 + index * 0.05}s`;
-            fragment.appendChild(slot);
-        });
-
-        currentSlots.forEach(slot => slot.classList.add('fade-out'));
-        
-        setTimeout(() => {
-            timeScale.innerHTML = '';
-            timeScale.appendChild(fragment);
-        }, 200);
     }
 
     /**
@@ -235,9 +205,6 @@
         if (JSON.stringify(currentCourts) === JSON.stringify(courts)) {
             return;
         }
-
-        // Обновляем grid-template-columns
-        courtsHeader.style.gridTemplateColumns = `repeat(${courts.length}, 1fr)`;
 
         const fragment = document.createDocumentFragment();
         courts.forEach(court => {
@@ -339,51 +306,25 @@
      * Создание элемента матча
      */
     function createMatchElement(data) {
-        const statusClass = `match-${data.status}`;
-        const rowClass = `row-${data.row}`;
-
         const el = document.createElement('div');
-        el.className = `match-item ${statusClass} ${rowClass}`;
-        el.style.cssText = `grid-row: ${data.row}; grid-column: ${data.col};`;
+        el.className = `match-item match-${data.status}`;
 
         const challengerWO = data.challenger_score === 'Won W.O.';
         const challengedWO = data.challenged_score === 'Won W.O.';
-
-        // Разбиваем имена на игроков
         const challengerPlayers = data.challenger_players || splitTeamName(data.challenger);
         const challengedPlayers = data.challenged_players || splitTeamName(data.challenged);
 
-        function createTeamHtml(players, wo, score) {
-            const woHtml = wo ? `<div class="match-team-wo">W.O.</div>` : '';
+        function teamHtml(players, wo, score) {
+            const woHtml    = wo ? `<div class="match-team-wo">W.O.</div>` : '';
             const scoreHtml = score && !wo ? `<div class="match-team-score">${score}</div>` : '';
-            
             if (players.length === 1) {
-                return `<div class="match-team">
-                    <div class="match-team-name">${players[0]}</div>
-                    ${woHtml}${scoreHtml}
-                </div>`;
+                return `<div class="match-team"><div class="match-team-name">${players[0]}</div>${woHtml}${scoreHtml}</div>`;
             }
-            
-            const playersHtml = players.slice(0, 2).map(p => 
-                `<div class="match-player-name">${p}</div>`
-            ).join('');
-            
-            return `<div class="match-team">
-                <div class="match-team-names">${playersHtml}</div>
-                ${woHtml}${scoreHtml}
-            </div>`;
+            const ph = players.slice(0, 2).map(p => `<div class="match-player-name">${p}</div>`).join('');
+            return `<div class="match-team"><div class="match-team-names">${ph}</div>${woHtml}${scoreHtml}</div>`;
         }
 
-        el.innerHTML = `
-            <div class="match-content">
-                <div class="match-number">:</div>
-                <div class="match-teams-wrapper">
-                    ${createTeamHtml(challengerPlayers, challengerWO, data.challenger_score)}
-                    ${createTeamHtml(challengedPlayers, challengedWO, data.challenged_score)}
-                </div>
-            </div>
-        `;
-
+        el.innerHTML = `<div class="match-content"><div class="match-teams-wrapper">${teamHtml(challengerPlayers, challengerWO, data.challenger_score)}${teamHtml(challengedPlayers, challengedWO, data.challenged_score)}</div></div>`;
         return el;
     }
 

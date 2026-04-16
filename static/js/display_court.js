@@ -1,13 +1,13 @@
-/**
- * Display Court - логика автоматического/ручного режима
+﻿/**
+ * Display Court - Р»РѕРіРёРєР° Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРіРѕ/СЂСѓС‡РЅРѕРіРѕ СЂРµР¶РёРјР°
  */
 
 (function() {
     'use strict';
 
     const CONFIG = {
-        checkInterval: 2000,      // Проверка состояния каждые 2 сек
-        fadeTime: 500             // Время fade эффекта (мс)
+        checkInterval: 1000,      // РџСЂРѕРІРµСЂРєР° СЃРѕСЃС‚РѕСЏРЅРёСЏ РєР°Р¶РґС‹Рµ 2 СЃРµРє
+        fadeTime: 250             // Р’СЂРµРјСЏ fade СЌС„С„РµРєС‚Р° (РјСЃ)
     };
 
     let slotNumber = null;
@@ -17,9 +17,10 @@
     let currentPage = null;
     let currentState = null;
     let checkTimer = null;
+    let loadRequestId = 0;
 
     /**
-     * Инициализация
+     * РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ
      */
     function init() {
         const container = document.querySelector('.display-container');
@@ -36,15 +37,15 @@
 
         console.log(`Display Court ${slotNumber}: initialized, tournament=${tournamentId}, court=${courtId}, mode=${mode}`);
 
-        // Первая проверка
+        // РџРµСЂРІР°СЏ РїСЂРѕРІРµСЂРєР°
         checkState();
         
-        // Периодическая проверка состояния
+        // РџРµСЂРёРѕРґРёС‡РµСЃРєР°СЏ РїСЂРѕРІРµСЂРєР° СЃРѕСЃС‚РѕСЏРЅРёСЏ
         checkTimer = setInterval(checkState, CONFIG.checkInterval);
     }
 
     /**
-     * Проверка состояния корта
+     * РџСЂРѕРІРµСЂРєР° СЃРѕСЃС‚РѕСЏРЅРёСЏ РєРѕСЂС‚Р°
      */
     async function checkState() {
         try {
@@ -54,19 +55,19 @@
             const data = await response.json();
             applyPlaceholderImage(data.placeholder_url);
             
-            // Обновляем режим если изменился
+            // РћР±РЅРѕРІР»СЏРµРј СЂРµР¶РёРј РµСЃР»Рё РёР·РјРµРЅРёР»СЃСЏ
             if (data.mode && data.mode !== mode) {
                 mode = data.mode;
                 console.log(`Mode changed to: ${mode}`);
             }
             
-            // В ручном режиме используем manual_page
+            // Р’ СЂСѓС‡РЅРѕРј СЂРµР¶РёРјРµ РёСЃРїРѕР»СЊР·СѓРµРј manual_page
             if (mode === 'manual' && data.manual_page) {
                 handleManualMode(data);
                 return;
             }
             
-            // В автоматическом режиме
+            // Р’ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРј СЂРµР¶РёРјРµ
             handleAutoMode(data);
             
         } catch (error) {
@@ -75,14 +76,14 @@
     }
 
     /**
-     * Обработка автоматического режима
+     * РћР±СЂР°Р±РѕС‚РєР° Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРіРѕ СЂРµР¶РёРјР°
      */
     function handleAutoMode(data) {
         const newState = data.state;
         const newPage = data.page;
         const newUrl = data.url;
         
-        // Показываем заглушку если корт пуст
+        // РџРѕРєР°Р·С‹РІР°РµРј Р·Р°РіР»СѓС€РєСѓ РµСЃР»Рё РєРѕСЂС‚ РїСѓСЃС‚
         if (newPage === 'empty' || newState === 'empty' || newState === 'not_configured') {
             showEmptyState();
             currentPage = 'empty';
@@ -90,36 +91,36 @@
             return;
         }
         
-        // Скрываем заглушку
+        // РЎРєСЂС‹РІР°РµРј Р·Р°РіР»СѓС€РєСѓ
         hideEmptyState();
         
-        // Если страница не изменилась - не перезагружаем
+        // Р•СЃР»Рё СЃС‚СЂР°РЅРёС†Р° РЅРµ РёР·РјРµРЅРёР»Р°СЃСЊ - РЅРµ РїРµСЂРµР·Р°РіСЂСѓР¶Р°РµРј
         if (newPage === currentPage && newState === currentState) {
             return;
         }
         
         console.log(`State changed: ${currentState} -> ${newState}, page: ${currentPage} -> ${newPage}`);
-        
+
         currentPage = newPage;
         currentState = newState;
-        
+
         if (newUrl) {
             loadPage(newUrl);
         }
     }
 
     /**
-     * Обработка ручного режима
+     * РћР±СЂР°Р±РѕС‚РєР° СЂСѓС‡РЅРѕРіРѕ СЂРµР¶РёРјР°
      */
     function handleManualMode(data) {
         const manualPage = data.manual_page;
         
-        // Если страница не изменилась
+        // Р•СЃР»Рё СЃС‚СЂР°РЅРёС†Р° РЅРµ РёР·РјРµРЅРёР»Р°СЃСЊ
         if (manualPage === currentPage && mode === 'manual') {
             return;
         }
         
-        // Заглушка - показываем empty state
+        // Р—Р°РіР»СѓС€РєР° - РїРѕРєР°Р·С‹РІР°РµРј empty state
         if (manualPage === 'empty') {
             showEmptyState();
             currentPage = 'empty';
@@ -128,7 +129,7 @@
         
         hideEmptyState();
         
-        // Получаем настройки окна для tournament_id, court_id и custom_url
+        // РџРѕР»СѓС‡Р°РµРј РЅР°СЃС‚СЂРѕР№РєРё РѕРєРЅР° РґР»СЏ tournament_id, court_id Рё custom_url
         fetchWindowConfig().then(window => {
             if (!window) {
                 console.log('No window config');
@@ -136,7 +137,7 @@
                 return;
             }
             
-            // Произвольный URL
+            // РџСЂРѕРёР·РІРѕР»СЊРЅС‹Р№ URL
             if (manualPage === 'custom') {
                 const customUrl = window.settings?.custom_url;
                 if (customUrl) {
@@ -149,7 +150,7 @@
                 return;
             }
             
-            // Стандартные страницы - требуют tournament_id и court_id
+            // РЎС‚Р°РЅРґР°СЂС‚РЅС‹Рµ СЃС‚СЂР°РЅРёС†С‹ - С‚СЂРµР±СѓСЋС‚ tournament_id Рё court_id
             if (!window.tournament_id || !window.court_id) {
                 console.log('No tournament/court configured');
                 showEmptyState();
@@ -172,7 +173,7 @@
     }
 
     /**
-     * Получение конфигурации окна
+     * РџРѕР»СѓС‡РµРЅРёРµ РєРѕРЅС„РёРіСѓСЂР°С†РёРё РѕРєРЅР°
      */
     async function fetchWindowConfig() {
         try {
@@ -195,89 +196,100 @@
         }
     }
 
-    /**
-     * Показать заглушку с fade эффектом
-     */
-    function showEmptyState() {
+    function setPlaceholderVisible(visible) {
         const emptyState = document.querySelector('.empty-state');
-        const content = document.querySelector('.display-content');
-        const overlay = document.querySelector('.fade-overlay');
-        
         if (!emptyState) return;
-        
-        // Если заглушка уже показана - ничего не делаем
-        if (emptyState.style.display === 'flex' && emptyState.style.opacity === '1') {
+
+        if (visible) {
+            emptyState.style.display = 'flex';
+            void emptyState.offsetHeight;
+            emptyState.style.opacity = '1';
             return;
         }
-        
-        // Fade out через overlay
-        if (overlay) overlay.classList.add('active');
-        
+
+        emptyState.style.opacity = '0';
         setTimeout(() => {
-            if (content) content.style.display = 'none';
-            emptyState.style.display = 'flex';
-            emptyState.style.opacity = '0';
-            
-            // Fade in заглушки
-            setTimeout(() => {
-                emptyState.style.transition = `opacity ${CONFIG.fadeTime}ms ease`;
-                emptyState.style.opacity = '1';
-                if (overlay) overlay.classList.remove('active');
-            }, 50);
+            if (emptyState.style.opacity === '0') {
+                emptyState.style.display = 'none';
+            }
         }, CONFIG.fadeTime);
     }
 
     /**
-     * Скрыть заглушку с fade эффектом
+     * РџРѕРєР°Р·Р°С‚СЊ Р·Р°РіР»СѓС€РєСѓ СЃ fade СЌС„С„РµРєС‚РѕРј
+     */
+    function showEmptyState() {
+        const emptyState = document.querySelector('.empty-state');
+        const content = document.querySelector('.display-content');
+        
+        if (!emptyState) return;
+        
+        // Р•СЃР»Рё Р·Р°РіР»СѓС€РєР° СѓР¶Рµ РїРѕРєР°Р·Р°РЅР° - РЅРёС‡РµРіРѕ РЅРµ РґРµР»Р°РµРј
+        if (emptyState.style.display === 'flex' && emptyState.style.opacity === '1') {
+            return;
+        }
+
+        if (content) content.style.display = 'none';
+        setPlaceholderVisible(true);
+    }
+
+    /**
+     * РЎРєСЂС‹С‚СЊ Р·Р°РіР»СѓС€РєСѓ СЃ fade СЌС„С„РµРєС‚РѕРј
      */
     function hideEmptyState() {
         const emptyState = document.querySelector('.empty-state');
         const content = document.querySelector('.display-content');
         
         if (!emptyState || emptyState.style.display === 'none') {
-            if (content) content.style.display = 'block';
+            if (content) {
+                content.style.display = 'block';
+                content.style.opacity = '1';
+            }
             return;
         }
         
-        // Fade out заглушки
-        emptyState.style.transition = `opacity ${CONFIG.fadeTime}ms ease`;
-        emptyState.style.opacity = '0';
-        
-        setTimeout(() => {
-            emptyState.style.display = 'none';
-            if (content) content.style.display = 'block';
-        }, CONFIG.fadeTime);
+        setPlaceholderVisible(false);
+        if (content) {
+            content.style.display = 'block';
+            content.style.opacity = '1';
+        }
     }
 
     /**
-     * Загрузка страницы в iframe с fade эффектом
+     * Р—Р°РіСЂСѓР·РєР° СЃС‚СЂР°РЅРёС†С‹ РІ iframe СЃ fade СЌС„С„РµРєС‚РѕРј
      */
     function loadPage(url) {
         const iframe = document.getElementById('display-frame');
-        const overlay = document.querySelector('.fade-overlay');
+        const content = document.querySelector('.display-content');
         
-        if (!iframe || !overlay) return;
+        if (!iframe) return;
         
         console.log(`Loading page: ${url}`);
-        
-        // Fade out
-        overlay.classList.add('active');
-        
+
+        if (content) {
+            content.style.display = 'block';
+            content.style.opacity = '0';
+        }
+
+        const requestId = ++loadRequestId;
+
         setTimeout(() => {
-            // Загружаем новую страницу
+            if (requestId !== loadRequestId) return;
             iframe.src = url;
-            
-            iframe.onload = () => {
-                // Fade in
-                setTimeout(() => {
-                    overlay.classList.remove('active');
-                }, 100);
-            };
         }, CONFIG.fadeTime);
+
+        iframe.onload = () => {
+            if (requestId !== loadRequestId) return;
+            setTimeout(() => {
+                if (content) {
+                    content.style.opacity = '1';
+                }
+            }, 50);
+        };
     }
 
     /**
-     * Очистка при закрытии
+     * РћС‡РёСЃС‚РєР° РїСЂРё Р·Р°РєСЂС‹С‚РёРё
      */
     function cleanup() {
         if (checkTimer) {
@@ -286,7 +298,7 @@
         }
     }
 
-    // Автопауза при скрытии вкладки
+    // РђРІС‚РѕРїР°СѓР·Р° РїСЂРё СЃРєСЂС‹С‚РёРё РІРєР»Р°РґРєРё
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
             if (checkTimer) {
@@ -299,17 +311,17 @@
         }
     });
 
-    // Очистка при закрытии
+    // РћС‡РёСЃС‚РєР° РїСЂРё Р·Р°РєСЂС‹С‚РёРё
     window.addEventListener('beforeunload', cleanup);
 
-    // Запуск
+    // Р—Р°РїСѓСЃРє
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();
     }
 
-    // Экспорт для отладки
+    // Р­РєСЃРїРѕСЂС‚ РґР»СЏ РѕС‚Р»Р°РґРєРё
     window.DisplayCourt = { 
         checkState, 
         loadPage,
@@ -317,3 +329,4 @@
         hideEmptyState
     };
 })();
+

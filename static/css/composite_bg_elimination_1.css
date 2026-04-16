@@ -80,7 +80,7 @@ html, body {
     line-height: 1.1;
     letter-spacing: 0.01em;
     color: #FFFFFF;
-    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
@@ -96,6 +96,44 @@ html, body {
 .tournament-name.very-long-name {
     font-size: 55px;
     line-height: 1.2;
+}
+
+.olimpic_1_4 {
+    font-family: 'TT_Bluescreens';
+    font-style: italic;
+    font-weight: 800;
+    font-size: 40px;
+	    color: #F9F9F9;
+		text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+		    position: absolute;
+    top: 155px;
+    left: 115px;
+}
+
+.olimpic_3_4 {
+    font-family: 'TT_Bluescreens';
+    font-style: italic;
+    font-weight: 800;
+    font-size: 40px;
+	    color: #F9F9F9;
+		text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+		    position: absolute;
+    top: 840px;
+    left: 1330px;
+	opacity: 1;
+}
+
+.olimpic_5_8 {
+    font-family: 'TT_Bluescreens';
+    font-style: italic;
+    font-weight: 800;
+    font-size: 40px;
+	    color: #F9F9F9;
+		text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+		    position: absolute;
+    opacity: 0;
+    top: 680px;
+    left: 115px;
 }
 
 /* === ЛОГОТИПЫ === */

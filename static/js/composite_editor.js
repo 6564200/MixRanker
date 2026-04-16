@@ -137,7 +137,7 @@ function addLayer() {
         url: '',
         x: 100 + layers.length * 50,
         y: 100 + layers.length * 50,
-        width: 600,
+        width: 900,
         height: 400,
         scale: 0.5
     });

@@ -66,7 +66,7 @@ html, body {
     font-size: 27px;
     line-height: 1;
     color: var(--text-dark);
-    padding-left: 15px;
+    padding-left: 0px;
 }
 
 /* Р—Р°РіРѕР»РѕРІРєРё РЅРѕРјРµСЂРѕРІ РєРѕРјР°РЅРґ */
@@ -196,7 +196,7 @@ html, body {
 .match-sets {
     
     font-weight: 700;
-    font-size: 36px;
+    font-size: 30px;
     color: var(--text-light);
 }
 
