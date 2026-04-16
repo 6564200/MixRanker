@@ -7,6 +7,7 @@
 from typing import Dict, List, Optional, Set
 from datetime import datetime
 from .html_base import HTMLBaseGenerator
+import hashlib
 import logging
 import re
 
@@ -16,9 +17,7 @@ logger = logging.getLogger(__name__)
 class ScheduleGenerator(HTMLBaseGenerator):
     """Генератор schedule страниц"""
     
-    # FHD размеры (увеличенные)
-    MATCH_HEIGHT = 86
-    GAP = 8
+    # FHD размеры — определены в schedule.css / schedule_half.css через CSS-переменные
 
     def _split_team_name(self, team_name: str) -> list:
         """Разбивает имя команды на отдельных игроков"""
@@ -54,10 +53,26 @@ class ScheduleGenerator(HTMLBaseGenerator):
             return sorted_courts[:half_size]
         return sorted_courts[half_size:]
 
+    @staticmethod
+    def _schedule_version(tournament_id: str, courts_matches: dict, time_slots: list) -> str:
+        """Стабильный хеш версии расписания. Используется и при рендере HTML, и в API данных."""
+        parts = [tournament_id]
+        for court in sorted(courts_matches.keys()):
+            for m in courts_matches[court]:
+                parts.append("|".join([
+                    str(m.get("TournamentMatchId", "")),
+                    str(m.get("ChallengerResult", "") or ""),
+                    str(m.get("ChallengedResult", "") or ""),
+                    str(m.get("start_time", "")),
+                    court,
+                ]))
+        return hashlib.md5("\n".join(parts).encode()).hexdigest()[:12]
+
     def get_schedule_data(self, tournament_data: Dict, target_date: str = None, settings: Dict = None, half: int = None) -> Dict:
         """Возвращает данные расписания в формате JSON для AJAX"""
         metadata = tournament_data.get("metadata", {})
         tournament_name = metadata.get("name", "Неизвестный турнир")
+        tournament_id = str(tournament_data.get("tournament_id", "") or metadata.get("id", ""))
         court_usage = tournament_data.get("court_usage")
 
         if not court_usage or not isinstance(court_usage, list):
@@ -118,12 +133,15 @@ class ScheduleGenerator(HTMLBaseGenerator):
                     "status": self.get_match_status(match)
                 })
 
+        version = self._schedule_version(tournament_id, courts_matches, time_slots)
+
         return {
             "tournament_name": tournament_name,
             "target_date": target_date,
             "courts": sorted_courts,
             "time_slots": time_slots,
-            "matches": matches_list
+            "matches": matches_list,
+            "version": version,
         }
 
     def _generate_schedule(self, tournament_data: Dict, target_date: str, css_file: str, filter_matches: bool, settings: Dict = None, half: int = None) -> str:
@@ -263,15 +281,26 @@ class ScheduleGenerator(HTMLBaseGenerator):
         swapped = self._match_abbrev_to_name(ab1, n2) and self._match_abbrev_to_name(ab2, n1)
         return direct or swapped
 
+    def _detect_swap(self, match: Dict, challenger_abbrev: str, challenged_abbrev: str) -> bool:
+        """Определяет, перевёрнут ли порядок сторон в rich_match относительно court_usage."""
+        ch = match.get("Challenger", {})
+        cd = match.get("Challenged", {})
+        same    = self._team_matches(challenger_abbrev, ch) and self._team_matches(challenged_abbrev, cd)
+        swapped = self._team_matches(challenger_abbrev, cd) and self._team_matches(challenged_abbrev, ch)
+        # Если same и swapped одновременно (имена одинаковые) — считаем не перевёрнутым
+        return swapped and not same
+
     def _find_match_by_abbrev(self, matches_index: Dict, date: str, court_name: str,
                               challenger_abbrev: str, challenged_abbrev: str,
-                              source_match: Optional[Dict] = None) -> Optional[Dict]:
-        """Находит матч по дате, корту и сокращениям имён"""
+                              source_match: Optional[Dict] = None) -> tuple:
+        """Находит матч по дате, корту и сокращениям имён.
+        Возвращает (match, is_swapped): is_swapped=True если Challenger/Challenged
+        в matches_data стоят в обратном порядке относительно court_usage."""
         if source_match:
             for match_id in self._extract_possible_match_ids(source_match):
                 exact = matches_index.get("by_id", {}).get(match_id)
                 if exact:
-                    return exact
+                    return exact, self._detect_swap(exact, challenger_abbrev, challenged_abbrev)
 
         key = (self._normalize_date(date), self._normalize_court_name(court_name))
         candidates = matches_index.get("by_date_court", {}).get(key, [])
@@ -291,10 +320,12 @@ class ScheduleGenerator(HTMLBaseGenerator):
                 and self._team_matches(challenged_abbrev, challenger)
             )
 
-            if same_side or swapped_side:
-                return match
+            if same_side:
+                return match, False
+            if swapped_side:
+                return match, True
 
-        return None
+        return None, False
 
     def _extract_team_player_names(self, participant: Dict) -> tuple:
         if not isinstance(participant, dict):
@@ -409,6 +440,8 @@ class ScheduleGenerator(HTMLBaseGenerator):
             if not isinstance(match, dict):
                 continue
 
+            match = dict(match)  # копия — не мутируем кэшированный объект
+
             match_date = match.get("MatchDate", "")
             if not match_date:
                 continue
@@ -416,6 +449,11 @@ class ScheduleGenerator(HTMLBaseGenerator):
             try:
                 dt_obj = datetime.fromisoformat(match_date.replace('T', ' ').replace('Z', ''))
                 if dt_obj.strftime("%d.%m.%Y") != target_date:
+                    continue
+
+                # Матчи с временем ≥ 22:00 — технические W.O.-записи с дефолтным timestamp,
+                # не реальные игры. Исключаем из расписания.
+                if dt_obj.hour >= 22:
                     continue
 
                 court_id = str(match.get("CourtId", ""))
@@ -430,21 +468,24 @@ class ScheduleGenerator(HTMLBaseGenerator):
                 challenger_abbrev = match.get("ChallengerName", "")
                 challenged_abbrev = match.get("ChallengedName", "")
                 
-                rich_match = self._find_match_by_abbrev(
+                rich_match, is_swapped = self._find_match_by_abbrev(
                     matches_index, match_date, court_name,
                     challenger_abbrev, challenged_abbrev, source_match=match
                 )
-                
+
                 if rich_match:
-                    # Добавляем полные имена
-                    match["ChallengerFullName"] = self._format_full_name(rich_match.get("Challenger", {}))
-                    match["ChallengedFullName"] = self._format_full_name(rich_match.get("Challenged", {}))
-                    # Добавляем детальный счёт
+                    # Если стороны перевёрнуты в matches_data — берём имена в обратном порядке,
+                    # чтобы они соответствовали ChallengerResult/ChallengedResult из court_usage
+                    if is_swapped:
+                        match["ChallengerFullName"] = self._format_full_name(rich_match.get("Challenged", {}))
+                        match["ChallengedFullName"] = self._format_full_name(rich_match.get("Challenger", {}))
+                    else:
+                        match["ChallengerFullName"] = self._format_full_name(rich_match.get("Challenger", {}))
+                        match["ChallengedFullName"] = self._format_full_name(rich_match.get("Challenged", {}))
                     match["DetailedScore"] = self._format_detailed_score(rich_match.get("MatchResult", {}))
                     match["RichMatchData"] = rich_match
                 else:
-                    # Fallback
-                    matches_data
+                    # Fallback: используем сокращённые имена
                     match["ChallengerFullName"] = self._format_abbrev_team_fallback(challenger_abbrev)
                     match["ChallengedFullName"] = self._format_abbrev_team_fallback(challenged_abbrev)
 
@@ -465,73 +506,40 @@ class ScheduleGenerator(HTMLBaseGenerator):
 
     def _filter_matches(self, courts_matches: Dict, finished_count: int = 3) -> Dict:
         """
-        Фильтрует матчи с выравниванием по отстающему корту.
-        
-        1. Находим корт с самым поздним временем среди последних N сыгранных
-        2. Берём это время как точку отсечения
-        3. На всех кортах показываем матчи начиная с этого времени
+        Фильтрует матчи по каждому корту независимо:
+        показывает последние N сыгранных + все предстоящие.
         """
         if not courts_matches:
             return {}
-        
-        # Шаг 1: Для каждого корта находим время N-го сыгранного матча с конца
-        court_cutoff_times = {}
-        
+
+        filtered = {}
         for court_name, matches in courts_matches.items():
-            # Матчи с результатами, отсортированные по времени
             with_results = sorted(
                 [m for m in matches if m.get("ChallengerResult") or m.get("ChallengedResult")],
                 key=lambda x: x.get("datetime_obj") or datetime.min
             )
 
             if len(with_results) >= finished_count:
-                # Берём время N-го с конца (первого из показываемых)
-                cutoff_match = with_results[-finished_count]
-                court_cutoff_times[court_name] = cutoff_match.get("datetime_obj")
+                cutoff = with_results[-finished_count].get("datetime_obj")
             elif with_results:
-                # Если меньше N сыгранных, берём самый ранний
-                court_cutoff_times[court_name] = with_results[0].get("datetime_obj")
+                cutoff = with_results[0].get("datetime_obj")
             else:
-                # Нет сыгранных — берём первый несыгранный
-                without_results = sorted(
-                    [m for m in matches if not m.get("ChallengerResult") and not m.get("ChallengedResult")],
-                    key=lambda x: x.get("datetime_obj") or datetime.min
-                )
-                if without_results:
-                    court_cutoff_times[court_name] = without_results[0].get("datetime_obj")
-        
-        if not court_cutoff_times:
-            return courts_matches
-        
-        # Шаг 2: Находим самое позднее время отсечки (отстающий корт)
-        global_cutoff = min(t for t in court_cutoff_times.values() if t)
-        
-        # Шаг 3: Фильтруем все корты по глобальному времени отсечки
-        filtered = {}
-        for court_name, matches in courts_matches.items():
+                # Нет сыгранных — показываем все
+                filtered[court_name] = list(matches)
+                continue
+
             filtered[court_name] = [
-                m for m in matches 
-                if m.get("datetime_obj") and m.get("datetime_obj") >= global_cutoff
+                m for m in matches
+                if m.get("datetime_obj") and m.get("datetime_obj") >= cutoff
             ]
-        
+
         return filtered
 
     def _render_schedule_html(self, tournament_name: str, tournament_id: str, target_date: str, courts_matches: Dict, time_slots: List, css_file: str, half: int = None) -> str:
-        """Рендерит HTML расписания с CSS Grid привязкой к времени"""
+        """Рендерит HTML расписания — матчи последовательно по кортам"""
         sorted_courts = sorted(courts_matches.keys())
-        
-        # Создаём маппинг время -> номер строки (1-indexed для CSS Grid)
-        time_to_row = {time: idx + 1 for idx, time in enumerate(time_slots)}
-        
-        # Генерируем version hash
-        import hashlib
-        version_data = f"{tournament_id}:{target_date}:{len(time_slots)}:{len(sorted_courts)}"
-        for court in sorted_courts:
-            for m in courts_matches[court]:
-                version_data += f":{m.get('TournamentMatchId', '')}:{m.get('ChallengerResult', '')}:{m.get('ChallengedResult', '')}"
-        version = hashlib.md5(version_data.encode()).hexdigest()[:12]
-        
-        # Определяем класс для названия турнира
+
+        version = self._schedule_version(tournament_id, courts_matches, time_slots)
         name_class = self._get_tournament_name_class(tournament_name)
 
         html = f'''{self.html_head(f"Расписание матчей - {tournament_name}", css_file, 0)}
@@ -549,45 +557,32 @@ class ScheduleGenerator(HTMLBaseGenerator):
             </div>
         </div>
 
-        <div class="main-grid">
-            <div class="time-scale" style="display: grid; grid-template-rows: repeat({len(time_slots)}, {self.MATCH_HEIGHT}px); gap: {self.GAP}px; padding-top: 36px;">'''
-        
-        for idx, time_slot in enumerate(time_slots):
-            html += f'<div class="time-slot" style="animation-delay: {0.1 + idx * 0.05}s;">{time_slot}</div>'
-        
-        html += '''</div>
+        <div class="main-grid" style="--court-cols: {len(sorted_courts)};">
             <div class="courts-container">
-                <div class="courts-header" style="grid-template-columns: repeat(''' + str(len(sorted_courts)) + ''', 1fr);">'''
-        
+                <div class="courts-header">'''
+
         for court_name in sorted_courts:
             html += f'<div class="court-header"><h3>{court_name}</h3></div>'
-        
-        html += f'''</div>
-                <div class="matches-grid" style="display: grid; grid-template-rows: repeat({len(time_slots)}, {self.MATCH_HEIGHT}px); grid-template-columns: repeat({len(sorted_courts)}, 1fr); gap: {self.GAP}px;">'''
 
-        # Размещаем матчи по сетке
-        for col_idx, court_name in enumerate(sorted_courts):
+        html += '</div><div class="matches-grid">'
+
+        for court_name in sorted_courts:
+            html += '<div class="court-column">'
             for match in courts_matches[court_name]:
-                start_time = match.get("start_time")
-                row = time_to_row.get(start_time, 1)
-                col = col_idx + 1
-                html += self._render_match_item_grid(match, row, col)
+                html += self._render_match_item_grid(match)
+            html += '</div>'
 
         js_file = "schedule_half_live.js" if css_file == "schedule_half.css" else "schedule_live.js"
         html += f'</div></div></div></div>\n    <script src="/static/js/{js_file}"></script>\n</body></html>'
         return html
 
-    def _render_match_item_grid(self, match: Dict, row: int, col: int) -> str:
-        """Рендерит матч с CSS Grid позиционированием и вертикальным расположением имён"""
+    def _render_match_item_grid(self, match: Dict) -> str:
+        """Рендерит матч — последовательное расположение без grid-позиционирования"""
         status_class = self.get_status_class(self.get_match_status(match))
-        
-        # Используем полные имена если есть, иначе сокращённые
+
         challenger_full = match.get("ChallengerFullName") or match.get("ChallengerName", "TBD")
         challenged_full = match.get("ChallengedFullName") or match.get("ChallengedName", "TBD")
-        #episode = match.get("episode_number", 1)
-        episode = ':'
 
-        # Счёт из court_usage
         challenger_result = match.get("ChallengerResult", "") or ""
         challenged_result = match.get("ChallengedResult", "") or ""
 
@@ -599,38 +594,23 @@ class ScheduleGenerator(HTMLBaseGenerator):
         if challenged_wo:
             challenged_result = ""
 
-        # Разбиваем имена на отдельных игроков
         challenger_players = self._split_team_name(challenger_full)
         challenged_players = self._split_team_name(challenged_full)
 
         def team_html(players: list, wo: bool, result: str) -> str:
             wo_div = "<div class='match-team-wo'>W.O.</div>" if wo else ""
             score_div = f"<div class='match-team-score'>{result}</div>" if result else ""
-            
-            # Если один игрок - используем старый формат
             if len(players) == 1:
-                return f'''<div class="match-team">
-                    <div class="match-team-name">{players[0]}</div>
-                    {wo_div}{score_div}
-                </div>'''
-            
-            # Если несколько игроков - располагаем вертикально
-            players_html = ''.join(f'<div class="match-player-name">{p}</div>' for p in players[:2])
-            return f'''<div class="match-team">
-                <div class="match-team-names">{players_html}</div>
-                {wo_div}{score_div}
-            </div>'''
+                return f'<div class="match-team"><div class="match-team-name">{players[0]}</div>{wo_div}{score_div}</div>'
+            players_html = "".join(f'<div class="match-player-name">{p}</div>' for p in players[:2])
+            return f'<div class="match-team"><div class="match-team-names">{players_html}</div>{wo_div}{score_div}</div>'
 
-        return f'''
-            <div class="match-item {status_class} row-{row}" style="grid-row: {row}; grid-column: {col};">
-                <div class="match-content">
-                    <div class="match-number">{episode}</div>
-                    <div class="match-teams-wrapper">
-                        {team_html(challenger_players, challenger_wo, challenger_result)}
-                        {team_html(challenged_players, challenged_wo, challenged_result)}
-                    </div>
-                </div>
-            </div>''' #
+        return (f'<div class="match-item {status_class}">'
+                f'<div class="match-content">'
+                f'<div class="match-teams-wrapper">'
+                f'{team_html(challenger_players, challenger_wo, challenger_result)}'
+                f'{team_html(challenged_players, challenged_wo, challenged_result)}'
+                f'</div></div></div>')
 
     def _generate_empty_schedule_html(self, tournament_name: str, message: str) -> str:
         """Генерирует пустую страницу расписания"""

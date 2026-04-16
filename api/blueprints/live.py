@@ -1,8 +1,6 @@
 ﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import hashlib
-import json
 from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify, request, Response
@@ -290,6 +288,8 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                     court_data.update(next_data)
                 court_data = _apply_no_referee_mode(court_data)
 
+            court_data = enrich_court_data_with_photos(court_data)
+
             team1 = court_data.get("first_participant", [])
             team2 = court_data.get("second_participant", [])
             detailed = court_data.get("detailed_result", [])
@@ -302,6 +302,9 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                     return full.upper()
                 return f"{player.get('firstName', '')} {player.get('lastName', '')}".strip().upper()
 
+            def photo_url(player):
+                return player.get("photo_url", "") if player else ""
+
             def set_score(idx, key):
                 if idx < len(detailed):
                     return detailed[idx].get(key, "")
@@ -312,6 +315,10 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 "team1_player2": player_name(team1[1] if len(team1) > 1 else None),
                 "team2_player1": player_name(team2[0] if team2 else None),
                 "team2_player2": player_name(team2[1] if len(team2) > 1 else None),
+                "team1_photo1": photo_url(team1[0] if team1 else None),
+                "team1_photo2": photo_url(team1[1] if len(team1) > 1 else None),
+                "team2_photo1": photo_url(team2[0] if team2 else None),
+                "team2_photo2": photo_url(team2[1] if len(team2) > 1 else None),
                 "set1_score1": set_score(0, "firstParticipantScore"),
                 "set1_score2": set_score(0, "secondParticipantScore"),
                 "set2_score1": set_score(1, "firstParticipantScore"),
@@ -448,11 +455,9 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
             settings = get_settings()
 
             schedule_data = html_generator.get_schedule_data(tournament_data, target_date, settings, half)
-            data_str = json.dumps(schedule_data, sort_keys=True, default=str)
-            version = hashlib.md5(data_str.encode()).hexdigest()[:12]
 
             return jsonify({
-                "version": version,
+                "version": schedule_data.get("version", ""),
                 "tournament_name": schedule_data.get("tournament_name", ""),
                 "target_date": schedule_data.get("target_date", ""),
                 "time_slots": schedule_data.get("time_slots", []),

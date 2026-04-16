@@ -36,12 +36,18 @@ class RoundRobinGenerator(HTMLBaseGenerator):
         matches_matrix = self._extract_matches_matrix(group_data, len(participants))
         standings = self._extract_standings(group_data)
 
+        # Проверяем, все ли матчи сыграны
+        non_bye_count = sum(1 for p in participants if not p.get("is_bye"))
+        expected_cells = non_bye_count * (non_bye_count - 1)
+        played_cells = sum(1 for v in matches_matrix.values() if v.get("has_result"))
+        all_played = (expected_cells > 0 and played_cells >= expected_cells)
+
         # Собираем standings с очками и местами
         standings_out = []
         for p in participants:
             standings_out.append({
                 "points": self._get_participant_points(p, standings),
-                "place": self._get_participant_place(p, standings)
+                "place": self._get_participant_place(p, standings, all_played)
             })
 
         # Версия для определения изменений
@@ -84,21 +90,28 @@ class RoundRobinGenerator(HTMLBaseGenerator):
         matches_matrix = self._extract_matches_matrix(group_data, len(participants))
         standings = self._extract_standings(group_data)
 
+        # Проверяем, все ли матчи сыграны
+        non_bye_count = sum(1 for p in participants if not p.get("is_bye"))
+        expected_cells = non_bye_count * (non_bye_count - 1)
+        played_cells = sum(1 for v in matches_matrix.values() if v.get("has_result"))
+        all_played = (expected_cells > 0 and played_cells >= expected_cells)
+
         return self._render_html(
             class_name, group_name, participants, matches_matrix, standings,
-            tournament_id, class_id, draw_index
+            tournament_id, class_id, draw_index, all_played
         )
 
     def _render_html(
-        self, 
-        class_name: str, 
+        self,
+        class_name: str,
         group_name: str,
-        participants: List[Dict], 
-        matches_matrix: Dict, 
+        participants: List[Dict],
+        matches_matrix: Dict,
         standings: List[Dict],
         tournament_id: str = None,
         class_id: str = None,
-        draw_index: int = 0
+        draw_index: int = 0,
+        all_played: bool = False
     ) -> str:
         """Рендерит HTML round robin таблицы с адаптивным масштабированием"""
         
@@ -157,7 +170,7 @@ class RoundRobinGenerator(HTMLBaseGenerator):
 
         # Строки участников
         for i, participant in enumerate(participants):
-            place = self._get_participant_place(participant, standings)
+            place = self._get_participant_place(participant, standings, all_played)
             points = self._get_participant_points(participant, standings)
             short_name = (participant.get("short_name", " ")).upper()
             participant_id = participant.get("participant_id", "")
@@ -353,15 +366,12 @@ class RoundRobinGenerator(HTMLBaseGenerator):
     #            return str(standing.get("standing", "-"))
     #    return "-"
         
-    def _get_participant_place(self, participant: Dict, standings: List[Dict]) -> str:
-        """Получает место участника. Пустое если нет сыгранных матчей."""
+    def _get_participant_place(self, participant: Dict, standings: List[Dict], all_played: bool = False) -> str:
+        """Получает место участника. Показывает только если все матчи в группе сыграны."""
+        if not all_played:
+            return ""
         for standing in standings:
             if set(standing.get("player_ids", [])) == set(participant.get("player_ids", [])):
-                # Если 0 побед и 0 очков - значит ещё не играли
-                wins = standing.get("wins", 0)
-                points = standing.get("match_points", 0)
-                if wins == 0 and points == 0:
-                    return ""
                 return str(standing.get("standing", ""))
         return ""
 

@@ -35,6 +35,39 @@ def _normalize_placeholder_image(name: Optional[str]) -> str:
     return name
 
 
+def _to_int_safe(value) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _has_any_nonzero_score(detailed_result: List[Dict]) -> bool:
+    for set_data in detailed_result or []:
+        first_score = _to_int_safe(set_data.get('firstParticipantScore'))
+        second_score = _to_int_safe(set_data.get('secondParticipantScore'))
+        if first_score > 0 or second_score > 0:
+            return True
+
+        game_score = set_data.get('gameScore') or {}
+        game_first = _to_int_safe(game_score.get('first'))
+        game_second = _to_int_safe(game_score.get('second'))
+        if game_first > 0 or game_second > 0:
+            return True
+
+    return False
+
+
+def _is_match_result_ready_for_winner(court_data: Dict) -> bool:
+    detailed_result = court_data.get('detailed_result', []) or []
+    if _has_any_nonzero_score(detailed_result):
+        return True
+
+    first_participant_score = _to_int_safe(court_data.get('first_participant_score'))
+    second_participant_score = _to_int_safe(court_data.get('second_participant_score'))
+    return first_participant_score > 0 or second_participant_score > 0
+
+
 # === Р В Р’ВР В РЎСљР В Р’ВР В Р’В¦Р В Р’ВР В РЎвЂ™Р В РІР‚С”Р В Р’ВР В РІР‚вЂќР В РЎвЂ™Р В Р’В¦Р В Р’ВР В Р вЂЎ Р В РЎС›Р В РЎвЂ™Р В РІР‚ВР В РІР‚С”Р В Р’ВР В Р’В¦Р В Р’В« ===
 
 def init_display_windows_table(cursor):
@@ -191,7 +224,7 @@ def _row_to_dict(row) -> Dict:
 
 # === Р В РІР‚С”Р В РЎвЂєР В РІР‚СљР В Р’ВР В РЎв„ўР В РЎвЂ™ Р В РЎвЂєР В РЎСџР В Р’В Р В РІР‚СћР В РІР‚СњР В РІР‚СћР В РІР‚С”Р В РІР‚СћР В РЎСљР В Р’ВР В Р вЂЎ Р В Р Р‹Р В РЎС›Р В Р’В Р В РЎвЂ™Р В РЎСљР В Р’ВР В Р’В¦Р В Р’В« Р В РІР‚СњР В РІР‚С”Р В Р вЂЎ Р В РЎв„ўР В РЎвЂєР В Р’В Р В РЎС›Р В РЎвЂ™ ===
 
-def get_court_display_page(tournament_id: str, court_id: str) -> Dict:
+def get_court_display_page(tournament_id: str, court_id: str, enforce_winner_result: bool = False) -> Dict:
     """Р В РЎвЂєР В РЎвЂ”Р РЋР вЂљР В Р’ВµР В РўвЂР В Р’ВµР В Р’В»Р РЋР РЏР В Р’ВµР РЋРІР‚С™ Р В РЎвЂќР В Р’В°Р В РЎвЂќР РЋРЎвЂњР РЋР вЂ№ Р РЋР С“Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋРІР‚В Р РЋРЎвЂњ Р В РЎвЂ”Р В РЎвЂўР В РЎвЂќР В Р’В°Р В Р’В·Р РЋРІР‚в„–Р В Р вЂ Р В Р’В°Р РЋРІР‚С™Р РЋР Р‰ Р В РўвЂР В Р’В»Р РЋР РЏ Р В РЎвЂќР В РЎвЂўР РЋР вЂљР РЋРІР‚С™Р В Р’В° Р В Р вЂ¦Р В Р’В° Р В РЎвЂўР РЋР С“Р В Р вЂ¦Р В РЎвЂўР В Р вЂ Р В Р’Вµ Р РЋР С“Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В РЎвЂўР РЋР РЏР В Р вЂ¦Р В РЎвЂР РЋР РЏ"""
     from .database import get_court_data
     
@@ -208,7 +241,8 @@ def get_court_display_page(tournament_id: str, court_id: str) -> Dict:
     current_match_state = (court_data.get('current_match_state') or '').lower()
     first_participant = court_data.get('first_participant', [])
     second_participant = court_data.get('second_participant', [])
-    detailed_result = court_data.get('detailed_result', [])
+    first_participant_score = _to_int_safe(court_data.get('first_participant_score'))
+    second_participant_score = _to_int_safe(court_data.get('second_participant_score'))
 
     # Р В РЎв„ўР В РЎвЂўР РЋР вЂљР РЋРІР‚С™ Р В РЎвЂ”Р РЋРЎвЂњР РЋР С“Р РЋРІР‚С™
     if not first_participant and not second_participant:
@@ -219,40 +253,43 @@ def get_court_display_page(tournament_id: str, court_id: str) -> Dict:
         }
     
     # Р В РЎС™Р В Р’В°Р РЋРІР‚С™Р РЋРІР‚РЋ Р В Р’В·Р В Р’В°Р В Р вЂ Р В Р’ВµР РЋР вЂљР РЋРІвЂљВ¬Р РЋРІР‚ВР В Р вЂ¦ - Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР В Р вЂ Р В Р’ВµР РЋР вЂљР РЋР РЏР В Р’ВµР В РЎВ Р В РЎвЂўР В Р’В±Р В Р’В° Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р РЋР РЏ
-    if event_state == 'finished' or current_match_state == 'finished':
-        return {
-            'page': 'winner',
-            'url': f'/api/html-live/{tournament_id}/{court_id}/winner',
-            'state': 'finished'
-        }
+    is_finished_state = event_state == 'finished' or current_match_state == 'finished'
+    if is_finished_state:
+        if (not enforce_winner_result) or _is_match_result_ready_for_winner(court_data):
+            return {
+                'page': 'winner',
+                'url': f'/api/html-live/{tournament_id}/{court_id}/winner',
+                'state': 'finished'
+            }
     
     # Р В РЎСџР РЋР вЂљР В РЎвЂўР В Р вЂ Р В Р’ВµР РЋР вЂљР РЋР РЏР В Р’ВµР В РЎВ Р В Р’ВµР РЋР С“Р РЋРІР‚С™Р РЋР Р‰ Р В Р’В»Р В РЎвЂ Р РЋР С“Р РЋРІР‚РЋР РЋРІР‚ВР РЋРІР‚С™
-    has_score = False
-    if detailed_result:
-        for set_data in detailed_result:
-            if set_data.get('firstParticipantScore', 0) > 0 or set_data.get('secondParticipantScore', 0) > 0:
-                has_score = True
-                break
-            if set_data.get('gameScore'):
-                game = set_data['gameScore']
-                if game.get('first', '0') != '0' or game.get('second', '0') != '0':
-                    has_score = True
-                    break
+    # Проверяем наличие очков: сеты ИЛИ любые очки внутри гейма/тай-брейка.
+    # Только first_participant_score недостаточно — он равен 0 весь первый сет.
+    has_current_points = (
+        first_participant_score > 0 or
+        second_participant_score > 0 or
+        _has_any_nonzero_score(court_data.get('detailed_result', []))
+    )
     
     # Р В РЎС™Р В Р’В°Р РЋРІР‚С™Р РЋРІР‚РЋ Р В РЎвЂР В РўвЂР РЋРІР‚ВР РЋРІР‚С™ (Live) - Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР В Р вЂ Р В Р’ВµР РЋР вЂљР РЋР РЏР В Р’ВµР В РЎВ Р В РЎвЂўР В Р’В±Р В Р’В° Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р РЋР РЏ
     if event_state in ('active', 'live', 'playing') or current_match_state in ('live', 'playing_no_score'):
-        if has_score:
-            return {
-                'page': 'scoreboard',
-                'url': f'/api/html-live/{tournament_id}/{court_id}/score_full',
-                'state': 'playing'
-            }
-        else:
+        if current_match_state == 'playing_no_score':
             return {
                 'page': 'vs',
                 'url': f'/api/html-live/{tournament_id}/{court_id}/vs',
                 'state': 'starting'
             }
+        if has_current_points:
+            return {
+                'page': 'scoreboard',
+                'url': f'/api/html-live/{tournament_id}/{court_id}/score_full',
+                'state': 'playing'
+            }
+        return {
+            'page': 'vs',
+            'url': f'/api/html-live/{tournament_id}/{court_id}/vs',
+            'state': 'starting'
+        }
     
     # Р В РЎСџР В РЎвЂў Р РЋРЎвЂњР В РЎВР В РЎвЂўР В Р’В»Р РЋРІР‚РЋР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋР вЂ№ - VS (Р В РЎВР В Р’В°Р РЋРІР‚С™Р РЋРІР‚РЋ Р В Р’В·Р В Р’В°Р В РЎвЂ”Р В Р’В»Р В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋР вЂљР В РЎвЂўР В Р вЂ Р В Р’В°Р В Р вЂ¦)
     return {
@@ -322,8 +359,24 @@ def api_get_court_state(slot_number: int):
                 'placeholder_image': window['placeholder_image'],
                 'placeholder_url': window['placeholder_url']
             })
+
+        # Keep live updates active in auto mode so VS -> scoreboard switches quickly
+        # even before score_full page is opened.
+        if window.get('mode') == 'auto':
+            try:
+                from .rankedin_live import live_manager
+                live_court_id = int(window['court_id'])
+                if not live_manager.is_subscribed(live_court_id):
+                    live_manager.subscribe_court(live_court_id)
+                live_manager.touch(live_court_id)
+            except Exception as e:
+                logger.debug(f'Auto live subscribe/touch failed for court {window.get("court_id")}: {e}')
         
-        page_info = get_court_display_page(window['tournament_id'], window['court_id'])
+        page_info = get_court_display_page(
+            window['tournament_id'],
+            window['court_id'],
+            enforce_winner_result=(window.get('mode') == 'auto')
+        )
         page_info['mode'] = window['mode']
         page_info['manual_page'] = window['manual_page']
         page_info['placeholder_image'] = window['placeholder_image']

@@ -497,29 +497,22 @@ def save_courts_data(tournament_id: str, courts_data: List[Dict]) -> int:
 
 
 def update_court_live_score(tournament_id: str, court_data: Dict) -> bool:
-    """Обновление только счёта корта (для live-обновлений через WebSocket)
-    Не перезаписывает участников и название класса"""
+    """Обновление данных корта из WebSocket.
+    Счёт обновляется всегда (ReceiveMatchUpdate и ReceiveMatchAction).
+    Участники обновляются только когда они есть в данных — это признак
+    ReceiveMatchAction (содержит полную модель корта с firstParticipant).
+    ReceiveMatchUpdate участников не содержит."""
     def transaction(conn):
         cursor = conn.cursor()
         court_id = str(court_data.get("court_id"))
-        
-        logger.info(f"LiveScore UPDATE: tournament={tournament_id}, court={court_id}")
-        
-        cursor.execute('''
-            UPDATE courts_data SET
-                first_participant_score = ?,
-                second_participant_score = ?,
-                detailed_result = ?,
-                is_tiebreak = ?,
-                is_super_tiebreak = ?,
-                is_first_participant_serving = ?,
-                is_serving_left = ?,
-                match_id = ?,
-                current_match_state = ?,
-                event_state = COALESCE(NULLIF(?, ''), event_state),
-                updated_at = CURRENT_TIMESTAMP
-            WHERE tournament_id = ? AND court_id = ?
-        ''', (
+
+        first_p  = court_data.get("first_participant")
+        second_p = court_data.get("second_participant")
+        has_participants = bool(first_p or second_p)
+
+        logger.info(f"LiveScore UPDATE: tournament={tournament_id}, court={court_id}, has_participants={has_participants}")
+
+        base_params = (
             court_data.get("first_participant_score", 0),
             court_data.get("second_participant_score", 0),
             json.dumps(court_data.get("detailed_result", [])),
@@ -530,10 +523,48 @@ def update_court_live_score(tournament_id: str, court_data: Dict) -> bool:
             court_data.get("match_id", ""),
             court_data.get("current_match_state", "live"),
             court_data.get("event_state", ""),
-            tournament_id,
-            court_id
-        ))
-        
+        )
+
+        if has_participants:
+            cursor.execute('''
+                UPDATE courts_data SET
+                    first_participant_score = ?,
+                    second_participant_score = ?,
+                    detailed_result = ?,
+                    is_tiebreak = ?,
+                    is_super_tiebreak = ?,
+                    is_first_participant_serving = ?,
+                    is_serving_left = ?,
+                    match_id = ?,
+                    current_match_state = ?,
+                    event_state = COALESCE(NULLIF(?, ''), event_state),
+                    first_participant = ?,
+                    second_participant = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE tournament_id = ? AND court_id = ?
+            ''', base_params + (
+                json.dumps(first_p),
+                json.dumps(second_p),
+                tournament_id,
+                court_id,
+            ))
+        else:
+            cursor.execute('''
+                UPDATE courts_data SET
+                    first_participant_score = ?,
+                    second_participant_score = ?,
+                    detailed_result = ?,
+                    is_tiebreak = ?,
+                    is_super_tiebreak = ?,
+                    is_first_participant_serving = ?,
+                    is_serving_left = ?,
+                    match_id = ?,
+                    current_match_state = ?,
+                    event_state = COALESCE(NULLIF(?, ''), event_state),
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE tournament_id = ? AND court_id = ?
+            ''', base_params + (tournament_id, court_id))
+
         rows_affected = cursor.rowcount
         logger.info(f"LiveScore UPDATE result: {rows_affected} rows affected")
         return rows_affected > 0

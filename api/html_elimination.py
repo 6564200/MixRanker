@@ -106,7 +106,7 @@ class EliminationGenerator(HTMLBaseGenerator):
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1920, height=1080">
+    <meta name="viewport" content="width=3840, height=2160">
     <title>{class_name} - {stage_name}</title>
     <link rel="stylesheet" href="/static/css/elimination.css">
 </head>

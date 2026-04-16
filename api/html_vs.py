@@ -29,26 +29,28 @@ class VSGenerator(HTMLBaseGenerator):
 
         return scores1, scores2, detailed
 
-    def _generate_player_photos_html(self, players: List[Dict]) -> str:
-        """Генерирует HTML для фото игроков"""
+    def _generate_player_photos_html(self, players: List[Dict], team_prefix: str) -> str:
+        """Генерирует HTML для фото игроков с data-field атрибутами"""
         html = []
-        for p in players[:2]:
+        for i, p in enumerate(players[:2]):
             photo = p.get("photo_url")
             name = p.get("fullName", "")
+            field = f"{team_prefix}_photo{i + 1}"
             if photo:
-                html.append(f'<img src="{photo}" class="player-photo" alt="{name}">')
+                html.append(f'<img src="{photo}" class="player-photo" data-field="{field}" alt="{name}">')
             else:
-                html.append('<img src="/static/images/silhouette.png" class="player-photo silhouette" alt="Player">')
+                html.append(f'<img src="/static/images/silhouette.png" class="player-photo silhouette" data-field="{field}" alt="Player">')
         return ''.join(html)
 
     def _build_sets_html(self, scores1: List[int], scores2: List[int], detailed: List[Dict]) -> str:
-        """Генерирует HTML блоков сетов с data-field атрибутами"""
+        """Генерирует HTML блоков сетов с data-field атрибутами.
+        Все 3 блока всегда присутствуют в DOM — скрытые, если счёт 0:0.
+        Это позволяет AJAX обновлять значения и показывать/скрывать блоки."""
         html = ""
         for i in range(3):
-            if scores1[i] or scores2[i]:
-                
-                html += f'''
-                <div class="set-block">
+            hidden = "" if (scores1[i] or scores2[i]) else " hidden"
+            html += f'''
+                <div class="set-block{hidden}" data-set="{i + 1}">
                     <div class="set-header"><div class="set-header-text">СЕТ {i + 1}</div></div>
                     <div class="set-scores">
                         <div class="set-score" data-field="set{i+1}_score1">{scores1[i]}</div>
@@ -56,7 +58,6 @@ class VSGenerator(HTMLBaseGenerator):
                         <div class="set-score" data-field="set{i+1}_score2">{scores2[i]}</div>
                     </div>
                 </div>'''
-
         return html
 
     def generate_court_vs_html(
@@ -74,8 +75,8 @@ class VSGenerator(HTMLBaseGenerator):
         header_title = tournament_data.get("metadata", {}).get("name", "ТУРНИР") if tournament_data else "ТУРНИР"
         sets_html = self._build_sets_html(scores1, scores2, detailed)
 
-        team1_photos = self._generate_player_photos_html(team1[:2])
-        team2_photos = self._generate_player_photos_html(team2[:2])
+        team1_photos = self._generate_player_photos_html(team1[:2], "team1")
+        team2_photos = self._generate_player_photos_html(team2[:2], "team2")
 
         # Имена с флагами и data-field
         team1_names = ''
