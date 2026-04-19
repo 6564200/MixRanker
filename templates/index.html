@@ -3,42 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta name="robots" content="noindex, nofollow">
-    <title>vMixRanker v2.5 - Управление турнирами</title>
+    <meta name="robots" content="noindex, nofollow">
+    <title>vMixRanker v2.6 - Управление турнирами</title>
     <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/vendor/fontawesome/css/all.min.css" rel="stylesheet">
     <link href="/static/css/main.css" rel="stylesheet">
+	<link rel="shortcut icon" href="/static/favicon.ico">
+
 </head>
 <body>
-	<!-- navbar -->
-	<nav class="navbar navbar-expand-lg sticky-top">
-		<div class="container-fluid">
-			<span class="navbar-brand">
-				<i class="fas fa-trophy me-2"></i>vMixRanker v2.5
-			</span>
-			<div class="d-flex align-items-center">
-				<span class="badge bg-success me-3" id="statusBadge">
-					<i class="fas fa-circle pulse me-1"></i>Онлайн
-				</span>
-				
-				<!-- Информация о пользователе -->
-				<div class="auth-user-info me-3" id="authUserInfo" style="display: none;">
-					<i class="fas fa-user"></i>
-					<span id="currentUsername"></span>
-					<button class="btn btn-outline-danger btn-sm ms-2" onclick="logout()">
-						<i class="fas fa-sign-out-alt"></i>
-					</button>
-				</div>
-				
-				<button class="theme-toggle me-3" onclick="toggleTheme()" title="РџРµСЂРµРєР»СЋС‡РёС‚СЊ С‚РµРјСѓ">
-					<i class="fas fa-moon" id="themeIcon"></i>
-				</button>
-				<button class="btn btn-outline-primary btn-sm" onclick="refreshAllData()">
-					<i class="fas fa-sync-alt me-1"></i>Обновить
-				</button>
-			</div>
-		</div>
-	</nav>
+    <!-- navbar -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container-fluid">
+            <span class="navbar-brand">
+                <i class="fas fa-trophy me-2"></i>vMixRanker v2.6
+            </span>
+            <div class="d-flex align-items-center">
+                <span class="badge bg-success me-3" id="statusBadge">
+                    <i class="fas fa-circle pulse me-1"></i>Онлайн
+                </span>
+                
+                <!-- Информация о пользователе -->
+                <div class="auth-user-info me-3" id="authUserInfo" style="display: none;">
+                    <i class="fas fa-user"></i>
+                    <span id="currentUsername"></span>
+                    <button class="btn btn-outline-danger btn-sm ms-2" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+                
+                <button class="theme-toggle me-3" onclick="toggleTheme()" title="Переключить тему">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
+                <button class="btn btn-outline-primary btn-sm" onclick="refreshAllData()">
+                    <i class="fas fa-sync-alt me-1"></i>Обновить
+                </button>
+            </div>
+        </div>
+    </nav>
 
     <div class="container-fluid p-3">
         <div class="main-container">
@@ -69,11 +71,10 @@
                         <i class="fas fa-cog me-2"></i>Настройки
                     </button>
                 </li>
-		
-					<button class="btn btn-outline-info" onclick="openDisplayManager()" title="РћРєРЅР° С‚СЂР°РЅСЃР»СЏС†РёРё">
-						<i class="fas fa-tv me-1"></i>Трансляции
-					</button>				
-			
+                
+                <button class="btn btn-outline-info" onclick="openDisplayManager()" title="Менеджер трансляций">
+                    <i class="fas fa-tv me-1"></i>Трансляции
+                </button>		
             </ul>
 
             <!-- Tab Content -->
@@ -124,7 +125,7 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"><i class="fas fa-table-tennis me-2"></i>Мониторинг кортов</h5>
                             <div class="d-flex align-items-center">
-                                <span class="me-3 text-muted small">Обновление каждые<span id="refreshInterval">30</span> СЃРµРє</span>
+                                <span class="me-3 text-muted small">Обновление каждые<span id="refreshInterval">30</span> сек</span>
                                 <button class="btn btn-outline-primary btn-sm me-2" onclick="refreshCourts()">
                                     <i class="fas fa-sync-alt me-1"></i>Обновить
                                 </button>
@@ -144,150 +145,151 @@
                 </div>
 
                 <!-- XML Generation Tab -->
-				<div class="tab-pane fade" id="xml-pane" role="tabpanel">
-					<div class="row">
-						<div class="col-lg-4">
-							<div class="card">
-								<div class="card-header">
-									<h5 class="mb-0"><i class="fas fa-broadcast-tower me-2"></i>Live XML для vMix</h5>
-								</div>
-								<div class="card-body">
-									<div class="alert alert-success">
-										<i class="fas fa-info-circle me-2"></i>
-										<strong>Live XML</strong>— всегда актуальные данные без кеширования. Эти ссылки обновляются в реальном времени.
-									</div>
-									
-									<div class="mb-3">
-										<label class="form-label">Выберите турнир</label>
-										<select class="form-select" id="xmlTournamentSelect">
-											<option value="">Сначала загрузите турнир</option>
-										</select>
-									</div>
-									
-									<!-- Live XML РєРЅРѕРїРєР° -->
-									<button class="btn btn-success w-100 mb-3" onclick="showLiveXMLList()" id="showLiveXMLBtn" disabled>
-										<i class="fas fa-broadcast-tower me-2"></i>Показать Live XML ссылки
-									</button>
-									
-									<!-- HTML СЂР°СЃРїРёСЃР°РЅРёРµ -->
-									<div class="border-top pt-3 mb-3">
-										<h6 class="text-muted mb-2">HTML расписание:</h6>
-										<div class="mb-2">
-											<input type="date" class="form-control form-control-sm" id="scheduleDateInput" title="Дата расписания">
-										</div>
-										<div class="d-flex gap-1">
-											<button class="btn btn-outline-info btn-sm flex-fill" onclick="openScheduleHTML()" id="openLiveScheduleBtn" disabled title="Полное расписание">
-												<i class="fas fa-external-link-alt me-1"></i>Все
-											</button>
-											<button class="btn btn-outline-secondary btn-sm flex-fill" onclick="openScheduleHalfHTML(1)" id="openScheduleHalf1Btn" disabled title="Первая половина кортов">
-												<i class="fas fa-table-columns me-1"></i>½&nbsp;лев
-											</button>
-											<button class="btn btn-outline-secondary btn-sm flex-fill" onclick="openScheduleHalfHTML(2)" id="openScheduleHalf2Btn" disabled title="Вторая половина кортов">
-												<i class="fas fa-table-columns me-1"></i>½&nbsp;прав
-											</button>
-										</div>
-									</div>
-									
-									<!-- Композитные страницы -->
-									<div class="border-top pt-3">
-										<h6 class="text-muted mb-2">Композитные страницы:</h6>
-										
-										<!-- Round Robin -->
-										<div class="mb-2">
-											<small class="text-muted">Round Robin (групповые таблицы):</small>
-											<div class="btn-group btn-group-sm w-100 mt-1">
-												<button class="btn btn-outline-primary" onclick="openCompositePage('round', 1)" id="compositeRound1Btn" disabled title="РћС‚РєСЂС‹С‚СЊ">
-													<i class="fas fa-external-link-alt me-1"></i>1
-												</button>
-												<button class="btn btn-outline-secondary" onclick="openCompositeEditor('round', 1)" id="compositeRound1EditBtn" disabled title="РќР°СЃС‚СЂРѕР№РєРё">
-													<i class="fas fa-cog"></i>
-												</button>
-												<button class="btn btn-outline-primary" onclick="openCompositePage('round', 2)" id="compositeRound2Btn" disabled title="РћС‚РєСЂС‹С‚СЊ">
-													<i class="fas fa-external-link-alt me-1"></i>2
-												</button>
-												<button class="btn btn-outline-secondary" onclick="openCompositeEditor('round', 2)" id="compositeRound2EditBtn" disabled title="РќР°СЃС‚СЂРѕР№РєРё">
-													<i class="fas fa-cog"></i>
-												</button>
-												<button class="btn btn-outline-primary" onclick="openCompositePage('round', 3)" id="compositeRound3Btn" disabled title="РћС‚РєСЂС‹С‚СЊ">
-													<i class="fas fa-external-link-alt me-1"></i>3
-												</button>
-												<button class="btn btn-outline-secondary" onclick="openCompositeEditor('round', 3)" id="compositeRound3EditBtn" disabled title="РќР°СЃС‚СЂРѕР№РєРё">
-													<i class="fas fa-cog"></i>
-												</button>
-												<button class="btn btn-outline-primary" onclick="openCompositePage('round', 4)" id="compositeRound4Btn" disabled title="РћС‚РєСЂС‹С‚СЊ">
-													<i class="fas fa-external-link-alt me-1"></i>4
-												</button>
-												<button class="btn btn-outline-secondary" onclick="openCompositeEditor('round', 4)" id="compositeRound4EditBtn" disabled title="РќР°СЃС‚СЂРѕР№РєРё">
-													<i class="fas fa-cog"></i>
-												</button>
-											</div>
-										</div>
-										
-										<!-- Elimination -->
-										<div class="mb-2">
-											<small class="text-muted">Elimination (сетки плей-офф):</small>
-											<div class="btn-group btn-group-sm w-100 mt-1">
-												<button class="btn btn-outline-info" onclick="openCompositePage('elimination', 1)" id="compositeElimination1Btn" disabled title="РћС‚РєСЂС‹С‚СЊ">
-													<i class="fas fa-external-link-alt me-1"></i>1
-												</button>
-												<button class="btn btn-outline-secondary" onclick="openCompositeEditor('elimination', 1)" id="compositeElimination1EditBtn" disabled title="РќР°СЃС‚СЂРѕР№РєРё">
-													<i class="fas fa-cog"></i>
-												</button>
-												<button class="btn btn-outline-info" onclick="openCompositePage('elimination', 2)" id="compositeElimination2Btn" disabled title="РћС‚РєСЂС‹С‚СЊ">
-													<i class="fas fa-external-link-alt me-1"></i>2
-												</button>
-												<button class="btn btn-outline-secondary" onclick="openCompositeEditor('elimination', 2)" id="compositeElimination2EditBtn" disabled title="РќР°СЃС‚СЂРѕР№РєРё">
-													<i class="fas fa-cog"></i>
-												</button>
-												<button class="btn btn-outline-info" onclick="openCompositePage('elimination', 3)" id="compositeElimination3Btn" disabled title="РћС‚РєСЂС‹С‚СЊ">
-													<i class="fas fa-external-link-alt me-1"></i>3
-												</button>
-												<button class="btn btn-outline-secondary" onclick="openCompositeEditor('elimination', 3)" id="compositeElimination3EditBtn" disabled title="РќР°СЃС‚СЂРѕР№РєРё">
-													<i class="fas fa-cog"></i>
-												</button>
-												<button class="btn btn-outline-info" onclick="openCompositePage('elimination', 4)" id="compositeElimination4Btn" disabled title="РћС‚РєСЂС‹С‚СЊ">
-													<i class="fas fa-external-link-alt me-1"></i>4
-												</button>
-												<button class="btn btn-outline-secondary" onclick="openCompositeEditor('elimination', 4)" id="compositeElimination4EditBtn" disabled title="РќР°СЃС‚СЂРѕР№РєРё">
-													<i class="fas fa-cog"></i>
-												</button>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-						
-						<div class="col-lg-8">
-							<div class="card">
-								<div class="card-header d-flex justify-content-between align-items-center">
-									<h5 class="mb-0">
-										<i class="fas fa-broadcast-tower me-2"></i>Live XML ссылки для vMix
-										<span class="live-indicator ms-2" title="РћР±РЅРѕРІР»СЏСЋС‚СЃСЏ РІ СЂРµР°Р»СЊРЅРѕРј РІСЂРµРјРµРЅРё"></span>
-									</h5>
-									<div class="d-flex gap-2">
-										<button class="btn btn-outline-success btn-sm" onclick="refreshLiveXMLList()">
-											<i class="fas fa-sync-alt me-1"></i>Обновить
-										</button>
-										<button class="btn btn-outline-info btn-sm" onclick="copyAllLiveXML()">
-											<i class="fas fa-copy me-1"></i>Копировать все
-										</button>
-									</div>
-								</div>
-								
-								<div class="card-body">
-									<div id="liveXMLList">
-										<div class="text-center text-muted py-5">
-											<i class="fas fa-broadcast-tower fa-3x mb-3 opacity-50"></i>
-											<p>Live XML ссылки не загружены</p>
-											<small>Выберите турнир для отображения live ссылок</small>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>				
+                <div class="tab-pane fade" id="xml-pane" role="tabpanel">
+                    <div class="row">
+                        <div class="col-lg-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fas fa-broadcast-tower me-2"></i>Live XML для vMix</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-success">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Live XML</strong>— всегда актуальные данные без кеширования. Эти ссылки обновляются в реальном времени.
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Выберите турнир</label>
+                                        <select class="form-select" id="xmlTournamentSelect">
+                                            <option value="">Сначала загрузите турнир</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Live XML генерация -->
+                                    <button class="btn btn-success w-100 mb-3" onclick="showLiveXMLList()" id="showLiveXMLBtn" disabled>
+                                        <i class="fas fa-broadcast-tower me-2"></i>Показать Live XML ссылки
+                                    </button>
+                                    
+                                    <!-- HTML страницы -->
+                                    <div class="border-top pt-3 mb-3">
+                                        <h6 class="text-muted mb-2">HTML расписание:</h6>
+                                        <div class="mb-2">
+                                            <input type="date" class="form-control form-control-sm" id="scheduleDateInput" title="Дата расписания">
+                                        </div>
+                                        <div class="d-flex gap-1">
+                                            <button class="btn btn-outline-info btn-sm flex-fill" onclick="openScheduleHTML()" id="openLiveScheduleBtn" disabled title="Полное расписание">
+                                                <i class="fas fa-external-link-alt me-1"></i>Все
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm flex-fill" onclick="openScheduleHalfHTML(1)" id="openScheduleHalf1Btn" disabled title="Первая половина кортов">
+                                                <i class="fas fa-table-columns me-1"></i>½&nbsp;лев
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm flex-fill" onclick="openScheduleHalfHTML(2)" id="openScheduleHalf2Btn" disabled title="Вторая половина кортов">
+                                                <i class="fas fa-table-columns me-1"></i>½&nbsp;прав
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Композитные страницы -->
+                                    <div class="border-top pt-3">
+                                        <h6 class="text-muted mb-2">Композитные страницы:</h6>
+                                        
+                                        <!-- Round Robin -->
+                                        <div class="mb-2">
+                                            <small class="text-muted">Round Robin (групповые таблицы):</small>
+                                            <div class="btn-group btn-group-sm w-100 mt-1">
+                                                <button class="btn btn-outline-primary" onclick="openCompositePage('round', 1)" id="compositeRound1Btn" disabled title="Страница">
+                                                    <i class="fas fa-external-link-alt me-1"></i>1
+                                                </button>
+                                                <button class="btn btn-outline-secondary" onclick="openCompositeEditor('round', 1)" id="compositeRound1EditBtn" disabled title="Настройки">
+                                                    <i class="fas fa-cog"></i>
+                                                </button>
+                                                <button class="btn btn-outline-primary" onclick="openCompositePage('round', 2)" id="compositeRound2Btn" disabled title="Страница">
+                                                    <i class="fas fa-external-link-alt me-1"></i>2
+                                                </button>
+                                                <button class="btn btn-outline-secondary" onclick="openCompositeEditor('round', 2)" id="compositeRound2EditBtn" disabled title="Настройки">
+                                                    <i class="fas fa-cog"></i>
+                                                </button>
+                                                <button class="btn btn-outline-primary" onclick="openCompositePage('round', 3)" id="compositeRound3Btn" disabled title="Страница">
+                                                    <i class="fas fa-external-link-alt me-1"></i>3
+                                                </button>
+                                                <button class="btn btn-outline-secondary" onclick="openCompositeEditor('round', 3)" id="compositeRound3EditBtn" disabled title="Настройки">
+                                                    <i class="fas fa-cog"></i>
+                                                </button>
+                                                <button class="btn btn-outline-primary" onclick="openCompositePage('round', 4)" id="compositeRound4Btn" disabled title="Страница">
+                                                    <i class="fas fa-external-link-alt me-1"></i>4
+                                                </button>
+                                                <button class="btn btn-outline-secondary" onclick="openCompositeEditor('round', 4)" id="compositeRound4EditBtn" disabled title="Настройки">
+                                                    <i class="fas fa-cog"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Elimination -->
+                                        <div class="mb-2">
+                                            <small class="text-muted">Elimination (сетки плей-офф):</small>
+                                            <div class="btn-group btn-group-sm w-100 mt-1">
+                                                <button class="btn btn-outline-info" onclick="openCompositePage('elimination', 1)" id="compositeElimination1Btn" disabled title="Страница">
+                                                    <i class="fas fa-external-link-alt me-1"></i>1
+                                                </button>
+                                                <button class="btn btn-outline-secondary" onclick="openCompositeEditor('elimination', 1)" id="compositeElimination1EditBtn" disabled title="Настройки">
+                                                    <i class="fas fa-cog"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info" onclick="openCompositePage('elimination', 2)" id="compositeElimination2Btn" disabled title="Страница">
+                                                    <i class="fas fa-external-link-alt me-1"></i>2
+                                                </button>
+                                                <button class="btn btn-outline-secondary" onclick="openCompositeEditor('elimination', 2)" id="compositeElimination2EditBtn" disabled title="Настройки">
+                                                    <i class="fas fa-cog"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info" onclick="openCompositePage('elimination', 3)" id="compositeElimination3Btn" disabled title="Страница">
+                                                    <i class="fas fa-external-link-alt me-1"></i>3
+                                                </button>
+                                                <button class="btn btn-outline-secondary" onclick="openCompositeEditor('elimination', 3)" id="compositeElimination3EditBtn" disabled title="Настройки">
+                                                    <i class="fas fa-cog"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info" onclick="openCompositePage('elimination', 4)" id="compositeElimination4Btn" disabled title="Страница">
+                                                    <i class="fas fa-external-link-alt me-1"></i>4
+                                                </button>
+                                                <button class="btn btn-outline-secondary" onclick="openCompositeEditor('elimination', 4)" id="compositeElimination4EditBtn" disabled title="Настройки">
+                                                    <i class="fas fa-cog"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-8">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-broadcast-tower me-2"></i>Live XML ссылки для vMix
+                                        <span class="live-indicator ms-2" title="Обновляется в режиме реального времени"></span>
+                                    </h5>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-success btn-sm" onclick="refreshLiveXMLList()">
+                                            <i class="fas fa-sync-alt me-1"></i>Обновить
+                                        </button>
+                                        <button class="btn btn-outline-info btn-sm" onclick="copyAllLiveXML()">
+                                            <i class="fas fa-copy me-1"></i>Копировать все
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-body">
+                                    <div id="liveXMLList">
+                                        <div class="text-center text-muted py-5">
+                                            <i class="fas fa-broadcast-tower fa-3x mb-3 opacity-50"></i>
+                                            <p>Live XML ссылки не загружены</p>
+                                            <small>Выберите турнир для отображения live ссылок</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>		
+
                 <!-- Media Tab -->
                 <div class="tab-pane fade" id="media-pane" role="tabpanel" style="display: none;">
                     <div class="row g-3">
@@ -299,7 +301,7 @@
                                 <div class="card-body">
                                     <div class="mb-3">
                                         <input type="file" class="form-control" id="mediaUploadInput" accept=".png,.jpg,.jpeg,.webp,.gif,.svg">
-                                        <div class="form-text">При совпадении имени файл будет заменён.</div>
+                                        <div class="form-text">При совпадении имен файл будет заменен.</div>
                                     </div>
                                     <button class="btn btn-primary w-100" onclick="uploadMediaImage()">
                                         <i class="fas fa-upload me-2"></i>Загрузить
@@ -333,21 +335,22 @@
                         </div>
                     </div>
                 </div>
+
                 <!-- Settings Tab -->
                 <div class="tab-pane fade" id="settings-pane" role="tabpanel" style="display: none;">
                     <div class="row">
                         <div class="col-lg-6">
                             <div class="card">
                                 <div class="card-header">
-                                    <h5 class="mb-0"><i class="fas fa-cog me-2"></i>РћСЃРЅРѕРІРЅС‹Рµ РЅР°СЃС‚СЂРѕР№РєРё</h5>
+                                    <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Настройки</h5>
                                 </div>
                                 <div class="card-body">
                                     <div class="settings-card">
                                         <div class="mb-3">
-                                            <label class="form-label">Интервал обновления ТАБЛИЦ (секунды)</label>
+                                            <label class="form-label">Интервал обновления ТАБЛИЦ (секунд)</label>
                                             <input type="number" class="form-control" id="refreshIntervalInput" value="30" min="10" max="200">
                                             <div class="form-text">Как часто обновлять данные (5-300 сек)</div>
-											<div class="form-text">Данные кортов обновляются дважды за интервал</div>
+                                            <div class="form-text">Данные кортов обновляются дважды за интервал</div>
                                         </div>
                                         <div class="mb-3">
                                             <label class="form-label">Тема интерфейса</label>
@@ -393,8 +396,8 @@
                                 <div class="card-body">
                                     <div class="settings-card">
                                         <div class="row mb-2">
-                                            <div class="col-6"><strong>Версия</strong></div>
-                                            <div class="col-6">v2.5.0</div>
+                                            <div class="col-6"><strong>Версия:</strong></div>
+                                            <div class="col-6">v2.6.0</div>
                                         </div>
                                         <div class="row mb-2">
                                             <div class="col-6"><strong>API статус:</strong></div>
@@ -459,33 +462,33 @@
         <div class="spinner"></div>
     </div>
 
-	<!-- Модальное окно авторизации -->
-	<div class="overlay" id="authOverlay" style="display: none;">
-		<div class="auth-modal">
-			<h4 class="text-center mb-4">
-				<i class="fas fa-lock me-2"></i>Модальное окно авторизации
-			</h4>
-			<p class="text-center text-muted mb-4">
-				Для выполнения этого действия требуется авторизация
-			</p>
-			<form id="authForm">
-				<div class="mb-3">
-					<label class="form-label">Имя пользователя</label>
-					<input type="text" class="form-control" id="authUsername" required>
-				</div>
-				<div class="mb-3">
-					<label class="form-label">Пароль</label>
-					<input type="password" class="form-control" id="authPassword" required>
-				</div>
-				<button type="submit" class="btn btn-primary w-100 mb-2">
-					<i class="fas fa-sign-in-alt me-2"></i>Войти
-				</button>
-				<button type="button" class="btn btn-outline-secondary w-100" onclick="closeAuthModal()">
-					Отмена
-				</button>
-			</form>
-		</div>
-	</div>
+    <!-- Модальное окно авторизации -->
+    <div class="overlay" id="authOverlay" style="display: none;">
+        <div class="auth-modal">
+            <h4 class="text-center mb-4">
+                <i class="fas fa-lock me-2"></i>Модальное окно авторизации
+            </h4>
+            <p class="text-center text-muted mb-4">
+                Для выполнения этого действия требуется авторизация
+            </p>
+            <form id="authForm">
+                <div class="mb-3">
+                    <label class="form-label">Имя пользователя</label>
+                    <input type="text" class="form-control" id="authUsername" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Пароль</label>
+                    <input type="password" class="form-control" id="authPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 mb-2">
+                    <i class="fas fa-sign-in-alt me-2"></i>Войти
+                </button>
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="closeAuthModal()">
+                    Отмена
+                </button>
+            </form>
+        </div>
+    </div>
 
     <!-- Модальное окно загрузки фотографий -->
     <div class="overlay" id="uploadOverlay" style="display: none;">
@@ -495,15 +498,18 @@
                 <button type="button" class="btn-close" onclick="closeUploadModal()"></button>
             </div>
             <div class="card-body p-0 d-flex" style="min-height: 560px;">
-                <!-- Р›РµРІР°СЏ РєРѕР»РѕРЅРєР°: СЃРїРёСЃРѕРє СѓС‡Р°СЃС‚РЅРёРєРѕРІ -->
+                <!-- Левая панель: Список участников -->
                 <div class="participants-panel">
-                    <div class="p-2">
+                    <div class="p-2 d-flex flex-column gap-2">
+                        <select class="form-select form-select-sm d-none" id="classFilter" onchange="filterParticipants()">
+                            <option value="">Все группы</option>
+                        </select>
                         <input type="text" class="form-control form-control-sm" id="participantSearch" placeholder="Поиск..." oninput="filterParticipants()">
                     </div>
                     <div class="participant-list" id="participantList"></div>
                 </div>
                 
-                <!-- РџСЂР°РІР°СЏ РєРѕР»РѕРЅРєР°: СЂРµРґР°РєС‚РѕСЂ -->
+                <!-- Правая панель: Редактор -->
                 <div class="editor-panel flex-grow-1 p-3">
                     <div id="noSelectionMessage" class="no-selection">
                         <i class="fas fa-user-circle fa-3x mb-2 opacity-50"></i>
@@ -514,7 +520,6 @@
                         <div class="participant-name-bar fw-bold border-bottom pb-2">
                             <span id="selectedParticipantName"></span>
                             <input type="hidden" id="selectedParticipantId">
-						
                         </div>
                         
                         <!-- Область превью/редактора -->
@@ -536,7 +541,7 @@
                             <small class="text-muted">Перетаскивайте фото для позиционирования</small>
                         </div>
                         
-                        <!-- Р’С‹Р±РѕСЂ С„Р°Р№Р»Р° -->
+                        <!-- Выбор файла -->
                         <div id="fileInputRow">
                             <label class="btn btn-outline-primary btn-sm w-100">
                                 <i class="fas fa-folder-open me-1"></i>Выбрать фото
@@ -544,7 +549,7 @@
                             </label>
                         </div>
                         
-                        <!-- Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ РїРѕР»СЏ -->
+                        <!-- Дополнительные поля -->
                         <div class="extra-fields">
                             <div class="row g-2">
                                 <div class="col-6">
@@ -572,10 +577,10 @@
                                     <input type="text" class="form-control form-control-sm" id="english-name" placeholder="Ivan Ivanov">
                                 </div>
                             </div>
-							<!-- РљРЅРѕРїРєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ -->
-							<button type="button" class="btn btn-warning w-100 mt-auto" id="uploadPhotoButton" onclick="uploadPhoto()">
-								<i class="fas fa-save me-1"></i>Сохранить
-							</button>	
+                            <!-- Кнопка сохранения -->
+                            <button type="button" class="btn btn-warning w-100 mt-auto" id="uploadPhotoButton" onclick="uploadPhoto()">
+                                <i class="fas fa-save me-1"></i>Сохранить
+                            </button>	
                         </div>
                     </div>
                 </div>
@@ -586,8 +591,11 @@
     <!-- Scripts -->
     <script src="/static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/photo-editor.js"></script>
-	<script src="/static/js/display_manager.js"></script>
+    <script src="/static/js/display_manager.js"></script>
     <script src="/static/js/main.js"></script>
+
+    <!-- Автокомплит стран: загружаем ПОСЛЕ main.js -->
+    <script src="/static/js/country-autocomplete.js"></script>
+    <script src="/static/js/photo-upload-integration.js"></script>
 </body>
 </html>
-

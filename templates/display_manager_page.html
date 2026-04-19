@@ -7,6 +7,7 @@
     <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/vendor/fontawesome/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/main.css">
+	<link rel="shortcut icon" href="/static/favicon.ico">
     <style>
         body { padding: 20px; background: var(--bg-secondary); }
         .page-header { margin-bottom: 30px; }
@@ -105,6 +106,19 @@
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label">Тип фона</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="courtBgType" id="courtBgTypeImage" value="image" checked>
+                                <label class="form-check-label" for="courtBgTypeImage">Изображение</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="courtBgType" id="courtBgTypeMatrix" value="matrix">
+                                <label class="form-check-label" for="courtBgTypeMatrix">Анимация Matrix</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Заглушка</label>
                         <select class="form-select" id="editCourtPlaceholder"></select>
                         <div class="mt-2">
@@ -145,6 +159,19 @@
                         </button>
                     </div>
 
+                    <div class="mb-3 mt-3">
+                        <label class="form-label">Тип фона</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="poolBgType" id="poolBgTypeImage" value="image" checked>
+                                <label class="form-check-label" for="poolBgTypeImage">Изображение</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="poolBgType" id="poolBgTypeMatrix" value="matrix">
+                                <label class="form-check-label" for="poolBgTypeMatrix">Анимация Matrix</label>
+                            </div>
+                        </div>
+                    </div>
                     <div class="mb-3 mt-3">
                         <label class="form-label">Заглушка</label>
                         <select class="form-select" id="editPoolPlaceholder"></select>
