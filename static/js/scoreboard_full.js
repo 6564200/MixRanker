@@ -6,7 +6,7 @@
     'use strict';
 
     const CONFIG = {
-        updateInterval: 2000,  // 2 секунды
+        updateInterval: 500,  // 2 секунды
         animationDuration: 500
     };
 
@@ -356,20 +356,22 @@
         
         let code = countryCode.toLowerCase();
         
-        // Маппинг кодов
+        // Маппинг кодов (3-буквенные → 2-буквенные ISO)
         const codeMap = {
-            'rin': 'ru',
-            'rus': 'ru',
-            'bra': 'br',
-            'arg': 'ar',
-            'esp': 'es',
-            'ita': 'it',
-            'fra': 'fr',
-            'ger': 'de',
-            'gbr': 'gb',
-            'usa': 'us',
-            'den': 'dk',
-            'dnk': 'dk'
+            'rin': 'ru', 'rus': 'ru',
+            'usa': 'us', 'ger': 'de', 'fra': 'fr', 'esp': 'es',
+            'ita': 'it', 'gbr': 'gb', 'por': 'pt', 'ned': 'nl',
+            'bel': 'be', 'sui': 'ch', 'aut': 'at', 'swe': 'se',
+            'nor': 'no', 'den': 'dk', 'dnk': 'dk', 'fin': 'fi',
+            'pol': 'pl', 'cze': 'cz', 'svk': 'sk', 'cro': 'hr',
+            'srb': 'rs', 'ukr': 'ua', 'blr': 'by',
+            'bra': 'br', 'arg': 'ar', 'chi': 'cl', 'uru': 'uy', 'col': 'co',
+            'jpn': 'jp', 'kor': 'kr', 'chn': 'cn', 'ind': 'in',
+            'aus': 'au', 'nzl': 'nz', 'kaz': 'kz', 'uzb': 'uz',
+            'arm': 'am', 'geo': 'ge', 'aze': 'az',
+            'isr': 'il', 'uae': 'ae', 'qat': 'qa', 'kuw': 'kw',
+            'ksa': 'sa', 'tur': 'tr', 'egy': 'eg', 'mar': 'ma',
+            'tun': 'tn', 'rsa': 'za', 'can': 'ca', 'mex': 'mx'
         };
         
         code = codeMap[code] || code;

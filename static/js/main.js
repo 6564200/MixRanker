@@ -479,6 +479,9 @@ function closeUploadModal() {
     document.getElementById('editorControls').classList.add('d-none');
     document.getElementById('photoFile').value = '';
     document.getElementById('participantSearch').value = '';
+    const cf = document.getElementById('classFilter');
+    cf.innerHTML = '<option value="">Все группы</option>';
+    cf.classList.add('d-none');
     photoEditor.destroy();
     allParticipants = [];
 }
@@ -487,10 +490,9 @@ async function fetchParticipants(tournamentId) {
     try {
         openUploadModal();
         document.getElementById('participantList').innerHTML = '<div class="text-center p-3"><div class="spinner-border spinner-border-sm"></div></div>';
-        
+
         const response = await fetch(`/api/tournament/${tournamentId}/participants`);
         if (!response.ok) throw new Error('Ошибка загрузки');
-        
         allParticipants = await response.json();
         renderParticipantsList(allParticipants);
     } catch (error) {
@@ -498,13 +500,33 @@ async function fetchParticipants(tournamentId) {
         showAlert('Ошибка загрузки участников', 'danger');
         document.getElementById('participantList').innerHTML = '<div class="text-danger p-2">Ошибка загрузки</div>';
     }
+
+    // Загружаем группы независимо — не влияет на основной поток
+    try {
+        const r = await fetch(`/api/tournament/${tournamentId}/participant-classes`);
+        if (!r.ok) return;
+        const classes = await r.json();
+        if (!classes.length) return;
+        const cf = document.getElementById('classFilter');
+        cf.innerHTML = '<option value="">Все группы</option>' +
+            classes.map(c => `<option value="${c.class_id}" data-ids="${c.participant_ids.join(',')}">${c.class_name}</option>`).join('');
+        cf.classList.remove('d-none');
+    } catch (e) { /* группы не критичны */ }
 }
 
 function filterParticipants() {
     const query = document.getElementById('participantSearch').value.toLowerCase();
-    const filtered = allParticipants.filter(p => 
-        `${p.first_name} ${p.last_name}`.toLowerCase().includes(query)
-    );
+    const cf = document.getElementById('classFilter');
+    const opt = cf.options[cf.selectedIndex];
+    const classIds = opt && opt.value
+        ? new Set(opt.dataset.ids.split(',').map(Number))
+        : null;
+
+    const filtered = allParticipants.filter(p => {
+        const nameOk  = `${p.first_name} ${p.last_name}`.toLowerCase().includes(query);
+        const classOk = !classIds || classIds.has(p.id);
+        return nameOk && classOk;
+    });
     renderParticipantsList(filtered);
 }
 
@@ -562,14 +584,26 @@ function selectParticipant(participant) {
         editorControls.classList.add('d-none');
     }
     
-    // Очищаем
+    // Заполняем поля из сохранённого info
+    let info = {};
+    try { info = JSON.parse(participant.info || '{}'); } catch (e) {}
     photoEditor.destroy();
     document.getElementById('photoFile').value = '';
-    document.getElementById('country').value = '';
-    document.getElementById('rating').value = '';
-    document.getElementById('height').value = '';
-    document.getElementById('position').value = '';
-    document.getElementById('english-name').value = '';
+
+    // Страна: info.country имеет приоритет над country_code от Rankedin
+    const countryCode = info.country || participant.country_code || 'RUS';
+    if (window.countryAutocomplete) {
+        window.countryAutocomplete.clear();
+        if (countryCode) window.countryAutocomplete.setCountry(countryCode);
+    } else {
+        document.getElementById('country').value = countryCode;
+    }
+    if (window.countryFormIntegration) window.countryFormIntegration.updateSaveButton();
+
+    document.getElementById('rating').value       = info.rating    || '';
+    document.getElementById('height').value       = info.height    || '';
+    document.getElementById('position').value     = info.position  || '';
+    document.getElementById('english-name').value = info.full_name || '';
 }
 
 function handleFileSelect(input) {
@@ -597,10 +631,21 @@ async function uploadPhoto() {
         return;
     }
     
+    // Валидация страны: если в поле что-то введено, это должно быть из справочника
+    const countryField = document.getElementById('country');
+    if (window.countryAutocomplete && countryField.value.trim()) {
+        if (!window.countryAutocomplete.isValidSelection()) {
+            showAlert('Выберите страну из списка', 'warning');
+            return;
+        }
+    }
+
     // Собираем данные
     const formData = new FormData();
     formData.append('participant_id', participantId);
-    formData.append('country', document.getElementById('country').value);
+    // Отправляем 3-буквенный код (из autocomplete), а не отображаемое имя
+    const selectedCountry = window.countryAutocomplete ? window.countryAutocomplete.getSelectedCountry() : null;
+    formData.append('country', selectedCountry ? selectedCountry.code : countryField.value);
     formData.append('rating', document.getElementById('rating').value);
     formData.append('height', document.getElementById('height').value);
     formData.append('position', document.getElementById('position').value);
@@ -641,23 +686,35 @@ async function uploadPhoto() {
         
         if (result.success) {
             showAlert('Сохранено', 'success');
-            
-            // Обновляем превью
+
+            // Обновляем info в кэше всегда — даже если фото не менялось
+            const p = allParticipants.find(x => x.id == participantId);
+            if (p) {
+                let cachedInfo = {};
+                try { cachedInfo = JSON.parse(p.info || '{}'); } catch (e) {}
+                const savedCountry = window.countryAutocomplete?.getSelectedCountry();
+                cachedInfo.country   = savedCountry ? savedCountry.code : document.getElementById('country').value;
+                cachedInfo.rating    = document.getElementById('rating').value;
+                cachedInfo.height    = document.getElementById('height').value;
+                cachedInfo.position  = document.getElementById('position').value;
+                cachedInfo.full_name = document.getElementById('english-name').value;
+                p.info = JSON.stringify(cachedInfo);
+            }
+
+            // Обновляем превью если было новое фото
             if (result.preview_url) {
                 previewArea.innerHTML = `<img class="existing-photo" src="${result.preview_url}?t=${Date.now()}" alt="Фото">`;
                 document.getElementById('editorControls').classList.add('d-none');
-                
+
                 // Галочка в списке
                 const item = document.querySelector(`.participant-item[data-id="${participantId}"]`);
                 if (item && !item.querySelector('.fa-check-circle')) {
                     item.insertAdjacentHTML('beforeend', '<i class="fas fa-check-circle"></i>');
                 }
-                
-                // Обновляем кэш
-                const p = allParticipants.find(x => x.id == participantId);
+
                 if (p) p.photo_url = result.preview_url;
             }
-            
+
             // Очищаем редактор
             photoEditor.file = null;
             document.getElementById('photoFile').value = '';

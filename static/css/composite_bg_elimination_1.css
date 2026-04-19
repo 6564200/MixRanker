@@ -98,16 +98,15 @@ html, body {
     line-height: 1.2;
 }
 
-.olimpic_1_4 {
+.olimpic_17_18 {
+	top: 193px;
+    left: 110px;
+	max-width: 900px;
     font-family: 'TT_Bluescreens';
-    font-style: italic;
-    font-weight: 800;
-    font-size: 40px;
-	    color: #F9F9F9;
-		text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
-		    position: absolute;
-    top: 155px;
-    left: 115px;
+	color: #F9F9F9;
+	font-size: 38px;
+    line-height: 1.4;
+	opacity: 1;
 }
 
 .olimpic_3_4 {
@@ -120,7 +119,7 @@ html, body {
 		    position: absolute;
     top: 840px;
     left: 1330px;
-	opacity: 1;
+	opacity: 0;
 }
 
 .olimpic_5_8 {
@@ -143,7 +142,7 @@ html, body {
     justify-content: flex-end;
     align-items: center;
     gap: 40px;
-
+    opacity: 1;
     height: 130px;
 }
 
@@ -153,13 +152,27 @@ html, body {
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
-    opacity: 0;
+    opacity: 1;
     animation: fadeInScale 0.5s ease-out forwards;
 }
+.logo3 { 
+    width: 140px; 
+	animation-delay: 0.7s;
+	opacity: 0;
 
+}
 
-.logo2 { width: 90px; animation-delay: 0.4s; }
-.logo1 { width: 120px; animation-delay: 0.3s; }
+.logo2 { 
+    width: 80px; 
+	animation-delay: 0.4s;
+    opacity: 0;
+}
+
+.logo1 { 
+    width: 120px; 
+	animation-delay: 0.3s;
+    opacity: 0;	
+	}
 
 /* === ДЕКОРАТИВНАЯ ЛИНИЯ === */
 .header-line {

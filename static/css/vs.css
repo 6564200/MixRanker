@@ -252,7 +252,7 @@ html, body {
     background-repeat: no-repeat;
     border-radius: 4px;
     flex-shrink: 0;
-	opacity: 0.0;
+	opacity: 1;
 }
 
 .player-name {

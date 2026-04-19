@@ -685,6 +685,11 @@ body {
   flex-direction: column;
 }
 
+#uploadFormArea {
+  overflow-y: auto;
+  max-height: calc(90vh - 100px);
+}
+
 .no-selection {
   flex: 1;
   display: flex;

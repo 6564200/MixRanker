@@ -33,6 +33,7 @@
         slotNumber = parseInt(container.dataset.slot);
         mode = container.dataset.mode || 'auto';
         applyPlaceholderImage(container.dataset.placeholderUrl);
+        applyBackgroundType(container.dataset.backgroundType || 'image');
 
         console.log(`Display Pool ${slotNumber}: initialized, mode=${mode}`);
 
@@ -85,6 +86,37 @@
             
         } catch (error) {
             console.error('Failed to load settings:', error);
+        }
+    }
+
+    function buildMatrix(matrix, rows = 8, cols = 14) {
+        if (matrix.children.length) return; // уже построена
+        const fragment = document.createDocumentFragment();
+        for (let r = 0; r < rows; r++) {
+            const row = document.createElement('div');
+            row.className = 'bg-matrix-row';
+            for (let c = 1; c <= cols; c++) {
+                const rect = document.createElement('div');
+                rect.className = 'bg-matrix-rect';
+                rect.style.setProperty('--i', c);
+                row.appendChild(rect);
+            }
+            fragment.appendChild(row);
+        }
+        matrix.appendChild(fragment);
+    }
+
+    function applyBackgroundType(type) {
+        const matrix = document.querySelector('.bg-matrix');
+        const bgImage = document.querySelector('.bg-image');
+        if (!matrix) return;
+        if (type === 'matrix') {
+            buildMatrix(matrix);
+            matrix.classList.add('active');
+            if (bgImage) bgImage.style.display = 'none';
+        } else {
+            matrix.classList.remove('active');
+            if (bgImage) bgImage.style.display = '';
         }
     }
 

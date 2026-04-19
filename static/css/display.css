@@ -12,7 +12,7 @@ html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: #0944BD;
+    background: #0943BE;
 }
 
 /* === КОНТЕЙНЕР === */
@@ -21,6 +21,42 @@ html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
+}
+
+/* === АНИМИРОВАННЫЙ ФОН: МАТРИЦА === */
+.bg-matrix {
+    display: none;
+    flex-direction: column;
+    gap: 0px;
+    width: 120%;
+    height: 110%;
+    padding: 0px;
+    background: #175CD1;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.bg-matrix.active { display: flex; }
+
+.bg-matrix-row {
+    display: flex;
+    flex: 1;
+    gap: 0px;
+}
+
+.bg-matrix-rect {
+    flex: 1;
+    background: #0943BE;
+    height: 100%;
+    transform-origin: left;
+    animation: bg-matrix-wave 10s ease-in-out infinite alternate;
+    animation-delay: calc(var(--i) * 0.2s);
+}
+
+@keyframes bg-matrix-wave {
+    0%   { transform: skewX(-5deg) scaleX(-1); }
+    100% { transform: skewX(-40deg) scaleX(1); }
 }
 
 /* === ФОНОВОЕ ИЗОБРАЖЕНИЕ === */

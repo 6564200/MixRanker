@@ -21,7 +21,7 @@ body {
 }
 /* cort & text_cort container */
 .cort {
-    width: 92px;
+    width: 110px;
     height: 24px;
     background: linear-gradient(180deg, #A0CF32 0%, #85C200 100%);
     border-radius: 4px 4px 0px 0px;

@@ -34,6 +34,7 @@
         courtId = container.dataset.courtId;
         mode = container.dataset.mode || 'auto';
         applyPlaceholderImage(container.dataset.placeholderUrl);
+        applyBackgroundType(container.dataset.backgroundType || 'image');
 
         console.log(`Display Court ${slotNumber}: initialized, tournament=${tournamentId}, court=${courtId}, mode=${mode}`);
 
@@ -185,6 +186,37 @@
         } catch (error) {
             console.error('Failed to fetch window config:', error);
             return null;
+        }
+    }
+
+    function buildMatrix(matrix, rows = 8, cols = 12) {
+        if (matrix.children.length) return; // уже построена
+        const fragment = document.createDocumentFragment();
+        for (let r = 0; r < rows; r++) {
+            const row = document.createElement('div');
+            row.className = 'bg-matrix-row';
+            for (let c = 1; c <= cols; c++) {
+                const rect = document.createElement('div');
+                rect.className = 'bg-matrix-rect';
+                rect.style.setProperty('--i', c);
+                row.appendChild(rect);
+            }
+            fragment.appendChild(row);
+        }
+        matrix.appendChild(fragment);
+    }
+
+    function applyBackgroundType(type) {
+        const matrix = document.querySelector('.bg-matrix');
+        const bgImage = document.querySelector('.bg-image');
+        if (!matrix) return;
+        if (type === 'matrix') {
+            buildMatrix(matrix);
+            matrix.classList.add('active');
+            if (bgImage) bgImage.style.display = 'none';
+        } else {
+            matrix.classList.remove('active');
+            if (bgImage) bgImage.style.display = '';
         }
     }
 

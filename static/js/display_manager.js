@@ -89,6 +89,18 @@ function getWindowPlaceholderImage(windowData) {
     return windowData?.placeholder_image || windowData?.settings?.placeholder_image || 'bg_001.png';
 }
 
+function getWindowBackgroundType(windowData) {
+    return windowData?.settings?.background_type || 'image';
+}
+
+function setBackgroundTypeRadio(name, value) {
+    document.querySelectorAll(`input[name="${name}"]`).forEach(r => { r.checked = r.value === value; });
+}
+
+function getBackgroundTypeRadio(name) {
+    return document.querySelector(`input[name="${name}"]:checked`)?.value || 'image';
+}
+
 function getImageUrlByName(imageName) {
     const match = displayMediaImages.find(item => item.name === imageName);
     if (match?.url) return match.url;
@@ -584,7 +596,8 @@ async function editCourtWindow(slotNumber) {
         'editCourtPlaceholderPreview',
         getWindowPlaceholderImage(window)
     );
-    
+    setBackgroundTypeRadio('courtBgType', getWindowBackgroundType(window));
+
     const modal = new bootstrap.Modal(document.getElementById('editCourtWindowModal'));
     modal.show();
 }
@@ -626,7 +639,8 @@ async function saveCourtWindow() {
         court_id: document.getElementById('editCourtCourt').value || null,
         settings: {
             ...(currentWindow?.settings || {}),
-            placeholder_image: document.getElementById('editCourtPlaceholder')?.value || getWindowPlaceholderImage(currentWindow)
+            placeholder_image: document.getElementById('editCourtPlaceholder')?.value || getWindowPlaceholderImage(currentWindow),
+            background_type: getBackgroundTypeRadio('courtBgType')
         }
     };
     
@@ -687,7 +701,8 @@ async function editPoolWindow(slotNumber) {
         'editPoolPlaceholderPreview',
         getWindowPlaceholderImage(window)
     );
-    
+    setBackgroundTypeRadio('poolBgType', getWindowBackgroundType(window));
+
     const modal = new bootstrap.Modal(document.getElementById('editPoolWindowModal'));
     modal.show();
 }
@@ -770,7 +785,8 @@ async function savePoolWindow() {
             ...(currentWindow?.settings || {}),
             items: currentRotationItems.filter(item => item.url),
             custom_url: currentWindow?.settings?.custom_url || null,
-            placeholder_image: document.getElementById('editPoolPlaceholder')?.value || getWindowPlaceholderImage(currentWindow)
+            placeholder_image: document.getElementById('editPoolPlaceholder')?.value || getWindowPlaceholderImage(currentWindow),
+            background_type: getBackgroundTypeRadio('poolBgType')
         }
     };
     

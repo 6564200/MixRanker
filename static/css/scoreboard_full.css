@@ -56,7 +56,7 @@ html, body {
     font-family: 'TT_Bluescreens';
     font-style: italic;
     font-weight: 800;
-    font-size: 180px;
+    font-size: 190px;
     line-height: 226px;
     letter-spacing: 0em;
     color: var(--text-white);
@@ -72,7 +72,7 @@ html, body {
     justify-content: flex-end;
     align-items: center;
     gap: 70px;
-    height: 262px;
+    height: 450px;
 }
 
 .logo {
@@ -84,7 +84,7 @@ html, body {
 
 .logo1 { width: 360px; }
 .logo2 { width: 240px; }
-.logo3 { width: 0px; }
+.logo3 { width: 340px; }
 .logo4 { width: 0px; }
 
 /* === TABLE === */
@@ -159,7 +159,7 @@ html, body {
     background-repeat: no-repeat;
     background-position: center;
     flex-shrink: 0;
-	opacity: 0;
+	opacity: 1;
 }
 
 .player-name {
