@@ -403,10 +403,12 @@ def display_pool(slot_number: int):
         return 'Р В РЎСљР В Р’ВµР В РўвЂР В РЎвЂўР В РЎвЂ”Р РЋРЎвЂњР РЋР С“Р РЋРІР‚С™Р В РЎвЂР В РЎВР РЋРІР‚в„–Р В РІвЂћвЂ“ Р В Р вЂ¦Р В РЎвЂўР В РЎВР В Р’ВµР РЋР вЂљ Р РЋР С“Р В Р’В»Р В РЎвЂўР РЋРІР‚С™Р В Р’В°', 404
     
     window = get_display_window('pool', slot_number)
-    return render_template('display_pool.html', 
-                          slot_number=slot_number, 
+    bg_type = (window.get('settings', {}).get('background_type') or 'image') if window else 'image'
+    return render_template('display_pool.html',
+                          slot_number=slot_number,
                           window=window,
-                          placeholder_url=window['placeholder_url'] if window else f"/static/images/{DEFAULT_PLACEHOLDER_IMAGE}")
+                          placeholder_url=window['placeholder_url'] if window else f"/static/images/{DEFAULT_PLACEHOLDER_IMAGE}",
+                          background_type=bg_type)
 
 
 @display_bp.route('/display/court/<int:slot_number>')
@@ -416,7 +418,9 @@ def display_court(slot_number: int):
         return 'Р В РЎСљР В Р’ВµР В РўвЂР В РЎвЂўР В РЎвЂ”Р РЋРЎвЂњР РЋР С“Р РЋРІР‚С™Р В РЎвЂР В РЎВР РЋРІР‚в„–Р В РІвЂћвЂ“ Р В Р вЂ¦Р В РЎвЂўР В РЎВР В Р’ВµР РЋР вЂљ Р РЋР С“Р В Р’В»Р В РЎвЂўР РЋРІР‚С™Р В Р’В°', 404
     
     window = get_display_window('court', slot_number)
-    return render_template('display_court.html', 
-                          slot_number=slot_number, 
+    bg_type = (window.get('settings', {}).get('background_type') or 'image') if window else 'image'
+    return render_template('display_court.html',
+                          slot_number=slot_number,
                           window=window,
-                          placeholder_url=window['placeholder_url'] if window else f"/static/images/{DEFAULT_PLACEHOLDER_IMAGE}")
+                          placeholder_url=window['placeholder_url'] if window else f"/static/images/{DEFAULT_PLACEHOLDER_IMAGE}",
+                          background_type=bg_type)

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Утилиты для работы с фото участников"""
 
+import json
 import logging
 from typing import Dict, List
 
@@ -61,9 +62,61 @@ def enrich_players_with_photos(players: List[Dict], photo_map: Dict[int, str]) -
             player['photo_url'] = photo_map[player_id]
 
 
+def get_local_data_for_ids(player_ids: List[int]) -> Dict[int, Dict]:
+    """
+    Возвращает {id: {"country": <код>}} из локальной БД.
+    Приоритет: info.country (ручная правка) > country_code (из Rankedin).
+    """
+    if not player_ids:
+        return {}
+
+    def transaction(conn):
+        cursor = conn.cursor()
+        placeholders = ','.join('?' for _ in player_ids)
+        cursor.execute(f'''
+            SELECT id, country_code, info
+            FROM participants
+            WHERE id IN ({placeholders})
+        ''', tuple(player_ids))
+
+        result = {}
+        for row in cursor.fetchall():
+            pid, country_code, info_raw = row
+            country = ''
+            if info_raw:
+                try:
+                    info = json.loads(info_raw)
+                    country = info.get('country', '')
+                except Exception:
+                    pass
+            if not country:
+                country = country_code or ''
+            result[pid] = {'country': country}
+        return result
+
+    try:
+        return execute_with_retry(transaction)
+    except Exception as e:
+        logger.error(f"Ошибка получения данных участников: {e}")
+        return {}
+
+
+def enrich_players_with_country(players: List[Dict], local_data: Dict[int, Dict]) -> None:
+    """
+    Подставляет countryCode из локальной БД, если там есть данные.
+    Перекрывает данные Rankedin — ручные правки имеют приоритет.
+    """
+    for player in players:
+        player_id = player.get('id')
+        if player_id and player_id in local_data:
+            country = local_data[player_id].get('country', '')
+            if country:
+                player['countryCode'] = country
+
+
 def enrich_court_data_with_photos(court_data: Dict) -> Dict:
     """
-    данные корта с фотографиями игроков
+    Обогащает данные корта фотографиями и страной участников из локальной БД.
     Возвращает модифицированный court_data.
     """
     team1_ids, team2_ids = extract_player_ids(court_data)
@@ -73,12 +126,15 @@ def enrich_court_data_with_photos(court_data: Dict) -> Dict:
         return court_data
 
     photo_map = get_photo_urls_for_ids(all_ids)
+    local_data = get_local_data_for_ids(all_ids)
 
     team1_players = court_data.get("first_participant", [])
     team2_players = court_data.get("second_participant", [])
 
     enrich_players_with_photos(team1_players, photo_map)
     enrich_players_with_photos(team2_players, photo_map)
+    enrich_players_with_country(team1_players, local_data)
+    enrich_players_with_country(team2_players, local_data)
 
     return court_data
 

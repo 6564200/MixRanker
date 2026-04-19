@@ -6,7 +6,7 @@
 
 from typing import Dict, List
 from .html_base import HTMLBaseGenerator
-from .constants import get_country_name_ru
+from .constants import get_country_name_ru, get_flag_url
 import logging
 
 logger = logging.getLogger(__name__)
@@ -59,10 +59,7 @@ class WinnerGenerator(HTMLBaseGenerator):
         winners_images = []
 
         for i, w in enumerate(winners[:2]):
-            code = w.get("countryCode", "").lower()
-            if code == 'rin':
-                code = 'ru'
-            flag_url = f"/static/flags/4x3/{code}.svg"
+            flag_url = get_flag_url(w.get("countryCode", ""))
             country_name = get_country_name_ru(w.get("countryCode", ""))
             full_name = w.get("fullName", "")
             
@@ -72,7 +69,7 @@ class WinnerGenerator(HTMLBaseGenerator):
             logger.debug(f"Winner {i}: {full_name}, photo_url: {photo_url}")
 
             winners_table.append(f'''<div>
-                <img src="{flag_url}" class="flag-icon" data-field="winner{i}_flag" alt="{code}">
+                <img src="{flag_url}" class="flag-icon" data-field="winner{i}_flag" alt="{w.get('countryCode', '')}">
                 <div class="player-info">
                     <div class="win_name" data-field="winner{i}_name">{full_name}</div>
                     <div class="country_name" data-field="winner{i}_country">{country_name}</div>

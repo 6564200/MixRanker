@@ -46,18 +46,65 @@ COUNTRIES_RU = {
 
 # Маппинг кодов стран для флагов (3-буквенные → 2-буквенные ISO)
 COUNTRY_CODE_MAP = {
+    # Rankedin-специфичные коды
     "rin": "ru",
-    "rus": "ru", 
-    "bra": "br",
-    "arg": "ar",
+    # Европа
+    "rus": "ru",
+    "usa": "us",
+    "ger": "de",
+    "fra": "fr",
     "esp": "es",
     "ita": "it",
-    "fra": "fr",
-    "ger": "de",
     "gbr": "gb",
-    "usa": "us",
+    "por": "pt",
+    "ned": "nl",
+    "bel": "be",
+    "sui": "ch",
+    "aut": "at",
+    "swe": "se",
+    "nor": "no",
     "den": "dk",
     "dnk": "dk",
+    "fin": "fi",
+    "pol": "pl",
+    "cze": "cz",
+    "svk": "sk",
+    "cro": "hr",
+    "srb": "rs",
+    "ukr": "ua",
+    "blr": "by",
+    # Южная Америка
+    "bra": "br",
+    "arg": "ar",
+    "chi": "cl",
+    "uru": "uy",
+    "col": "co",
+    # Азия / Океания
+    "jpn": "jp",
+    "kor": "kr",
+    "chn": "cn",
+    "ind": "in",
+    "aus": "au",
+    "nzl": "nz",
+    "kaz": "kz",
+    "uzb": "uz",
+    "arm": "am",
+    "geo": "ge",
+    "aze": "az",
+    # Ближний Восток / Африка
+    "isr": "il",
+    "uae": "ae",
+    "qat": "qa",
+    "kuw": "kw",
+    "ksa": "sa",
+    "tur": "tr",
+    "egy": "eg",
+    "mar": "ma",
+    "tun": "tn",
+    "rsa": "za",
+    # Северная Америка
+    "can": "ca",
+    "mex": "mx",
 }
 
 def get_flag_url(country_code: str) -> str:
@@ -99,8 +146,10 @@ def get_country_name(country_id: int) -> str:
 
 
 def get_country_name_ru(country_code: str) -> str:
-    """Возвращает название страны на русском по коду"""
-    return COUNTRIES_RU.get(country_code.lower(), country_code.upper())
+    """Возвращает название страны на русском по коду (3- или 2-буквенный)"""
+    code = country_code.lower()
+    code = COUNTRY_CODE_MAP.get(code, code)  # 3-буквенный → 2-буквенный
+    return COUNTRIES_RU.get(code, country_code.upper())
 
 
 def get_xml_type_description(xml_type: str) -> str:

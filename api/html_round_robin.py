@@ -161,10 +161,10 @@ class RoundRobinGenerator(HTMLBaseGenerator):
                 </div>
                 {num_cols_html}
                 <div class="points-header" style="width:{points_col_width}px;">
-                    <div class="points" style="width:{points_col_width}px;">ОЧКИ</div>
+                    <div class="points" style="width:{points_col_width}px;">POINTS</div>
                 </div>
                 <div class="points-header" style="width:{points_col_width}px;">
-                    <div class="points" style="width:{points_col_width}px;">МЕСТО</div>
+                    <div class="points" style="width:{points_col_width}px;">PLACE</div>
                 </div>
             </div>'''
 

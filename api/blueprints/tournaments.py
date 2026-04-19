@@ -1,5 +1,8 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Обновления в tournaments.py для поддержки приоритетной логики стран
+MixRanker v2.6 - Country Autocomplete Integration
+"""
 
 import json
 import os
@@ -17,6 +20,7 @@ from api import (
     get_sport_name,
     get_court_has_referee,
 )
+
 def _extract_players(team_data: dict) -> list:
     if not team_data:
         return []
@@ -114,7 +118,7 @@ def create_tournaments_blueprint(api_client, upload_folder: str, logger):
                     (tournament_id, court_planner, court_usage, updated_at)
                     VALUES (?, ?, ?, CURRENT_TIMESTAMP)
                 ''', (tournament_id, json.dumps(tournament_data.get("court_planner", {})),
-                      json.dumps(tournament_data.get("court_usage", {}))))
+                          json.dumps(tournament_data.get("court_usage", {}))))
 
                 if matches_data:
                     cursor.execute('''
@@ -258,6 +262,57 @@ def create_tournaments_blueprint(api_client, upload_folder: str, logger):
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+    @bp.route('/api/tournament/<tournament_id>/participant-classes', methods=['GET'])
+    def get_participant_classes(tournament_id):
+        """Классы турнира с ID участников из draw_data (round robin + elimination)"""
+        tournament_data = get_tournament_data(tournament_id)
+        if not tournament_data:
+            return jsonify([])
+
+        result = []
+        for class_id, class_data in tournament_data.get('draw_data', {}).items():
+            if not isinstance(class_data, dict):
+                continue
+            raw_name = class_data.get('class_info', {}).get('Name', '') or class_id
+            class_name = raw_name[raw_name.find(',') + 1:].strip() if ',' in raw_name else raw_name
+
+            player_ids = set()
+
+            for rr in class_data.get('round_robin', []):
+                if not isinstance(rr, dict):
+                    continue
+                for row in rr.get('RoundRobin', {}).get('Pool', []):
+                    if not isinstance(row, list):
+                        continue
+                    for cell in row:
+                        if not isinstance(cell, dict) or cell.get('CellType') != 'ParticipantCell':
+                            continue
+                        for p in cell.get('ParticipantCell', {}).get('Players', []):
+                            if isinstance(p, dict) and p.get('Id'):
+                                player_ids.add(int(p['Id']))
+
+            for el in class_data.get('elimination', []):
+                if not isinstance(el, dict):
+                    continue
+                for slot in el.get('Elimination', {}).get('FirstRoundParticipantCells', []):
+                    if not isinstance(slot, dict):
+                        continue
+                    for side in ('ChallengerParticipant', 'ChallengedParticipant'):
+                        for key in ('FirstPlayer', 'SecondPlayer'):
+                            p = slot.get(side, {}).get(key, {})
+                            if isinstance(p, dict) and p.get('Id'):
+                                player_ids.add(int(p['Id']))
+
+            if player_ids:
+                result.append({
+                    'class_id': class_id,
+                    'class_name': class_name,
+                    'participant_ids': list(player_ids)
+                })
+
+        result.sort(key=lambda x: x['class_name'])
+        return jsonify(result)
+
     @bp.route('/api/participants/upload-photo', methods=['POST'])
     @require_auth
     def upload_participant_photo():
@@ -267,8 +322,37 @@ def create_tournaments_blueprint(api_client, upload_folder: str, logger):
         if not participant_id:
             return jsonify({"success": False, "error": "Не указан ID участника"}), 400
 
+        # НОВАЯ ЛОГИКА: Получаем страну и сохраняем только если важна валидация
+        country_input = request.form.get('country', '').strip()
+        
+        # Проверяем, есть ли уже страна в базе для приоритетной логики
+        def get_current_country(conn):
+            cursor = conn.cursor()
+            cursor.execute('SELECT country_code, info FROM participants WHERE id = ?', (participant_id,))
+            row = cursor.fetchone()
+            if row:
+                current_country = row[0] if row[0] else ''
+                current_info = row[1] if row[1] else '{}'
+                try:
+                    info_dict = json.loads(current_info) if current_info != '{}' else {}
+                    stored_country = info_dict.get('country', '')
+                    return current_country or stored_country
+                except:
+                    return current_country
+            return ''
+        
+        try:
+            current_country_in_db = execute_with_retry(get_current_country)
+        except:
+            current_country_in_db = ''
+
+        # ПРИОРИТЕТНАЯ ЛОГИКА: 
+        # Если в базе уже есть страна, и пользователь не изменил поле явно, 
+        # сохраняем существующую
+        final_country = country_input if country_input else current_country_in_db
+
         info = json.dumps({
-            'country': request.form.get('country', ''),
+            'country': final_country,
             'rating': request.form.get('rating', ''),
             'height': request.form.get('height', ''),
             'position': request.form.get('position', ''),
@@ -315,9 +399,19 @@ def create_tournaments_blueprint(api_client, upload_folder: str, logger):
         def update(conn):
             cursor = conn.cursor()
             if photo_saved:
-                cursor.execute('UPDATE participants SET photo_url = ?, info = ? WHERE id = ?', (preview_url, info, participant_id))
+                # Обновляем и фото, и дополнительные данные
+                cursor.execute('''
+                    UPDATE participants 
+                    SET photo_url = ?, info = ?, country_code = COALESCE(NULLIF(?, ''), country_code)
+                    WHERE id = ?
+                ''', (preview_url, info, final_country, participant_id))
             else:
-                cursor.execute('UPDATE participants SET info = ? WHERE id = ?', (info, participant_id))
+                # Обновляем только дополнительные данные 
+                cursor.execute('''
+                    UPDATE participants 
+                    SET info = ?, country_code = COALESCE(NULLIF(?, ''), country_code)
+                    WHERE id = ?
+                ''', (info, final_country, participant_id))
 
         execute_with_retry(update)
         return jsonify({"success": True, "preview_url": preview_url if photo_saved else None})

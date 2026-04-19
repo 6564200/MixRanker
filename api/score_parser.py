@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Общий модуль парсинга теннисного счёта и данных игроков.
-Единый источник правды для rankedin_api.py и rankedin_live.py
+Единый источник для rankedin_api.py и rankedin_live.py
 """
 
 from typing import Dict, List

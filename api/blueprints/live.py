@@ -195,6 +195,7 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 court_data.update(next_data)
                 court_data = _apply_no_referee_mode(court_data)
 
+            court_data = enrich_court_data_with_photos(court_data)
             html = html_generator.generate_scoreboard_full_html(court_data, tournament_data, tournament_id, court_id)
             return Response(html, mimetype='text/html; charset=utf-8')
         except Exception as e:
@@ -219,6 +220,8 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                     next_data = _get_next_match_participants(tournament_data, court_id)
                     court_data.update(next_data)
                 court_data = _apply_no_referee_mode(court_data)
+
+            court_data = enrich_court_data_with_photos(court_data)
 
             first_participant = court_data.get("first_participant", [])
             second_participant = court_data.get("second_participant", [])
@@ -345,6 +348,7 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 court_data.update(next_data)
                 court_data = _apply_no_referee_mode(court_data)
 
+            court_data = enrich_court_data_with_photos(court_data)
             html = html_generator.generate_match_introduction_html(court_data, match_info)
             return Response(html, mimetype='text/html; charset=utf-8')
         except Exception as e:
