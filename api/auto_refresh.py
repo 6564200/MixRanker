@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Сервис автоматического обновления данных"""
+#Сервис автоматического обновления данных
 
 import threading
 import time
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class AutoRefreshService:
-    """Сервис автоматического обновления данных с разными интервалами"""
+    #Сервис автоматического обновления данных с разными интервалами
     _instance = None
 
     def __new__(cls):
@@ -43,12 +43,12 @@ class AutoRefreshService:
         self.api = None
 
     def configure(self, app, api):
-        """Конфигурация сервиса"""
+        #Конфигурация сервиса
         self.app = app
         self.api = api
 
     def start(self):
-        """Запуск автоматического обновления"""
+        #Запуск автоматического обновления
         if not self.running:
             self.running = True
             self.thread = threading.Thread(target=self._refresh_loop, daemon=True)
@@ -56,14 +56,14 @@ class AutoRefreshService:
             logger.info(f"AutoRefresh ЗАПУЩЕН: корты={self.cycle_interval}с, таблицы={self.base_interval}с")
 
     def stop(self):
-        """Остановка автоматического обновления"""
+        #Остановка автоматического обновления
         self.running = False
         if self.thread:
             self.thread.join(timeout=5)
         logger.info("AutoRefresh остановлен")
 
     def _refresh_loop(self):
-        """Цикл автоматического обновления"""
+        #Цикл автоматического обновления
         while self.running:
             try:
                 with self.app.app_context():
@@ -85,7 +85,7 @@ class AutoRefreshService:
             time.sleep(self.cycle_interval)
 
     def _update_intervals(self, base_interval: int):
-        """Обновление интервалов"""
+        #Обновление интервалов
         self.base_interval = base_interval
         self.cycle_interval = max(base_interval // 2, 5)
         self.tables_update_frequency = max(base_interval // self.cycle_interval, 1)
@@ -93,7 +93,7 @@ class AutoRefreshService:
         logger.info(f"base_interval: {self.base_interval}, cycle_interval: {self.cycle_interval}")
 
     def _execute_updates(self, tournament_ids: List[str]):
-        """Выполнение обновлений"""
+        #Выполнение обновлений
         if self.cycle_counter % self.courts_update_frequency == 0:
             start = time.time()
             count = self._update_courts_data(tournament_ids)
@@ -119,7 +119,7 @@ class AutoRefreshService:
                 logger.info(f"МАТЧИ: обновлено {count} за {time.time() - start:.1f}с")
 
     def _get_settings_and_tournaments(self) -> Tuple[bool, int, List[str]]:
-        """Получает настройки и список турниров"""
+        #Получает настройки и список турниров
         def transaction(conn):
             cursor = conn.cursor()
 
@@ -155,7 +155,7 @@ class AutoRefreshService:
             return True, 30, []
 
     def _update_courts_data(self, tournament_ids: List[str]) -> int:
-        """Обновляет данные кортов"""
+        #Обновляет данные кортов
         updated = 0
 
         for tid in tournament_ids:
@@ -213,7 +213,7 @@ class AutoRefreshService:
         return updated
 
     def _update_tournament_tables(self, tournament_ids: List[str]) -> int:
-        """Обновляет турнирные таблицы"""
+        #Обновляет турнирные таблицы
         updated = 0
 
         for tid in tournament_ids:
@@ -269,7 +269,7 @@ class AutoRefreshService:
         return updated
 
     def _update_tournament_schedules(self, tournament_ids: List[str]) -> int:
-        """Обновляет расписание турниров"""
+        #Обновляет расписание турниров
         updated = 0
 
         for tid in tournament_ids:
@@ -307,7 +307,7 @@ class AutoRefreshService:
         return updated
 
     def _update_tournament_matches(self, tournament_ids: List[str]) -> int:
-        """Обновление матчей турниров"""
+        #Обновление матчей турниров
         updated = 0
         for tid in tournament_ids:
             try:

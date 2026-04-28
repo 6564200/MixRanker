@@ -4,6 +4,7 @@
 Генератор HTML страниц расписания матчей
 """
 
+from collections import Counter
 from typing import Dict, List, Optional, Set
 from datetime import datetime
 from .html_base import HTMLBaseGenerator
@@ -82,9 +83,13 @@ class ScheduleGenerator(HTMLBaseGenerator):
         target_date = target_date or datetime.now().strftime("%d.%m.%Y")
 
         matches_data = tournament_data.get("matches_data", {})
+        draw_data    = tournament_data.get("draw_data", {})
         matches_index = self._build_matches_index(matches_data, court_names_map)
+        player_index  = self._build_player_index(matches_data, draw_data)
 
-        courts_matches, all_matches = self._group_matches_by_court(court_usage, court_names_map, target_date, matches_index)
+        courts_matches, all_matches = self._group_matches_by_court(
+            court_usage, court_names_map, target_date, matches_index, player_index
+        )
 
         if not courts_matches:
             return {
@@ -159,9 +164,13 @@ class ScheduleGenerator(HTMLBaseGenerator):
 
         # Создаём индекс матчей для обогащения данных
         matches_data = tournament_data.get("matches_data", {})
+        draw_data    = tournament_data.get("draw_data", {})
         matches_index = self._build_matches_index(matches_data, court_names_map)
+        player_index  = self._build_player_index(matches_data, draw_data)
 
-        courts_matches, all_matches = self._group_matches_by_court(court_usage, court_names_map, target_date, matches_index)
+        courts_matches, all_matches = self._group_matches_by_court(
+            court_usage, court_names_map, target_date, matches_index, player_index
+        )
 
         if not courts_matches:
             return self._generate_empty_schedule_html(tournament_name, f"Нет матчей на {target_date}")
@@ -219,7 +228,7 @@ class ScheduleGenerator(HTMLBaseGenerator):
     @staticmethod
     def _extract_possible_match_ids(match: Dict) -> Set[str]:
         ids = set()
-        for key in ("TournamentMatchId", "TournamentMatchID", "MatchId", "Id", "id"):
+        for key in ("TournamentMatchId", "TournamentMatchID", "ChallengeId", "MatchId", "Id", "id"):
             value = match.get(key)
             if value not in (None, ""):
                 ids.add(str(value))
@@ -247,9 +256,18 @@ class ScheduleGenerator(HTMLBaseGenerator):
 
         return matches_index
 
+    # Заглушки — не являются реальными именами, матчируются с чем угодно
+    _PENDING_TOKENS = frozenset({"PENDING", "TBD", "BYE", "WO", "WalkOver"})
+
     @staticmethod
     def _normalize_token(value: str) -> str:
         return re.sub(r"[^0-9A-Za-zА-Яа-я]", "", (value or "")).upper()
+
+    @classmethod
+    def _is_pending(cls, abbrev: str) -> bool:
+        """True если строка — placeholder неопределённого участника."""
+        token = cls._normalize_token(abbrev)
+        return bool(token) and token in {cls._normalize_token(t) for t in cls._PENDING_TOKENS}
 
     def _get_abbrevs_from_name(self, full_name: str) -> set:
         """Получает все возможные сокращения (первые 3 буквы каждого слова)"""
@@ -272,6 +290,9 @@ class ScheduleGenerator(HTMLBaseGenerator):
         return token in self._get_abbrevs_from_name(full_name)
 
     def _team_matches(self, team_abbrev: str, team_data: Dict) -> bool:
+        # Заглушка «PENDING» / «TBD» / «BYE» — считаем, что подходит к любому участнику
+        if self._is_pending(team_abbrev):
+            return True
         parts = [p.strip() for p in re.split(r"[\\/|]", (team_abbrev or "")) if p.strip()]
         ab1 = parts[0] if len(parts) > 0 else ""
         ab2 = parts[1] if len(parts) > 1 else ""
@@ -283,6 +304,9 @@ class ScheduleGenerator(HTMLBaseGenerator):
 
     def _detect_swap(self, match: Dict, challenger_abbrev: str, challenged_abbrev: str) -> bool:
         """Определяет, перевёрнут ли порядок сторон в rich_match относительно court_usage."""
+        # Если одна из сторон — заглушка, swap не определить — считаем не перевёрнутым
+        if self._is_pending(challenger_abbrev) or self._is_pending(challenged_abbrev):
+            return False
         ch = match.get("Challenger", {})
         cd = match.get("Challenged", {})
         same    = self._team_matches(challenger_abbrev, ch) and self._team_matches(challenged_abbrev, cd)
@@ -399,6 +423,89 @@ class ScheduleGenerator(HTMLBaseGenerator):
 
         return "/".join(normalized) if normalized else team_name
 
+    def _build_player_index(self, matches_data, draw_data: Optional[Dict] = None) -> Dict[str, str]:
+        """
+        Индекс: нормализованный токен имени/фамилии → отформатированное имя команды.
+        Строится по участникам из matches_data И из draw_data (elimination brackets).
+        Позволяет найти команды с BYE, которых нет в matches_data.
+
+        """
+        index: Dict[str, str] = {}
+
+        def _index_participant(participant: dict, formatted: str) -> None:
+            n1, n2 = self._extract_team_player_names(participant)
+            for name in filter(None, [n1, n2]):
+                for token in self._get_abbrevs_from_name(name):
+                    if token not in index:
+                        index[token] = formatted
+
+        # ── Источник 1: matches_data ──────────────────────────────────────────
+        matches_list = matches_data.get("Matches", []) if isinstance(matches_data, dict) else []
+        for match in matches_list:
+            for side in ("Challenger", "Challenged"):
+                participant = match.get(side) or {}
+                if not isinstance(participant, dict):
+                    continue
+                formatted = self._format_full_name(participant)
+                if not formatted or formatted == "TBD":
+                    continue
+                _index_participant(participant, formatted)
+
+        # ── Источник 2: draw_data (elimination brackets) ──────────────────────
+        # Здесь есть сеяные команды с BYE, которых нет в matches_data
+        if draw_data and isinstance(draw_data, dict):
+            for class_data in draw_data.values():
+                if not isinstance(class_data, dict):
+                    continue
+                for elim in class_data.get("elimination", []):
+                    if not isinstance(elim, dict):
+                        continue
+                    bracket = elim.get("Elimination", {})
+                    draw_rounds = bracket.get("DrawData", [])
+                    for round_matches in draw_rounds:
+                        if not isinstance(round_matches, list):
+                            continue
+                        for match in round_matches:
+                            if not isinstance(match, dict):
+                                continue
+                            for side in ("ChallengerParticipant", "ChallengedParticipant"):
+                                p = match.get(side) or {}
+                                if not isinstance(p, dict):
+                                    continue
+                                # Структура: {FirstPlayer: {Name: "..."}, SecondPlayer: {Name: "..."}}
+                                # _extract_team_player_names поддерживает Variant B (FirstPlayer/SecondPlayer)
+                                formatted = self._format_full_name(p)
+                                if not formatted or formatted == "TBD":
+                                    continue
+                                _index_participant(p, formatted)
+
+        return index
+
+    def _lookup_full_name_by_abbrev(self, team_abbrev: str, player_index: Dict[str, str]) -> Optional[str]:
+        """
+        Ищет полное имя команды по сокращению из court_usage (например "Мария/Дмитр").
+        Каждая часть аббревиатуры ищется в player_index.
+        Возвращает наиболее часто встречающийся кандидат, или None если не найден.
+        """
+        if not team_abbrev or self._is_pending(team_abbrev):
+            return None
+
+        parts = [p.strip() for p in re.split(r"[\\/|]", team_abbrev) if p.strip()]
+        if not parts:
+            return None
+
+        candidates = []
+        for part in parts:
+            token = self._normalize_token(part)
+            if token and token in player_index:
+                candidates.append(player_index[token])
+
+        if not candidates:
+            return None
+
+        most_common, _ = Counter(candidates).most_common(1)[0]
+        return most_common
+
     def _format_detailed_score(self, match_result: Dict) -> str:
         """Форматирует детальный счёт из MatchResult"""
         if not match_result:
@@ -430,17 +537,33 @@ class ScheduleGenerator(HTMLBaseGenerator):
         
         return " ".join(sets)
 
-    def _group_matches_by_court(self, court_usage: List, court_names_map: Dict, 
-                                 target_date: str, matches_index: Dict) -> tuple:
-        """Группирует матчи по кортам и фильтрует по дате"""
-        courts_matches = {}
-        all_matches = []
+    def _group_matches_by_court(self, court_usage: List, court_names_map: Dict,
+                                 target_date: str, matches_index: Dict,
+                                 player_index: Optional[Dict[str, str]] = None) -> tuple:
+        """Группирует матчи по кортам и фильтрует по дате.
 
-        for match in court_usage:
-            if not isinstance(match, dict):
+        Двухпроходное обогащение:
+        1. Все матчи, у которых нашёлся rich_match, разрешаются немедленно;
+           их аббревиатуры → полные имена сохраняются в abbrev_to_full.
+        2. Матчи без rich_match (будущие раунды) ищут свои аббревиатуры
+           в abbrev_to_full (прямое совпадение строки из court_usage),
+           затем — в player_index (поиск по токенам), затем — сырой fallback.
+        """
+        # ── Проход 1: разрешаем известные матчи и строим словарь аббревиатур ──
+
+        # abbrev_to_full: точная строка ChallengerName/ChallengedName из court_usage
+        #                 → отформатированное полное имя команды
+        abbrev_to_full: Dict[str, str] = {}
+
+        pending_matches: List[Dict] = []   # матчи без rich_match (для 2-го прохода)
+        all_matches:     List[Dict] = []
+        courts_matches:  Dict[str, List] = {}
+
+        for raw_match in court_usage:
+            if not isinstance(raw_match, dict):
                 continue
 
-            match = dict(match)  # копия — не мутируем кэшированный объект
+            match = dict(raw_match)  # копия — не мутируем кэшированный объект
 
             match_date = match.get("MatchDate", "")
             if not match_date:
@@ -456,18 +579,17 @@ class ScheduleGenerator(HTMLBaseGenerator):
                 if dt_obj.hour >= 22:
                     continue
 
-                court_id = str(match.get("CourtId", ""))
+                court_id   = str(match.get("CourtId", ""))
                 court_name = court_names_map.get(court_id, f"Корт {court_id}")
 
-                match["start_time"] = dt_obj.strftime("%H:%M")
+                match["start_time"]    = dt_obj.strftime("%H:%M")
                 match["date_formatted"] = dt_obj.strftime("%d.%m.%Y")
-                match["court_name"] = court_name
-                match["datetime_obj"] = dt_obj
+                match["court_name"]    = court_name
+                match["datetime_obj"]  = dt_obj
 
-                # Обогащаем данными из matches
                 challenger_abbrev = match.get("ChallengerName", "")
                 challenged_abbrev = match.get("ChallengedName", "")
-                
+
                 rich_match, is_swapped = self._find_match_by_abbrev(
                     matches_index, match_date, court_name,
                     challenger_abbrev, challenged_abbrev, source_match=match
@@ -477,23 +599,61 @@ class ScheduleGenerator(HTMLBaseGenerator):
                     # Если стороны перевёрнуты в matches_data — берём имена в обратном порядке,
                     # чтобы они соответствовали ChallengerResult/ChallengedResult из court_usage
                     if is_swapped:
-                        match["ChallengerFullName"] = self._format_full_name(rich_match.get("Challenged", {}))
-                        match["ChallengedFullName"] = self._format_full_name(rich_match.get("Challenger", {}))
+                        ch_full = self._format_full_name(rich_match.get("Challenged", {}))
+                        cd_full = self._format_full_name(rich_match.get("Challenger", {}))
                     else:
-                        match["ChallengerFullName"] = self._format_full_name(rich_match.get("Challenger", {}))
-                        match["ChallengedFullName"] = self._format_full_name(rich_match.get("Challenged", {}))
-                    match["DetailedScore"] = self._format_detailed_score(rich_match.get("MatchResult", {}))
-                    match["RichMatchData"] = rich_match
+                        ch_full = self._format_full_name(rich_match.get("Challenger", {}))
+                        cd_full = self._format_full_name(rich_match.get("Challenged", {}))
+
+                    # Сохраняем placeholder из court_usage, если rich_match не даёт реального имени
+                    if ch_full == "TBD" and self._is_pending(challenger_abbrev):
+                        ch_full = challenger_abbrev.strip()
+                    if cd_full == "TBD" and self._is_pending(challenged_abbrev):
+                        cd_full = challenged_abbrev.strip()
+
+                    # Запоминаем соответствие аббревиатура → полное имя для 2-го прохода
+                    if not self._is_pending(challenger_abbrev) and ch_full and ch_full != "TBD":
+                        abbrev_to_full[challenger_abbrev] = ch_full
+                    if not self._is_pending(challenged_abbrev) and cd_full and cd_full != "TBD":
+                        abbrev_to_full[challenged_abbrev] = cd_full
+
+                    match["ChallengerFullName"] = ch_full
+                    match["ChallengedFullName"] = cd_full
+                    match["DetailedScore"]      = self._format_detailed_score(rich_match.get("MatchResult", {}))
+                    match["RichMatchData"]      = rich_match
                 else:
-                    # Fallback: используем сокращённые имена
-                    match["ChallengerFullName"] = self._format_abbrev_team_fallback(challenger_abbrev)
-                    match["ChallengedFullName"] = self._format_abbrev_team_fallback(challenged_abbrev)
+                    # Отложим на 2-й проход
+                    pending_matches.append(match)
 
                 all_matches.append(match)
                 courts_matches.setdefault(court_name, []).append(match)
 
             except Exception:
                 continue
+
+        # ── Проход 2: разрешаем отложенные матчи ──────────────────────────────
+
+        pi = player_index or {}
+
+        for match in pending_matches:
+            challenger_abbrev = match.get("ChallengerName", "")
+            challenged_abbrev = match.get("ChallengedName", "")
+
+            def _resolve(abbrev: str) -> str:
+                if self._is_pending(abbrev):
+                    return abbrev.strip()
+                # 1. Точное совпадение строки из court_usage (из 1-го прохода)
+                if abbrev in abbrev_to_full:
+                    return abbrev_to_full[abbrev]
+                # 2. Поиск по токенам имён через player_index (включает draw_data)
+                found = self._lookup_full_name_by_abbrev(abbrev, pi)
+                if found:
+                    return found
+                # 3. Сырой fallback: нормализованная аббревиатура
+                return self._format_abbrev_team_fallback(abbrev)
+
+            match["ChallengerFullName"] = _resolve(challenger_abbrev)
+            match["ChallengedFullName"] = _resolve(challenged_abbrev)
 
         return courts_matches, all_matches
 
@@ -589,27 +749,32 @@ class ScheduleGenerator(HTMLBaseGenerator):
         challenger_wo = challenger_result == "Won W.O."
         challenged_wo = challenged_result == "Won W.O."
 
-        if challenger_wo:
+        # "Won R" — победа из-за снятия соперника (retirement): показываем бейдж R.
+        challenger_ret = challenger_result == "Won R"
+        challenged_ret = challenged_result == "Won R"
+
+        if challenger_wo or challenger_ret:
             challenger_result = ""
-        if challenged_wo:
+        if challenged_wo or challenged_ret:
             challenged_result = ""
 
         challenger_players = self._split_team_name(challenger_full)
         challenged_players = self._split_team_name(challenged_full)
 
-        def team_html(players: list, wo: bool, result: str) -> str:
-            wo_div = "<div class='match-team-wo'>W.O.</div>" if wo else ""
+        def team_html(players: list, wo: bool, ret: bool, result: str) -> str:
+            wo_div  = "<div class='match-team-wo'>W.O.</div>"  if wo  else ""
+            ret_div = "<div class='match-team-ret'>Ret.</div>" if ret else ""
             score_div = f"<div class='match-team-score'>{result}</div>" if result else ""
             if len(players) == 1:
-                return f'<div class="match-team"><div class="match-team-name">{players[0]}</div>{wo_div}{score_div}</div>'
+                return f'<div class="match-team"><div class="match-team-name">{players[0]}</div>{wo_div}{ret_div}{score_div}</div>'
             players_html = "".join(f'<div class="match-player-name">{p}</div>' for p in players[:2])
-            return f'<div class="match-team"><div class="match-team-names">{players_html}</div>{wo_div}{score_div}</div>'
+            return f'<div class="match-team"><div class="match-team-names">{players_html}</div>{wo_div}{ret_div}{score_div}</div>'
 
         return (f'<div class="match-item {status_class}">'
                 f'<div class="match-content">'
                 f'<div class="match-teams-wrapper">'
-                f'{team_html(challenger_players, challenger_wo, challenger_result)}'
-                f'{team_html(challenged_players, challenged_wo, challenged_result)}'
+                f'{team_html(challenger_players, challenger_wo, challenger_ret, challenger_result)}'
+                f'{team_html(challenged_players, challenged_wo, challenged_ret, challenged_result)}'
                 f'</div></div></div>')
 
     def _generate_empty_schedule_html(self, tournament_name: str, message: str) -> str:

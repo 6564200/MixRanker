@@ -12,6 +12,12 @@ from .html_base import HTMLBaseGenerator
 
 
 class ThemeRegistry:
+    """
+    Реестр тем оформления страниц трансляции.
+    Хранит список допустимых тем для каждого типа страницы (_PAGE_THEMES)
+    и предоставляет методы валидации и перечисления тем.
+    DEFAULT_THEME используется как запасной вариант при неизвестной или пустой теме.
+    """
     DEFAULT_THEME = "default"
     _PAGE_THEMES = {
         "vs": {"default", "arena"},
@@ -28,6 +34,11 @@ class ThemeRegistry:
 
     @classmethod
     def normalize_theme(cls, theme: str, page: str) -> str:
+        """
+        Нормализует и валидирует тему для конкретного типа страницы.
+        Если тема пустая или не входит в список допустимых для данного page —
+        возвращает DEFAULT_THEME. Сравнение регистронезависимо.
+        """
         requested = (theme or "").strip().lower()
         if not requested:
             return cls.DEFAULT_THEME
@@ -38,10 +49,18 @@ class ThemeRegistry:
 
     @classmethod
     def list_themes(cls, page: str) -> List[str]:
+        """Возвращает отсортированный список допустимых тем для указанного типа страницы."""
         return sorted(cls._PAGE_THEMES.get(page, {cls.DEFAULT_THEME}))
 
 
 def get_window_theme_for_court(tournament_id: str, court_id: str, page: str = "vs") -> str:
+    """
+    Читает тему из настроек display_window для конкретного корта турнира.
+    Ищет активное окно типа 'court' с совпадающими tournament_id и court_id,
+    берёт последнее по updated_at/id и извлекает поле settings.theme.
+    Результат валидируется через ThemeRegistry.normalize_theme.
+    При любой ошибке или отсутствии записи возвращает DEFAULT_THEME.
+    """
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
@@ -70,6 +89,14 @@ def get_window_theme_for_court(tournament_id: str, court_id: str, page: str = "v
 
 
 def build_vs_view_model(court_data: Dict, tournament_data: Dict, tournament_id: str, court_id: str, theme: str) -> Dict:
+    """
+    Строит view-model для страницы VS (противостояние двух команд перед матчем или в начале).
+    Извлекает до 2 игроков каждой команды, до 3 уже сыгранных сетов (с ненулевым счётом),
+    формирует строки имён через HTMLBaseGenerator.format_player_name и добавляет URL флага и фото.
+    Внутренняя функция _player_row формирует словарь одного игрока:
+      name, flag_url, photo_url, has_photo.
+    Возвращает словарь, готовый для передачи в шаблон themes/<theme>/vs.html.
+    """
     base = HTMLBaseGenerator()
     team1 = (court_data or {}).get("first_participant", [])[:2]
     team2 = (court_data or {}).get("second_participant", [])[:2]
@@ -103,12 +130,26 @@ def build_vs_view_model(court_data: Dict, tournament_data: Dict, tournament_id: 
 
 
 def render_vs_themed(court_data: Dict, tournament_data: Dict, tournament_id: str, court_id: str, theme: str) -> str:
+    """
+    Рендерит HTML-страницу VS для заданной темы.
+    Нормализует тему, строит view-model через build_vs_view_model
+    и отрисовывает шаблон themes/<theme>/vs.html.
+    """
     normalized_theme = ThemeRegistry.normalize_theme(theme, "vs")
     vm = build_vs_view_model(court_data, tournament_data, tournament_id, court_id, normalized_theme)
     return render_template(f"themes/{normalized_theme}/vs.html", **vm)
 
 
 def build_winner_view_model(court_data: Dict, tournament_id: str, court_id: str, theme: str) -> Dict:
+    """
+    Строит view-model для страницы победителя.
+    Определяет победителя и проигравшего по сравнению счёта сетов (score1 vs score2).
+    Внутренняя функция _winner_row формирует словарь игрока-победителя:
+      name (fullName), country (на русском), flag_url, photo_url, has_photo.
+    Особый случай: код страны 'rin' заменяется на 'ru' для корректного флага.
+    Формирует строку loser_name (initialLastName через слеш) и список set_scores ('X/Y' для каждого сета).
+    Возвращает словарь, готовый для шаблона themes/<theme>/winner.html.
+    """
     first_participant = (court_data or {}).get("first_participant", [])
     second_participant = (court_data or {}).get("second_participant", [])
     score1 = int((court_data or {}).get("first_participant_score", 0) or 0)
@@ -159,12 +200,25 @@ def build_winner_view_model(court_data: Dict, tournament_id: str, court_id: str,
 
 
 def render_winner_themed(court_data: Dict, tournament_id: str, court_id: str, theme: str) -> str:
+    """
+    Рендерит HTML-страницу победителя для заданной темы.
+    Нормализует тему, строит view-model через build_winner_view_model
+    и отрисовывает шаблон themes/<theme>/winner.html.
+    """
     normalized_theme = ThemeRegistry.normalize_theme(theme, "winner")
     vm = build_winner_view_model(court_data, tournament_id, court_id, normalized_theme)
     return render_template(f"themes/{normalized_theme}/winner.html", **vm)
 
 
 def apply_theme_to_html(html: str, theme: str, page: str) -> str:
+    """
+    Внедряет тему оформления в готовую HTML-строку без повторного рендеринга шаблона.
+    Используется для страниц, которые генерируются не через themed-шаблоны (round_robin, schedule и т.п.).
+    Действия:
+      1. Вставляет <link> на CSS темы перед </head>,
+      2. Добавляет класс 'theme-<name>' к тегу <body> (создаёт атрибут class, если его нет).
+    Для DEFAULT_THEME ('default') возвращает HTML без изменений.
+    """
     normalized_theme = ThemeRegistry.normalize_theme(theme, page)
     if normalized_theme == ThemeRegistry.DEFAULT_THEME:
         return html

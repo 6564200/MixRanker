@@ -51,7 +51,7 @@ def check_user_credentials(username: str, password: str) -> bool:
         user = cursor.fetchone()
 
         if user and _verify_password(user['password'], password):
-            # Migrate legacy plaintext password to hash on successful login.
+            
             if not _is_password_hash(user['password']):
                 cursor.execute(
                     'UPDATE users SET password = ?, last_login = CURRENT_TIMESTAMP WHERE username = ?',

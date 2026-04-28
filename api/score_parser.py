@@ -33,7 +33,6 @@ def _convert_game_score(value: int, other: int) -> str:
     """Конвертация очков гейма в теннисный формат (0, 15, 30, 40, AD)"""
     if value <= 3:
         return {0: "0", 1: "15", 2: "30", 3: "40"}.get(value, str(value))
-    # Deuce / Advantage
     return "AD" if value > other else "40"
 
 

@@ -49,11 +49,6 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
         team1_sets_html = self._render_team_sets(detailed_result, "first")
         team2_sets_html = self._render_team_sets(detailed_result, "second")
         
-        # HTML для колонки СЧЁТ (текущие геймы)
-        # game_score_header = '<div class="header-cell game-score">СЧЁТ</div>' if show_game_score else ''                                        {game_score_header}
-        # team1_game_html = f'<div class="score-cell game-score" data-field="team1_game">{team1_game_score}</div>' if show_game_score else ''    {team1_game_html}
-        # team2_game_html = f'<div class="score-cell game-score" data-field="team2_game">{team2_game_score}</div>' if show_game_score else ''    {team2_game_html}
-        
         # Формируем HTML для игроков
         team1_html = self._render_team_block(team1_players, "team1")
         team2_html = self._render_team_block(team2_players, "team2")
@@ -144,7 +139,7 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
         </div>
         
     </div>
-    <script src="/static/js/scoreboard_full.js"></script>
+    <script src="/static/js/court_scoreboard.js"></script>
 </body>
 </html>'''
 

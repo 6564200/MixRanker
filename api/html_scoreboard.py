@@ -137,7 +137,7 @@ class ScoreboardGenerator(HTMLBaseGenerator):
             </div>
         </div>
     </div>
-    <script src="/static/js/smart_scoreboard.js?v=0.0.1"></script>
+    <script src="/static/js/court_scoreboard.js"></script>
 </body>
 </html>'''
 
@@ -258,7 +258,7 @@ class ScoreboardGenerator(HTMLBaseGenerator):
         <div class="team-name">NO ACTIVE MATCH</div>
     </div>
     
-    <script src="/static/js/smart_scoreboard.js?v=0.0.2"></script>
+    <script src="/static/js/court_scoreboard.js"></script>
 </body>
 </html>'''
 

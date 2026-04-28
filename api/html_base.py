@@ -65,6 +65,20 @@ class HTMLBaseGenerator:
         return {"finished": "match-finished", "active": "match-active", "future": "match-future"}.get(status, "match-future")
 
     @staticmethod
+    def _normalize_result(result: str) -> str:
+        """
+        Нормализует строку результата из rankedin API для отображения.
+        Заменяет технические значения на пустую строку, чтобы фронтенд
+        показывал бейдж вместо сырого текста:
+          'Won W.O.' → '' (победа при неявке соперника — walkover)
+          'Won R'    → '' (победа при снятии соперника — retirement)
+        Все остальные значения (числовой счёт и т.п.) возвращаются как есть.
+        """
+        if result in ("Won W.O.", "Won R"):
+            return ""
+        return result
+
+    @staticmethod
     def get_team_name_from_players(first_player: Dict, second_player: Dict) -> str:
         """Формирует название команды из имен игроков"""
         names = [p.get("Name") for p in [first_player, second_player] if p and p.get("Name")]

@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Р В РЎС™Р В РЎвЂўР В РўвЂР РЋРЎвЂњР В Р’В»Р РЋР Р‰ Р РЋРЎвЂњР В РЎвЂ”Р РЋР вЂљР В Р’В°Р В Р вЂ Р В Р’В»Р В Р’ВµР В Р вЂ¦Р В РЎвЂР РЋР РЏ Р В РЎвЂўР В РЎвЂќР В Р вЂ¦Р В Р’В°Р В РЎВР В РЎвЂ Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р РЋР С“Р В Р’В»Р РЋР РЏР РЋРІР‚В Р В РЎвЂР В РЎвЂ (Display Windows)
-"""
 
 import json
 import logging
@@ -13,16 +10,22 @@ from flask import Blueprint, jsonify, request, render_template, session
 
 logger = logging.getLogger(__name__)
 
-# Blueprint Р В РўвЂР В Р’В»Р РЋР РЏ Р В РЎВР В Р’В°Р РЋР вЂљР РЋРІвЂљВ¬Р РЋР вЂљР РЋРЎвЂњР РЋРІР‚С™Р В РЎвЂўР В Р вЂ 
 display_bp = Blueprint('display', __name__)
 DEFAULT_PLACEHOLDER_IMAGE = 'bg_001.png'
 ALLOWED_PLACEHOLDER_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'}
 
 def _is_authenticated() -> bool:
+    """Проверяет, авторизован ли текущий пользователь через сессию Flask."""
     return bool(session.get('authenticated'))
 
 
 def _normalize_placeholder_image(name: Optional[str]) -> str:
+    """
+    Проверяет и нормализует имя файла изображения-заглушки (placeholder).
+    Допустимые расширения: png, jpg, jpeg, webp, gif, svg.
+    Запрещены пути с каталогами (только basename).
+    Возвращает переданное имя или DEFAULT_PLACEHOLDER_IMAGE при невалидном значении.
+    """
     if not name:
         return DEFAULT_PLACEHOLDER_IMAGE
     if name != basename(name):
@@ -36,6 +39,7 @@ def _normalize_placeholder_image(name: Optional[str]) -> str:
 
 
 def _to_int_safe(value) -> int:
+    """Безопасно приводит значение к int. При ошибке (None, строка, и т.п.) возвращает 0."""
     try:
         return int(value)
     except (TypeError, ValueError):
@@ -43,6 +47,12 @@ def _to_int_safe(value) -> int:
 
 
 def _has_any_nonzero_score(detailed_result: List[Dict]) -> bool:
+    """
+    Проверяет, есть ли хотя бы одно ненулевое очко в detailed_result.
+    Анализирует счёт по сетам (firstParticipantScore / secondParticipantScore)
+    и внутри гейма/тай-брейка (gameScore.first / gameScore.second).
+    Возвращает True, если найдено любое очко > 0.
+    """
     for set_data in detailed_result or []:
         first_score = _to_int_safe(set_data.get('firstParticipantScore'))
         second_score = _to_int_safe(set_data.get('secondParticipantScore'))
@@ -59,6 +69,11 @@ def _has_any_nonzero_score(detailed_result: List[Dict]) -> bool:
 
 
 def _is_match_result_ready_for_winner(court_data: Dict) -> bool:
+    """
+    Определяет, готов ли результат матча для отображения экрана победителя.
+    Считается готовым, если есть хотя бы одно ненулевое очко в detailed_result
+    или ненулевой общий счёт (first_participant_score / second_participant_score).
+    """
     detailed_result = court_data.get('detailed_result', []) or []
     if _has_any_nonzero_score(detailed_result):
         return True
@@ -67,11 +82,14 @@ def _is_match_result_ready_for_winner(court_data: Dict) -> bool:
     second_participant_score = _to_int_safe(court_data.get('second_participant_score'))
     return first_participant_score > 0 or second_participant_score > 0
 
-
-# === Р В Р’ВР В РЎСљР В Р’ВР В Р’В¦Р В Р’ВР В РЎвЂ™Р В РІР‚С”Р В Р’ВР В РІР‚вЂќР В РЎвЂ™Р В Р’В¦Р В Р’ВР В Р вЂЎ Р В РЎС›Р В РЎвЂ™Р В РІР‚ВР В РІР‚С”Р В Р’ВР В Р’В¦Р В Р’В« ===
-
 def init_display_windows_table(cursor):
-    """Р В Р Р‹Р В РЎвЂўР В Р’В·Р В РўвЂР В Р’В°Р В Р вЂ¦Р В РЎвЂР В Р’Вµ Р РЋРІР‚С™Р В Р’В°Р В Р’В±Р В Р’В»Р В РЎвЂР РЋРІР‚В Р РЋРІР‚в„– display_windows"""
+    """
+    Создаёт таблицу display_windows и заполняет её начальными записями (если не существуют).
+    Типы окон:
+      'pool'  — 6 слотов для отображения групп/расписания (с настройками items и current_index),
+      'court' — 10 слотов для отображения состояния кортов (mode по умолчанию 'auto').
+    Вызывается при инициализации БД.
+    """
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS display_windows (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,29 +107,27 @@ def init_display_windows_table(cursor):
         )
     ''')
     
-    # Р В Р Р‹Р В РЎвЂўР В Р’В·Р В РўвЂР В Р’В°Р РЋРІР‚ВР В РЎВ Р В РЎвЂўР В РЎвЂќР В Р вЂ¦Р В Р’В° Р В РЎвЂ”Р РЋРЎвЂњР В Р’В»Р В Р’В° (Р В РўвЂР В РЎвЂў 6) Р В Р’ВµР РЋР С“Р В Р’В»Р В РЎвЂ Р В РЎвЂР РЋРІР‚В¦ Р В Р вЂ¦Р В Р’ВµР РЋРІР‚С™
     for i in range(1, 7):
         cursor.execute('SELECT COUNT(*) FROM display_windows WHERE type = "pool" AND slot_number = ?', (i,))
         if cursor.fetchone()[0] == 0:
             cursor.execute('''
                 INSERT INTO display_windows (type, slot_number, name, settings)
                 VALUES ('pool', ?, ?, ?)
-            ''', (i, f'Р В РЎСџР РЋРЎвЂњР В Р’В» {i}', json.dumps({'items': [], 'current_index': 0})))
+            ''', (i, f'Слот {i}', json.dumps({'items': [], 'current_index': 0})))
     
-    # Р В Р Р‹Р В РЎвЂўР В Р’В·Р В РўвЂР В Р’В°Р РЋРІР‚ВР В РЎВ 10 Р В РЎвЂўР В РЎвЂќР В РЎвЂўР В Р вЂ¦ Р В РЎвЂќР В РЎвЂўР РЋР вЂљР РЋРІР‚С™Р В РЎвЂўР В Р вЂ  Р В РЎвЂ”Р В РЎвЂў Р РЋРЎвЂњР В РЎВР В РЎвЂўР В Р’В»Р РЋРІР‚РЋР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋР вЂ№
     cursor.execute('SELECT COUNT(*) FROM display_windows WHERE type = "court"')
     if cursor.fetchone()[0] == 0:
         for i in range(1, 11):
             cursor.execute('''
                 INSERT INTO display_windows (type, slot_number, name, mode)
                 VALUES ('court', ?, ?, 'auto')
-            ''', (i, f'Р В РЎв„ўР В РЎвЂўР РЋР вЂљР РЋРІР‚С™ {i}'))
-
-
-# === CRUD Р В РЎвЂєР В РЎСџР В РІР‚СћР В Р’В Р В РЎвЂ™Р В Р’В¦Р В Р’ВР В Р’В ===
+            ''', (i, f'Корт {i}'))
 
 def get_display_window(window_type: str, slot_number: int) -> Optional[Dict]:
-    """Р В РЎСџР В РЎвЂўР В Р’В»Р РЋРЎвЂњР РЋРІР‚РЋР В Р’ВµР В Р вЂ¦Р В РЎвЂР В Р’Вµ Р В РЎвЂўР В РЎвЂќР В Р вЂ¦Р В Р’В° Р В РЎвЂ”Р В РЎвЂў Р РЋРІР‚С™Р В РЎвЂР В РЎвЂ”Р РЋРЎвЂњ Р В РЎвЂ Р В Р вЂ¦Р В РЎвЂўР В РЎВР В Р’ВµР РЋР вЂљР РЋРЎвЂњ Р РЋР С“Р В Р’В»Р В РЎвЂўР РЋРІР‚С™Р В Р’В°"""
+    """
+    Возвращает одно окно отображения по типу ('pool' или 'court') и номеру слота.
+    Возвращает None, если запись не найдена в БД.
+    """
     from .database import get_db_connection
     
     conn = get_db_connection()
@@ -132,7 +148,10 @@ def get_display_window(window_type: str, slot_number: int) -> Optional[Dict]:
 
 
 def get_all_display_windows() -> Dict[str, List[Dict]]:
-    """Р В РЎСџР В РЎвЂўР В Р’В»Р РЋРЎвЂњР РЋРІР‚РЋР В Р’ВµР В Р вЂ¦Р В РЎвЂР В Р’Вµ Р В Р вЂ Р РЋР С“Р В Р’ВµР РЋРІР‚В¦ Р В РЎвЂўР В РЎвЂќР В РЎвЂўР В Р вЂ¦"""
+    """
+    Возвращает все окна отображения, сгруппированные по типу.
+    Формат: {'pool': [...], 'court': [...]}, отсортированные по типу и номеру слота.
+    """
     from .database import get_db_connection
     
     conn = get_db_connection()
@@ -151,9 +170,14 @@ def get_all_display_windows() -> Dict[str, List[Dict]]:
 
 
 def update_display_window(window_type: str, slot_number: int, data: Dict) -> bool:
-    """Р В РЎвЂєР В Р’В±Р В Р вЂ¦Р В РЎвЂўР В Р вЂ Р В Р’В»Р В Р’ВµР В Р вЂ¦Р В РЎвЂР В Р’Вµ Р В РЎвЂўР В РЎвЂќР В Р вЂ¦Р В Р’В°"""
+    """
+    Обновляет поля окна отображения в БД (только переданные ключи).
+    Поддерживает обновление: name, tournament_id, court_id, mode, manual_page, settings, is_active.
+    Использует execute_with_retry для защиты от конкурентных блокировок SQLite.
+    Возвращает True при успешном обновлении, False — если нет полей или строка не найдена.
+    """
     from .database import get_db_connection, execute_with_retry
-    
+
     def transaction(conn):
         cursor = conn.cursor()
         
@@ -200,7 +224,11 @@ def update_display_window(window_type: str, slot_number: int, data: Dict) -> boo
 
 
 def _row_to_dict(row) -> Dict:
-    """Р В РЎСџР РЋР вЂљР В Р’ВµР В РЎвЂўР В Р’В±Р РЋР вЂљР В Р’В°Р В Р’В·Р В РЎвЂўР В Р вЂ Р В Р’В°Р В Р вЂ¦Р В РЎвЂР В Р’Вµ Р РЋР С“Р РЋРІР‚С™Р РЋР вЂљР В РЎвЂўР В РЎвЂќР В РЎвЂ Р В РІР‚ВР В РІР‚Сњ Р В Р вЂ  Р РЋР С“Р В Р’В»Р В РЎвЂўР В Р вЂ Р В Р’В°Р РЋР вЂљР РЋР Р‰"""
+    """
+    Преобразует строку sqlite3.Row в словарь.
+    Десериализует JSON-поле settings, нормализует placeholder_image
+    и формирует готовый URL изображения-заглушки (placeholder_url).
+    """
     settings = json.loads(row['settings']) if row['settings'] else {}
     placeholder_image = _normalize_placeholder_image(settings.get('placeholder_image'))
 
@@ -221,11 +249,17 @@ def _row_to_dict(row) -> Dict:
         'updated_at': row['updated_at']
     }
 
-
-# === Р В РІР‚С”Р В РЎвЂєР В РІР‚СљР В Р’ВР В РЎв„ўР В РЎвЂ™ Р В РЎвЂєР В РЎСџР В Р’В Р В РІР‚СћР В РІР‚СњР В РІР‚СћР В РІР‚С”Р В РІР‚СћР В РЎСљР В Р’ВР В Р вЂЎ Р В Р Р‹Р В РЎС›Р В Р’В Р В РЎвЂ™Р В РЎСљР В Р’ВР В Р’В¦Р В Р’В« Р В РІР‚СњР В РІР‚С”Р В Р вЂЎ Р В РЎв„ўР В РЎвЂєР В Р’В Р В РЎС›Р В РЎвЂ™ ===
-
 def get_court_display_page(tournament_id: str, court_id: str, enforce_winner_result: bool = False) -> Dict:
-    """Р В РЎвЂєР В РЎвЂ”Р РЋР вЂљР В Р’ВµР В РўвЂР В Р’ВµР В Р’В»Р РЋР РЏР В Р’ВµР РЋРІР‚С™ Р В РЎвЂќР В Р’В°Р В РЎвЂќР РЋРЎвЂњР РЋР вЂ№ Р РЋР С“Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋРІР‚В Р РЋРЎвЂњ Р В РЎвЂ”Р В РЎвЂўР В РЎвЂќР В Р’В°Р В Р’В·Р РЋРІР‚в„–Р В Р вЂ Р В Р’В°Р РЋРІР‚С™Р РЋР Р‰ Р В РўвЂР В Р’В»Р РЋР РЏ Р В РЎвЂќР В РЎвЂўР РЋР вЂљР РЋРІР‚С™Р В Р’В° Р В Р вЂ¦Р В Р’В° Р В РЎвЂўР РЋР С“Р В Р вЂ¦Р В РЎвЂўР В Р вЂ Р В Р’Вµ Р РЋР С“Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В РЎвЂўР РЋР РЏР В Р вЂ¦Р В РЎвЂР РЋР РЏ"""
+    """
+    Определяет, какую страницу показывать на экране корта, исходя из текущего состояния матча.
+    Возвращает словарь {'page', 'url', 'state'} с одним из вариантов:
+      'empty'      — корт не настроен или данные отсутствуют,
+      'winner'     — матч завершён (и результат готов, если enforce_winner_result=True),
+      'scoreboard' — матч идёт, есть очки → /score_full,
+      'vs'         — матч начинается или ожидает старта → /vs.
+    enforce_winner_result=True используется в авто-режиме: экран победителя
+    показывается только при наличии хотя бы одного ненулевого счёта.
+    """
     from .database import get_court_data
     
     court_data = get_court_data(tournament_id, court_id)
@@ -244,7 +278,6 @@ def get_court_display_page(tournament_id: str, court_id: str, enforce_winner_res
     first_participant_score = _to_int_safe(court_data.get('first_participant_score'))
     second_participant_score = _to_int_safe(court_data.get('second_participant_score'))
 
-    # Р В РЎв„ўР В РЎвЂўР РЋР вЂљР РЋРІР‚С™ Р В РЎвЂ”Р РЋРЎвЂњР РЋР С“Р РЋРІР‚С™
     if not first_participant and not second_participant:
         return {
             'page': 'empty',
@@ -252,7 +285,6 @@ def get_court_display_page(tournament_id: str, court_id: str, enforce_winner_res
             'state': 'empty'
         }
     
-    # Р В РЎС™Р В Р’В°Р РЋРІР‚С™Р РЋРІР‚РЋ Р В Р’В·Р В Р’В°Р В Р вЂ Р В Р’ВµР РЋР вЂљР РЋРІвЂљВ¬Р РЋРІР‚ВР В Р вЂ¦ - Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР В Р вЂ Р В Р’ВµР РЋР вЂљР РЋР РЏР В Р’ВµР В РЎВ Р В РЎвЂўР В Р’В±Р В Р’В° Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р РЋР РЏ
     is_finished_state = event_state == 'finished' or current_match_state == 'finished'
     if is_finished_state:
         if (not enforce_winner_result) or _is_match_result_ready_for_winner(court_data):
@@ -262,7 +294,6 @@ def get_court_display_page(tournament_id: str, court_id: str, enforce_winner_res
                 'state': 'finished'
             }
     
-    # Р В РЎСџР РЋР вЂљР В РЎвЂўР В Р вЂ Р В Р’ВµР РЋР вЂљР РЋР РЏР В Р’ВµР В РЎВ Р В Р’ВµР РЋР С“Р РЋРІР‚С™Р РЋР Р‰ Р В Р’В»Р В РЎвЂ Р РЋР С“Р РЋРІР‚РЋР РЋРІР‚ВР РЋРІР‚С™
     # Проверяем наличие очков: сеты ИЛИ любые очки внутри гейма/тай-брейка.
     # Только first_participant_score недостаточно — он равен 0 весь первый сет.
     has_current_points = (
@@ -271,7 +302,6 @@ def get_court_display_page(tournament_id: str, court_id: str, enforce_winner_res
         _has_any_nonzero_score(court_data.get('detailed_result', []))
     )
     
-    # Р В РЎС™Р В Р’В°Р РЋРІР‚С™Р РЋРІР‚РЋ Р В РЎвЂР В РўвЂР РЋРІР‚ВР РЋРІР‚С™ (Live) - Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР В Р вЂ Р В Р’ВµР РЋР вЂљР РЋР РЏР В Р’ВµР В РЎВ Р В РЎвЂўР В Р’В±Р В Р’В° Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р РЋР РЏ
     if event_state in ('active', 'live', 'playing') or current_match_state in ('live', 'playing_no_score'):
         if current_match_state == 'playing_no_score':
             return {
@@ -291,7 +321,6 @@ def get_court_display_page(tournament_id: str, court_id: str, enforce_winner_res
             'state': 'starting'
         }
     
-    # Р В РЎСџР В РЎвЂў Р РЋРЎвЂњР В РЎВР В РЎвЂўР В Р’В»Р РЋРІР‚РЋР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋР вЂ№ - VS (Р В РЎВР В Р’В°Р РЋРІР‚С™Р РЋРІР‚РЋ Р В Р’В·Р В Р’В°Р В РЎвЂ”Р В Р’В»Р В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋР вЂљР В РЎвЂўР В Р вЂ Р В Р’В°Р В Р вЂ¦)
     return {
         'page': 'vs',
         'url': f'/api/html-live/{tournament_id}/{court_id}/vs',
@@ -303,31 +332,36 @@ def get_court_display_page(tournament_id: str, court_id: str, enforce_winner_res
 
 @display_bp.route('/api/display/windows')
 def api_get_windows():
-    """Р В РЎСџР В РЎвЂўР В Р’В»Р РЋРЎвЂњР РЋРІР‚РЋР В РЎвЂР РЋРІР‚С™Р РЋР Р‰ Р В Р вЂ Р РЋР С“Р В Р’Вµ Р В РЎвЂўР В РЎвЂќР В Р вЂ¦Р В Р’В°"""
+    """Все окна отображения, сгруппированные по типу ('pool' и 'court')."""
     try:
         windows = get_all_display_windows()
         return jsonify(windows)
     except Exception as e:
-        logger.error(f'Р В РЎвЂєР РЋРІвЂљВ¬Р В РЎвЂР В Р’В±Р В РЎвЂќР В Р’В° Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р РЋРЎвЂњР РЋРІР‚РЋР В Р’ВµР В Р вЂ¦Р В РЎвЂР РЋР РЏ Р В РЎвЂўР В РЎвЂќР В РЎвЂўР В Р вЂ¦: {e}')
+        logger.error(f'api_get_windows: {e}')
         return jsonify({'error': str(e)}), 500
 
 
 @display_bp.route('/api/display/window/<window_type>/<int:slot_number>')
 def api_get_window(window_type: str, slot_number: int):
-    """Р В РЎСџР В РЎвЂўР В Р’В»Р РЋРЎвЂњР РЋРІР‚РЋР В РЎвЂР РЋРІР‚С™Р РЋР Р‰ Р В РЎвЂќР В РЎвЂўР В Р вЂ¦Р В РЎвЂќР РЋР вЂљР В Р’ВµР РЋРІР‚С™Р В Р вЂ¦Р В РЎвЂўР В Р’Вµ Р В РЎвЂўР В РЎвЂќР В Р вЂ¦Р В РЎвЂў"""
+    """Одно окно отображения. 404, если не найдено."""
     try:
         window = get_display_window(window_type, slot_number)
         if not window:
-            return jsonify({'error': 'Р В РЎвЂєР В РЎвЂќР В Р вЂ¦Р В РЎвЂў Р В Р вЂ¦Р В Р’Вµ Р В Р вЂ¦Р В Р’В°Р В РІвЂћвЂ“Р В РўвЂР В Р’ВµР В Р вЂ¦Р В РЎвЂў'}), 404
+            return jsonify({'error': 'api_get_window'}), 404
         return jsonify(window)
     except Exception as e:
-        logger.error(f'Р В РЎвЂєР РЋРІвЂљВ¬Р В РЎвЂР В Р’В±Р В РЎвЂќР В Р’В° Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р РЋРЎвЂњР РЋРІР‚РЋР В Р’ВµР В Р вЂ¦Р В РЎвЂР РЋР РЏ Р В РЎвЂўР В РЎвЂќР В Р вЂ¦Р В Р’В°: {e}')
+        logger.error(f'api_get_window: {e}')
         return jsonify({'error': str(e)}), 500
 
 
 @display_bp.route('/api/display/window/<window_type>/<int:slot_number>', methods=['PUT'])
 def api_update_window(window_type: str, slot_number: int):
-    """Update display window (auth required)"""
+    """
+    Обновляет параметры окна отображения.
+    Требует авторизации. Тело запроса (JSON): любые поля из
+    name, tournament_id, court_id, mode, manual_page, settings, is_active.
+    Возвращает обновлённый объект окна или 401/400 при ошибках.
+    """
     try:
         if not _is_authenticated():
             return jsonify({'error': 'Authentication required', 'auth_required': True}), 401
@@ -345,11 +379,16 @@ def api_update_window(window_type: str, slot_number: int):
 
 @display_bp.route('/api/display/court/<int:slot_number>/state')
 def api_get_court_state(slot_number: int):
-    """Р В РЎСџР В РЎвЂўР В Р’В»Р РЋРЎвЂњР РЋРІР‚РЋР В РЎвЂР РЋРІР‚С™Р РЋР Р‰ Р РЋРІР‚С™Р В Р’ВµР В РЎвЂќР РЋРЎвЂњР РЋРІР‚В°Р В Р’ВµР В Р’Вµ Р РЋР С“Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В РЎвЂўР РЋР РЏР В Р вЂ¦Р В РЎвЂР В Р’Вµ Р В РЎвЂќР В РЎвЂўР РЋР вЂљР РЋРІР‚С™Р В Р’В° Р В РЎвЂ Р РЋР вЂљР В Р’ВµР В РЎвЂќР В РЎвЂўР В РЎВР В Р’ВµР В Р вЂ¦Р В РўвЂР РЋРЎвЂњР В Р’ВµР В РЎВР РЋРЎвЂњР РЋР вЂ№ Р РЋР С“Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋРІР‚В Р РЋРЎвЂњ"""
+    """
+    Текущее состояние экрана корта.
+    В авто-режиме автоматически подписывается на live-обновления (rankedin_live).
+    Возвращает: page, url, state, mode, manual_page, placeholder_image/url, background_type.
+    Возможные состояния (state): empty, not_configured, finished, starting, playing, scheduled.
+    """
     try:
         window = get_display_window('court', slot_number)
         if not window:
-            return jsonify({'error': 'Р В РЎвЂєР В РЎвЂќР В Р вЂ¦Р В РЎвЂў Р В Р вЂ¦Р В Р’Вµ Р В Р вЂ¦Р В Р’В°Р В РІвЂћвЂ“Р В РўвЂР В Р’ВµР В Р вЂ¦Р В РЎвЂў'}), 404
+            return jsonify({'error': 'api_get_court_state'}), 404
         
         if not window.get('tournament_id') or not window.get('court_id'):
             return jsonify({
@@ -381,26 +420,28 @@ def api_get_court_state(slot_number: int):
         page_info['manual_page'] = window['manual_page']
         page_info['placeholder_image'] = window['placeholder_image']
         page_info['placeholder_url'] = window['placeholder_url']
-        
+        page_info['background_type'] = (window.get('settings') or {}).get('background_type', 'image')
+
         return jsonify(page_info)
     except Exception as e:
-        logger.error(f'Р В РЎвЂєР РЋРІвЂљВ¬Р В РЎвЂР В Р’В±Р В РЎвЂќР В Р’В° Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р РЋРЎвЂњР РЋРІР‚РЋР В Р’ВµР В Р вЂ¦Р В РЎвЂР РЋР РЏ Р РЋР С“Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В РЎвЂўР РЋР РЏР В Р вЂ¦Р В РЎвЂР РЋР РЏ Р В РЎвЂќР В РЎвЂўР РЋР вЂљР РЋРІР‚С™Р В Р’В°: {e}')
+        logger.error(f'api_get_court_state: {e}')
         return jsonify({'error': str(e)}), 500
-
-
-# === HTML Р В Р Р‹Р В РЎС›Р В Р’В Р В РЎвЂ™Р В РЎСљР В Р’ВР В Р’В¦Р В Р’В« Р В РЎвЂєР В РЎв„ўР В РЎвЂєР В РЎСљ ===
 
 @display_bp.route('/display/manager')
 def display_manager():
-    """Р В Р Р‹Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋРІР‚В Р В Р’В° Р РЋРЎвЂњР В РЎвЂ”Р РЋР вЂљР В Р’В°Р В Р вЂ Р В Р’В»Р В Р’ВµР В Р вЂ¦Р В РЎвЂР РЋР РЏ Р В РЎвЂўР В РЎвЂќР В Р вЂ¦Р В Р’В°Р В РЎВР В РЎвЂ Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р РЋР С“Р В Р’В»Р РЋР РЏР РЋРІР‚В Р В РЎвЂР В РЎвЂ"""
+    """Страница менеджера окон отображения (display_manager_page.html)."""
     return render_template('display_manager_page.html')
 
 
 @display_bp.route('/display/pool/<int:slot_number>')
 def display_pool(slot_number: int):
-    """Р В Р Р‹Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋРІР‚В Р В Р’В° Р В РЎвЂўР В РЎвЂќР В Р вЂ¦Р В Р’В° Р В РЎвЂ”Р РЋРЎвЂњР В Р’В»Р В Р’В°"""
+    """
+    Страница пула (слоты 1–6).
+    Отрисовывает display_pool.html с настройками окна, изображением-заглушкой и типом фона.
+    Возвращает 404 при недопустимом номере слота.
+    """
     if slot_number < 1 or slot_number > 6:
-        return 'Р В РЎСљР В Р’ВµР В РўвЂР В РЎвЂўР В РЎвЂ”Р РЋРЎвЂњР РЋР С“Р РЋРІР‚С™Р В РЎвЂР В РЎВР РЋРІР‚в„–Р В РІвЂћвЂ“ Р В Р вЂ¦Р В РЎвЂўР В РЎВР В Р’ВµР РЋР вЂљ Р РЋР С“Р В Р’В»Р В РЎвЂўР РЋРІР‚С™Р В Р’В°', 404
+        return 'display_pool', 404
     
     window = get_display_window('pool', slot_number)
     bg_type = (window.get('settings', {}).get('background_type') or 'image') if window else 'image'
@@ -411,11 +452,33 @@ def display_pool(slot_number: int):
                           background_type=bg_type)
 
 
+@display_bp.route('/display/media-dashboard/<tournament_id>')
+def display_media_dashboard(tournament_id: str):
+    """
+    Media Dashboard турнира.
+    Отображает сводную панель мониторинга всех кортов.
+    Передаёт в шаблон: tournament_id, tournament_name, текущую дату.
+    """
+    from api import get_tournament_data
+    from datetime import date
+    tournament_data = get_tournament_data(tournament_id)
+    tournament_name = tournament_data.get("metadata", {}).get("name", f"Турнир {tournament_id}") if tournament_data else f"Турнир {tournament_id}"
+    current_date = date.today().strftime("%d.%m.%Y")
+    return render_template('media_dashboard.html',
+                           tournament_id=tournament_id,
+                           tournament_name=tournament_name,
+                           current_date=current_date)
+
+
 @display_bp.route('/display/court/<int:slot_number>')
 def display_court(slot_number: int):
-    """Р В Р Р‹Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋРІР‚В Р В Р’В° Р В РЎвЂўР В РЎвЂќР В Р вЂ¦Р В Р’В° Р В РЎвЂќР В РЎвЂўР РЋР вЂљР РЋРІР‚С™Р В Р’В°"""
+    """
+    Страница экрана корта (слоты 1–10).
+    Отрисовывает display_court.html с настройками окна, изображением-заглушкой и типом фона.
+    Возвращает 404 при недопустимом номере слота.
+    """
     if slot_number < 1 or slot_number > 10:
-        return 'Р В РЎСљР В Р’ВµР В РўвЂР В РЎвЂўР В РЎвЂ”Р РЋРЎвЂњР РЋР С“Р РЋРІР‚С™Р В РЎвЂР В РЎВР РЋРІР‚в„–Р В РІвЂћвЂ“ Р В Р вЂ¦Р В РЎвЂўР В РЎВР В Р’ВµР РЋР вЂљ Р РЋР С“Р В Р’В»Р В РЎвЂўР РЋРІР‚С™Р В Р’В°', 404
+        return 'display_court', 404
     
     window = get_display_window('court', slot_number)
     bg_type = (window.get('settings', {}).get('background_type') or 'image') if window else 'image'
