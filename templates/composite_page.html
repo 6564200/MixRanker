@@ -4,57 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ page_type | capitalize }} {{ slot_number }} - {{ tournament_name }}</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: transparent;
-        }
-        
-        .composite-container {
-            position: absolute;
-            width: 1920px;
-            height: 1080px;
-            transform-origin: top left;
-            background: transparent;
-        }
-        
-        /* Фоновый слой */
-        .background-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
-        
-        .background-layer iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        
-        /* Слои с iframe */
-        .iframe-layer {
-            position: absolute;
-            overflow: hidden;
-
-            z-index: 1;
-        }
-        
-        .iframe-layer iframe {
-            border: none;
-            transform-origin: top left;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/composite_page.css">
 </head>
 <body>
     <div class="composite-container" 
@@ -68,49 +18,30 @@
             <iframe src="/composite/bg/{{ page_type }}/{{ slot_number }}/{{ tournament_id }}" allowtransparency="true"></iframe>
         </div>
         
-        <!-- Слои iframe -->
+        <!-- Слои (iframe и текстовые) -->
         <div id="layersContainer">
             {% if page and page.layers %}
                 {% for layer in page.layers %}
-                <div class="iframe-layer" 
-                     style="left: {{ layer.x }}px; top: {{ layer.y }}px; width: {{ layer.width}}px; height: {{ layer.height }}px; box-sizing: border-box;">
-                    <iframe src="{{ layer.url }}" 
-                            allowtransparency="true"
-                            style="width: {{ (layer.width / layer.scale ) | int }}px; height: {{ (layer.height / layer.scale) | int }}px; transform: scale({{ layer.scale }});"></iframe>
-                </div>
+                    {% if layer.type == 'text' %}
+                    <div class="text-layer"
+                         style="left: {{ layer.x }}px; top: {{ layer.y }}px; width: {{ layer.width }}px; height: {{ layer.height }}px;">
+                        <div class="tournament-name"
+                             style="font-size: {{ layer.fontSize | default(75) }}px;
+                                    animation-delay: {{ (loop.index0 * 0.15 + 0.2) | round(2) }}s;">{{ layer.text | default('') }}</div>
+                    </div>
+                    {% else %}
+                    <div class="iframe-layer"
+                         style="left: {{ layer.x }}px; top: {{ layer.y }}px; width: {{ layer.width }}px; height: {{ layer.height }}px; box-sizing: border-box;">
+                        <iframe src="{{ layer.url }}"
+                                allowtransparency="true"
+                                style="width: {{ (layer.width / layer.scale) | int }}px; height: {{ (layer.height / layer.scale) | int }}px; transform: scale({{ layer.scale }});"></iframe>
+                    </div>
+                    {% endif %}
                 {% endfor %}
             {% endif %}
         </div>
     </div>
     
-    <script>
-        const BASE_WIDTH = 1920;
-        const BASE_HEIGHT = 1080;
-        
-        function scaleToFit() {
-            const container = document.getElementById('compositeContainer');
-            if (!container) return;
-            
-            const windowWidth = window.innerWidth;
-            const windowHeight = window.innerHeight;
-            
-            const scaleX = windowWidth / BASE_WIDTH;
-            const scaleY = windowHeight / BASE_HEIGHT;
-            const scale = Math.min(scaleX, scaleY);
-            
-            const scaledWidth = BASE_WIDTH * scale;
-            const scaledHeight = BASE_HEIGHT * scale;
-            
-            const offsetX = (windowWidth - scaledWidth) / 2;
-            const offsetY = (windowHeight - scaledHeight) / 2;
-            
-            container.style.transform = `scale(${scale})`;
-            container.style.left = `${offsetX}px`;
-            container.style.top = `${offsetY}px`;
-        }
-        
-        window.addEventListener('resize', scaleToFit);
-        scaleToFit();
-    </script>
+    <script src="/static/js/composite_page.js"></script>
 </body>
 </html>

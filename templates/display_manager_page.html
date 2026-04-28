@@ -7,18 +7,8 @@
     <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/vendor/fontawesome/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/display_manager.css">
 	<link rel="shortcut icon" href="/static/favicon.ico">
-    <style>
-        body { padding: 20px; background: var(--bg-secondary); }
-        .page-header { margin-bottom: 30px; }
-        .page-header h1 { color: var(--primary-color); font-weight: 700; }
-        .nav-tabs .nav-link { color: var(--text-secondary); }
-        .nav-tabs .nav-link.active { color: var(--primary-color); font-weight: 600; }
-        .window-card { transition: transform 0.2s, box-shadow 0.2s; }
-        .window-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-        .badge-auto { background-color: var(--success-color); }
-        .badge-manual { background-color: var(--info-color); }
-    </style>
 </head>
 <body>
     <div class="container-fluid">
@@ -116,6 +106,10 @@
                                 <input class="form-check-input" type="radio" name="courtBgType" id="courtBgTypeMatrix" value="matrix">
                                 <label class="form-check-label" for="courtBgTypeMatrix">Анимация Matrix</label>
                             </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="courtBgType" id="courtBgTypeTransparent" value="transparent">
+                                <label class="form-check-label" for="courtBgTypeTransparent">Прозрачный</label>
+                            </div>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -169,6 +163,10 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="poolBgType" id="poolBgTypeMatrix" value="matrix">
                                 <label class="form-check-label" for="poolBgTypeMatrix">Анимация Matrix</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="poolBgType" id="poolBgTypeTransparent" value="transparent">
+                                <label class="form-check-label" for="poolBgTypeTransparent">Прозрачный</label>
                             </div>
                         </div>
                     </div>

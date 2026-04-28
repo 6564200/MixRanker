@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Dashboard — {{ tournament_name }}</title>
+    <link rel="stylesheet" href="/static/css/media_dashboard.css">
+</head>
+<body>
+<div class="dashboard-root" data-tournament-id="{{ tournament_id }}">
+
+    <!-- ШАПКА -->
+    <header class="dash-header">
+        <div class="dash-header-left">
+            <img src="/static/images/logo2.png" alt="Logo" class="dash-logo">
+            <div class="dash-title" id="dash-title">{{ tournament_name }}</div>
+        </div>
+        <div class="dash-header-right">
+            <div class="dash-date">{{ current_date }}</div>
+            <div class="dash-time" id="dash-time">00:00:00</div>
+        </div>
+    </header>
+
+    <!-- СЕТКА КОРТОВ -->
+    <main class="dash-body" id="dash-grid"></main>
+
+    <!-- ПОДВАЛ -->
+    <footer class="dash-footer">
+        <span class="footer-label">Категории:</span>
+        <div class="footer-categories" id="footer-categories"></div>
+    </footer>
+
+</div>
+
+<!-- ── ШАБЛОН: карточка корта ── -->
+<template id="tpl-court-card">
+    <div class="card-head">
+        <span class="court-name"></span>
+        <div class="card-badges">
+            <span class="badge-stage" hidden></span>
+            <span class="badge-status"></span>
+        </div>
+    </div>
+
+    <div class="card-category" hidden></div>
+
+    <div class="card-match" hidden>
+        <div class="team-block">
+            <div class="team-names"></div>
+            <div class="team-score-row">
+                <div class="sets-col"></div>
+                <span class="game-score"></span>
+            </div>
+        </div>
+        <div class="divider"></div>
+        <div class="team-block">
+            <div class="team-names"></div>
+            <div class="team-score-row">
+                <div class="sets-col"></div>
+                <span class="game-score"></span>
+            </div>
+        </div>
+        <div class="tiebreak-indicator">● TIE-BREAK</div>
+    </div>
+
+    <div class="no-match" hidden>Нет активного матча</div>
+
+    <div class="card-next" hidden>
+        <div class="next-header">
+            <span class="next-label">Следующий матч</span>
+            <div class="next-badges">
+                <span class="next-cat-badge" hidden></span>
+                <span class="next-stage-badge" hidden></span>
+            </div>
+        </div>
+        <div class="next-players">
+            <div class="next-player" hidden></div>
+            <div class="next-player" hidden></div>
+        </div>
+    </div>
+</template>
+
+<!-- ── ШАБЛОН: категория в подвале ── -->
+<template id="tpl-footer-cat">
+    <span class="footer-cat"></span>
+</template>
+
+<script src="/static/js/media_dashboard.js"></script>
+</body>
+</html>

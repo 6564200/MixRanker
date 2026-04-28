@@ -56,9 +56,14 @@
             <div class="card flex-grow-1">
                 <div class="card-header py-2 d-flex justify-content-between align-items-center">
                     <h6 class="mb-0"><i class="fas fa-layer-group me-2"></i>Слои</h6>
-                    <button class="btn btn-success btn-sm" onclick="addLayer()">
-                        <i class="fas fa-plus me-1"></i>Добавить
-                    </button>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-success" onclick="addLayer()" title="Добавить iframe-слой">
+                            <i class="fas fa-plus me-1"></i>iframe
+                        </button>
+                        <button class="btn btn-info" onclick="addTextLayer()" title="Добавить текстовый слой">
+                            <i class="fas fa-font me-1"></i>Текст
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body p-2" id="layersList" style="overflow-y: auto;">
                     <!-- Слои рендерятся динамически -->
