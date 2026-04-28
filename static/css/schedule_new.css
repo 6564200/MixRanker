@@ -16,7 +16,6 @@ body {
     position: relative;
 }
 
-/* Класс для скрытия элементов при обновлении */
 .hide-for-refresh {
     animation: fadeOut 0.4s ease-out forwards !important;
 }
@@ -113,7 +112,6 @@ body {
     }
 }
 
-/* Задержка для каждого time-slot */
 .time-slot:nth-child(1) { animation-delay: 0.1s; }
 .time-slot:nth-child(2) { animation-delay: 0.15s; }
 .time-slot:nth-child(3) { animation-delay: 0.2s; }
@@ -211,7 +209,6 @@ body {
     }
 }
 
-/* Анимация для завершённых матчей - конечная opacity 0.85 */
 @keyframes fadeInUpFinished {
     from {
         opacity: 0;
@@ -227,7 +224,6 @@ body {
     animation: fadeInUpFinished 0.5s ease-out forwards;
 }
 
-/* Задержка анимации для матчей по строкам */
 .match-item.row-1 { animation-delay: 0.2s; }
 .match-item.row-2 { animation-delay: 0.25s; }
 .match-item.row-3 { animation-delay: 0.3s; }
@@ -247,7 +243,6 @@ body {
 .match-item.row-17 { animation-delay: 1.0s; }
 .match-item.row-18 { animation-delay: 1.05s; }
 
-/* Стили для нового контейнера, который будет добавляться при обновлении */
 .refresh-overlay {
     position: absolute;
     top: 0;
@@ -279,7 +274,6 @@ body {
     50% { opacity: 1; }
 }
 
-/* Пульсация для активного матча */
 .match-active {
     animation: fadeInUp 0.5s ease-out forwards, pulse 2s ease-in-out infinite 1s;
 }
@@ -375,6 +369,16 @@ body {
     align-items: center;
 }
 
+.match-team-ret {
+    padding-right: 15px;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 28px;
+    color: #C0792A;
+    display: flex;
+    align-items: center;
+}
+
 .match-team:first-child .match-team-score {
     border-radius: 5px 5px 0 0;
 }
@@ -383,7 +387,6 @@ body {
     border-radius: 0 0 5px 5px;
 }
 
-/* Статусы матчей */
 .match-finished .match-team-name {
     color: #8F8F8F;
 }

@@ -1,27 +1,20 @@
-/* intro_player.css - Страница представления игрока 16:9 */
-/* Базовое разрешение: FHD 1920x1080 */
+/* intro_player.css — карточка представления одного игрока. Базовое разрешение FHD 1920×400 */
 
 @import url('/static/css/broadcast_tokens.css');
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* Сброс */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
     --green-gradient: linear-gradient(180deg, #AED753 0%, #83C000 100%);
-    --dark-gradient: linear-gradient(180deg, #202020 0%, #070707 100%);
-    --green-line: #AED557;
-    --text-white: #F9F9F9;
-    --text-dark: #080609;
-    --text-muted: rgba(255, 255, 255, 0.7);
-    
-    /* FHD базовые размеры */
-    --base-width: 1920;
-    --base-height: 400;
+    --dark-gradient:  linear-gradient(180deg, #202020 0%, #070707 100%);
+    --green-line:     #AED557;
+    --text-white:     #F9F9F9;
+    --text-dark:      #080609;
+    --text-muted:     rgba(255, 255, 255, 0.7);
 }
 
+/* Страница — прозрачный фон для наложения в vMix */
 html, body {
     width: 100%;
     height: 100%;
@@ -30,7 +23,7 @@ html, body {
     font-family: 'Onest', Arial, sans-serif;
 }
 
-/* Контейнер с масштабированием */
+/* Корневой контейнер — горизонтальная полоска высотой 400px */
 .intro-player-container {
     width: 1920px;
     height: 400px;
@@ -41,7 +34,7 @@ html, body {
     background: transparent;
 }
 
-/* Карточка игрока */
+/* Карточка игрока: тёмный фон, зелёная граница */
 .player-card {
     display: flex;
     flex-direction: column;
@@ -52,7 +45,7 @@ html, body {
     border: 4px solid var(--green-line);
 }
 
-/* Header с именем */
+/* Зелёный заголовок карточки с именем и флагом */
 .player-header {
     display: flex;
     align-items: center;
@@ -61,6 +54,7 @@ html, body {
     gap: 20px;
 }
 
+/* Флаг страны игрока */
 .player-flag {
     width: 60px;
     height: 42px;
@@ -68,9 +62,10 @@ html, body {
     background-repeat: no-repeat;
     background-position: center;
     flex-shrink: 0;
-	opacity: 1;
+    opacity: 1;
 }
 
+/* Имя игрока в заголовке */
 .player-name {
     font-family: 'Onest', Arial, sans-serif;
     font-weight: 700;
@@ -84,7 +79,7 @@ html, body {
     text-overflow: ellipsis;
 }
 
-/* Информация об игроке */
+/* Блок со строками характеристик (рейтинг, рост, страна...) */
 .player-info {
     display: flex;
     flex-direction: column;
@@ -92,6 +87,7 @@ html, body {
     gap: 12px;
 }
 
+/* Одна строка характеристики */
 .info-row {
     display: flex;
     justify-content: space-between;
@@ -100,10 +96,9 @@ html, body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.info-row:last-child {
-    border-bottom: none;
-}
+.info-row:last-child { border-bottom: none; }
 
+/* Метка характеристики (слева) */
 .info-label {
     font-family: 'Onest', Arial, sans-serif;
     font-weight: 700;
@@ -114,6 +109,7 @@ html, body {
     text-transform: uppercase;
 }
 
+/* Значение характеристики (справа) */
 .info-value {
     font-family: 'Onest', Arial, sans-serif;
     font-weight: 700;
@@ -123,63 +119,29 @@ html, body {
     text-align: right;
 }
 
-/* === ANIMATIONS === */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
+/* === АНИМАЦИИ === */
 
-@keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+@keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn  { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 
-@keyframes scaleIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
+/* Применение анимаций появления */
+.intro-player-container { animation: fadeIn   0.5s ease-out; }
+.player-card            { animation: scaleIn  0.6s ease-out 0.1s both; }
+.player-header          { animation: slideInUp 0.5s ease-out 0.2s both; }
+.info-row               { animation: slideInUp 0.4s ease-out both; }
 
-/* Animation Classes */
-.intro-player-container {
-    animation: fadeIn 0.5s ease-out;
-}
-
-.player-card {
-    animation: scaleIn 0.6s ease-out 0.1s both;
-}
-
-.player-header {
-    animation: slideInUp 0.5s ease-out 0.2s both;
-}
-
-.info-row {
-    animation: slideInUp 0.4s ease-out both;
-}
-
+/* Каскадная задержка строк характеристик */
 .info-row:nth-child(1) { animation-delay: 0.3s; }
 .info-row:nth-child(2) { animation-delay: 0.4s; }
 .info-row:nth-child(3) { animation-delay: 0.5s; }
 .info-row:nth-child(4) { animation-delay: 0.6s; }
 
-/* Update animation */
-.updating {
-    animation: pulse 0.3s ease-out;
-}
+/* Мигание при live-обновлении */
+.updating { animation: pulse 0.3s ease-out; }
 
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.7; }
+    0%   { opacity: 1; }
+    50%  { opacity: 0.7; }
     100% { opacity: 1; }
 }

@@ -1,0 +1,497 @@
+@import url('/static/css/broadcast_tokens.css');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 50%, #1e293b 0%, #080c14 100%);
+}
+
+/* ── КОРЕНЬ / МАСШТАБИРОВАНИЕ ── */
+.dashboard-root {
+    position: absolute;
+    width: 1920px;
+    height: 1080px;
+    top: 0; left: 0;
+    transform-origin: top left;
+    display: flex;
+    flex-direction: column;
+    color: #E8EDF5;
+}
+
+/* ── ШАПКА ── */
+.dash-header {
+    height: 110px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 50px;
+    background: rgba(10, 15, 30, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 3px solid var(--green-line);
+    box-shadow: 0 4px 40px rgba(0, 0, 0, 0.6);
+    z-index: 10;
+}
+
+.dash-header-left {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+
+.dash-logo {
+    height: 42px;
+    object-fit: contain;
+}
+
+.dash-title {
+    font-family: var(--font-title);
+    font-style: italic;
+    font-weight: 700;
+    font-size: 56px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    background: linear-gradient(to right, #ffffff, #94a3b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
+    max-width: 960px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dash-header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.dash-date {
+    font-family: var(--font-onest);
+    font-size: 42px;
+    color: #64748B;
+}
+
+.dash-time {
+    font-family: var(--font-onest);
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--green-line);
+    text-shadow: 0 0 24px rgba(145, 191, 31, 0.45);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+/* ── СЕТКА КОРТОВ ── */
+.dash-body {
+    flex: 1;
+    padding: 20px 28px;
+    display: grid;
+    gap: 15px;
+    overflow: hidden;
+    /* grid-template-columns задаётся JS */
+}
+
+/* ── КАРТОЧКА КОРТА ── */
+.court-card {
+    background: rgba(20, 30, 50, 0.7);
+    backdrop-filter: blur(6px);
+    border-radius: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+}
+
+.court-card.state-active {
+    border-color: rgba(145, 191, 31, 0.55);
+    box-shadow: 0 0 32px rgba(145, 191, 31, 0.18);
+}
+
+.court-card.state-finished {
+    border-color: rgba(99, 102, 241, 0.5);
+    animation: finishedPulse 1.8s ease-in-out 3;
+}
+
+@keyframes finishedPulse {
+    0%   { transform: scale(1);    box-shadow: 0 0 0   rgba(99,102,241,0); }
+    50%  { transform: scale(1.015); box-shadow: 0 0 40px rgba(99,102,241,0.55); }
+    100% { transform: scale(1);    box-shadow: 0 0 0   rgba(99,102,241,0); }
+}
+
+/* ── ЗАГОЛОВОК КАРТОЧКИ ── */
+.card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px 10px;
+    background: rgba(0, 0, 0, 0.25);
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.court-name {
+    font-family: var(--font-title);
+    font-style: italic;
+    font-weight: 700;
+    font-size: 36px;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+	padding-right: 10px;
+}
+
+.card-badges {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.badge-stage {
+    display: inline-flex;    /* Делает блок оберткой по размеру контента */
+    align-items: center;     /* Центрирует по вертикали */
+    justify-content: center;  /* Центрирует по горизонтали */
+	
+    font-family: var(--font-onest);
+    font-size: 15px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.badge-stage.group   { background: rgba(29, 78, 216, 0.8);  color: #BFDBFE; }
+.badge-stage.playoff { background: rgba(124, 58, 237, 0.8); color: #EDE9FE; }
+
+.badge-status {
+    font-family: var(--font-onest);
+    font-size: 20px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.badge-status.live     { background: rgba(21, 128, 61, 0.85); color: #BBF7D0; }
+.badge-status.finished { background: rgba(67, 56, 202, 0.85); color: #C7D2FE; }
+.badge-status.waiting  { background: rgba(55, 65, 81, 0.7);   color: #9CA3AF; }
+
+/* ── КАТЕГОРИЯ ── */
+.card-category {
+    margin: 8px 18px 0;
+    padding: 5px 14px;
+    border-radius: 8px;
+    font-family: var(--font-onest);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    width: fit-content;
+    max-width: calc(100% - 36px);
+    box-shadow: inset 0 0 12px rgba(0,0,0,0.2);
+    flex-shrink: 0;
+}
+
+/* ── МАТЧ ── */
+.card-match {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 5px 8px 8px;
+    gap: 1px;
+}
+
+/* Блок команды: имя сверху, счёт снизу */
+.team-block {
+    display: flex;
+    justify-content: space-between; /* Имена влево, а счет вправо */
+    align-items: center;            /* Выравнивает их по вертикали по центру */
+    flex-direction: row;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    gap: 4px;
+    transition: background 0.3s;
+    border-left: 4px solid transparent;
+}
+
+.team-block.leader {
+    background: linear-gradient(90deg, rgba(145, 191, 31, 0.18) 0%, rgba(145, 191, 31, 0) 100%);
+    border-left-color: var(--green-line);
+}
+
+.team-names {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    overflow: hidden;
+}
+
+.player-name {
+    font-family: var(--font-onest);
+    font-size: 22px;
+    font-weight: 700;
+    color: #94A3B8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+}
+
+.team-block.leader .player-name {
+    color: #F1F5F9;
+}
+
+/* Строка счёта: сеты слева, крупный гейм справа */
+.team-score-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sets-col {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.set-score {
+    font-family: var(--font-onest);
+    font-size: 35px;
+    font-weight: 700;
+    color: #334155;
+    min-width: 24px;
+    text-align: center;
+    line-height: 1;
+}
+
+.set-score.won {
+    color: #64748B;
+}
+
+.game-score {
+    font-family: var(--font-onest);
+    font-size: 44px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--dark-gradient);
+    padding: 0 16px;
+    border-radius: 10px;
+    min-width: 90px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 0 22px rgba(145, 191, 31, 0.28);
+    line-height: 1.05;
+}
+
+.divider {
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+    margin: 2px 0;
+}
+
+/* ── ТАЙ-БРЕЙК ── */
+.tiebreak-indicator {
+    display: none;
+    font-family: var(--font-onest);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+}
+
+.tiebreak-indicator.active {
+    display: inline-block;
+    background: #FBBF24;
+    color: #000;
+    padding: 3px 14px;
+    border-radius: 4px;
+    animation: flash 0.5s ease infinite alternate;
+}
+
+@keyframes flash {
+    from { opacity: 1;   transform: scale(1); }
+    to   { opacity: 0.7; transform: scale(0.96); }
+}
+
+/* ── НЕТ МАТЧА ── */
+.no-match {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-onest);
+    font-size: 18px;
+    color: #334155;
+    font-style: italic;
+}
+
+/* ── СЛЕДУЮЩИЙ МАТЧ ── */
+.card-next {
+    flex: 1;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    background: rgba(0, 0, 0, 0.22);
+    padding: 10px 18px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    min-height: 0;
+}
+
+.next-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.next-label {
+    font-family: var(--font-onest);
+    font-size: 20px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.next-badges {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
+
+.next-cat-badge {
+    font-family: var(--font-onest);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.next-stage-badge {
+    font-family: var(--font-onest);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.next-stage-badge.group   { background: rgba(29, 78, 216, 0.7);  color: #BFDBFE; }
+.next-stage-badge.playoff { background: rgba(124, 58, 237, 0.7); color: #EDE9FE; }
+
+.next-players {
+    display: flex;
+    flex-direction: row;
+	justify-content: space-between; /* Расталкивает имена влево, а счет вправо */
+    align-items: center;
+    gap: 2px;
+}
+
+.next-player {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.next-player + .next-player {
+
+
+}
+
+.next-player-name {
+    font-family: var(--font-onest);
+    font-size: 18px;
+    font-weight: 700;
+    color: #64748B;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.25;
+}
+
+/* ── ПОДВАЛ ── */
+.dash-footer {
+    height: 72px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    gap: 14px;
+    background: rgba(8, 12, 20, 0.9);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    overflow: hidden;
+}
+
+.footer-label {
+    font-family: var(--font-onest);
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.footer-categories {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
+
+.footer-cat {
+    font-family: var(--font-onest);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 7px 18px;
+    border-radius: 20px;
+    color: #fff;
+    white-space: nowrap;
+    border: 1px solid rgba(255,255,255,0.1);
+    letter-spacing: 0.03em;
+    transition: transform 0.2s;
+}
+
+.footer-cat:hover {
+    transform: translateY(-3px);
+}

@@ -1,0 +1,37 @@
+/**
+ * composite_bg_round_slot.css — переопределения для фона Round Robin (все слоты).
+ * Подключается после composite_bg_shared.css. Задаёт отступы шапки,
+ * размеры логотипов и позицию разделительной линии.
+ */
+
+/* Отступы шапки от краёв экрана */
+.header { left: 110px; right: 110px; }
+
+/* Название турнира: размер и тень */
+.tournament-name {
+    font-size: 70px;
+    max-width: 1100px;
+    letter-spacing: 0.01em;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Адаптация размера шрифта для длинных названий */
+.tournament-name.long-name      { font-size: 76px; line-height: 1.15; }
+.tournament-name.very-long-name { font-size: 55px; line-height: 1.2; }
+
+/* Блок логотипов */
+.logos { gap: 50px; height: 140px; }
+.logo  { height: 150px; }
+
+/* Ширина и задержка появления каждого логотипа */
+.logo3 { width:  70px; animation-delay: 0.7s; }
+.logo2 { width:  90px; animation-delay: 0.4s; }
+.logo1 { width: 120px; animation-delay: 0.3s; }
+
+/* Разделительная линия под шапкой */
+.header-line {
+    top: 130px;
+    left: 100px;
+    right: 45px;
+    background: linear-gradient(90deg, #AED557 0%, #84C100 50%, transparent 100%);
+}

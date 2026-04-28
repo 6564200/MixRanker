@@ -1,4 +1,6 @@
-/* static/css/main.css */
+/* main.css — основные стили интерфейса управления (index.html, display_manager_page.html) */
+
+/* === CSS-ПЕРЕМЕННЫЕ — СВЕТЛАЯ ТЕМА === */
 :root {
   --primary-color: #117A8D;
   --secondary-color: #27565F;
@@ -28,6 +30,7 @@
   --bs-heading-color: #466469;
 }
 
+/* === CSS-ПЕРЕМЕННЫЕ — ТЁМНАЯ ТЕМА === */
 [data-theme="dark"] {
   --bg-primary: #1f2937;
   --bg-secondary: #111827;
@@ -50,10 +53,10 @@
   --bs-heading-color: #f3f4f6;
 }
 
-* {
-  transition: all 0.3s ease;
-}
+/* Плавный переход всех свойств при смене темы */
+* { transition: all 0.3s ease; }
 
+/* === БАЗОВЫЕ СТИЛИ СТРАНИЦЫ === */
 body {
   background: var(--bg-secondary);
   color: var(--text-primary);
@@ -61,6 +64,7 @@ body {
   line-height: 1.6;
 }
 
+/* === НАВБАР === */
 .navbar {
   background: var(--bg-primary) !important;
   border-bottom: 1px solid var(--border-color);
@@ -73,6 +77,7 @@ body {
   color: var(--primary-color) !important;
 }
 
+/* === ГЛАВНЫЙ КОНТЕЙНЕР (карточка с вкладками) === */
 .main-container {
   background: var(--bg-primary);
   border-radius: 16px;
@@ -162,6 +167,7 @@ body {
   margin-bottom: 0.5rem;
 }
 
+/* === КАРТОЧКА ТУРНИРА (в списке загруженных) === */
 .tournament-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
@@ -177,6 +183,7 @@ body {
   box-shadow: var(--shadow-lg);
 }
 
+/* === КОРТЫ — СЕТКА И КАРТОЧКИ === */
 .court-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -198,6 +205,7 @@ body {
   box-shadow: var(--shadow-md);
 }
 
+/* === БЕЙДЖИ СТАТУСА МАТЧА === */
 .status-badge {
   border-radius: 20px;
   font-size: 0.75rem;
@@ -365,6 +373,7 @@ body {
   color: #7c949d;
 }
 
+/* === КНОПКА ПЕРЕКЛЮЧЕНИЯ ТЕМЫ === */
 .theme-toggle {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
@@ -378,6 +387,7 @@ body {
   justify-content: center;
 }
 
+/* === ГЛОБАЛЬНЫЙ СПИННЕР ЗАГРУЗКИ === */
 .loading-spinner {
   display: none;
   position: fixed;
@@ -405,6 +415,7 @@ body {
   100% { transform: rotate(360deg); }
 }
 
+/* === КАРТОЧКИ XML-ССЫЛОК === */
 .xml-link-card {
   background: var(--bg-secondary);
   border: 1px solid var(--success-color);
@@ -580,6 +591,7 @@ body {
   100% { opacity: 1; }
 }
 
+/* Мигающий зелёный индикатор «в эфире» */
 .live-indicator {
   width: 8px;
   height: 8px;
@@ -594,6 +606,7 @@ body {
   51%, 100% { opacity: 0.3; }
 }
 
+/* === КАСТОМНЫЙ СКРОЛЛБАР === */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -630,6 +643,7 @@ body {
   to { opacity: 1; transform: translateX(0); }
 }
 
+/* === МОДАЛЬНОЕ ОКНО ЗАГРУЗКИ ФОТО УЧАСТНИКОВ === */
 .photo-upload-modal {
   width: 700px;
   max-width: 95vw;
@@ -699,6 +713,7 @@ body {
   color: var(--bs-secondary);
 }
 
+/* Область предпросмотра фото (тёмный прямоугольник 375×512) */
 .preview-area {
   position: relative;
   width: 375px;
@@ -715,6 +730,7 @@ body {
   object-fit: cover;
 }
 
+/* Перетаскиваемый canvas редактора фото */
 .photo-editor-canvas {
   position: absolute;
   top: 0;
@@ -735,6 +751,7 @@ body {
   -webkit-user-drag: none;
 }
 
+/* Полупрозрачный силуэт-подсказка для кадрирования фото */
 .silhouette-overlay {
   position: absolute;
   top: 0;
@@ -746,6 +763,7 @@ body {
   object-fit: contain;
 }
 
+/* Пунктирная рамка зоны кадрирования */
 .crop-frame {
   position: absolute;
   top: 0;
@@ -769,6 +787,7 @@ body {
   margin-bottom: 2px;
 }
 
+/* === АДАПТИВ (мобильные) === */
 @media (max-width: 768px) {
   .main-container {
     margin: 0.5rem;

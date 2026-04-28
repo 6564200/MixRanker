@@ -1,13 +1,11 @@
-/* VS Page - Base resolution FHD 1920x1080 */
+/* vs.css — страница «VS» перед матчем. Базовое разрешение FHD 1920×1080 */
 
 @import url('/static/css/broadcast_tokens.css');
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* Сброс */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* Страница — прозрачный фон для наложения в vMix */
 html, body {
     width: 100%;
     height: 100%;
@@ -16,6 +14,7 @@ html, body {
     font-family: 'Onest';
 }
 
+/* Корневой контейнер страницы (фоновое изображение через background-image) */
 .vs-container {
     position: absolute;
     width: 1920px;
@@ -23,6 +22,7 @@ html, body {
     background-size: cover;
 }
 
+/* Блок с названием турнира и локацией вверху по центру */
 .header-text {
     position: absolute;
     top: 50px;
@@ -33,6 +33,7 @@ html, body {
     z-index: 10;
 }
 
+/* Строка «локация» — меньший шрифт, с разрядкой */
 .header-location {
     font-family: 'Bluescreens';
     font-style: italic;
@@ -44,6 +45,7 @@ html, body {
     margin-bottom: 0;
 }
 
+/* Название турнира — крупный заголовок */
 .header-title {
     font-family: 'Bluescreens';
     font-style: italic;
@@ -54,7 +56,7 @@ html, body {
     color: #FFFFFF;
 }
 
-/* Teams container */
+/* Обёртка двух команд — растянута по нижнему краю экрана */
 .teams-wrapper {
     position: absolute;
     bottom: 0px;
@@ -67,7 +69,7 @@ html, body {
     z-index: 1;
 }
 
-/* Team container */
+/* Контейнер одной команды (левый или правый) */
 .team-container {
     position: relative;
     display: block;
@@ -75,15 +77,10 @@ html, body {
     height: 900px;
 }
 
-.team-container.team-left {
-    text-align: left;
-}
+.team-container.team-left  { text-align: left; }
+.team-container.team-right { text-align: right; }
 
-.team-container.team-right {
-    text-align: right;
-}
-
-/* Player photo */
+/* Фото игрока */
 .player-photo {
     width: 675px;
     height: 900px;
@@ -93,33 +90,18 @@ html, body {
     bottom: 0;
 }
 
-/* Наложение для левой команды */
-.team-container.team-left .player-photo:first-child {
-    left: 0;
-    z-index: 1;
-}
+/* Наложение фото в паре — левая команда */
+.team-container.team-left .player-photo:first-child { left: 0;     z-index: 1; }
+.team-container.team-left .player-photo:last-child  { left: 200px; z-index: 2; }
 
-.team-container.team-left .player-photo:last-child {
-    left: 200px;
-    z-index: 2;
-}
+/* Наложение фото в паре — правая команда */
+.team-container.team-right .player-photo:first-child { right: 200px; z-index: 2; }
+.team-container.team-right .player-photo:last-child  { right: 0;     z-index: 1; }
 
-/* Наложение для правой команды */
-.team-container.team-right .player-photo:first-child {
-    right: 200px;
-    z-index: 2;
-}
+/* Силуэт (нет фото) — приглушённый */
+.player-photo.silhouette { opacity: 0.3; }
 
-.team-container.team-right .player-photo:last-child {
-    right: 0;
-    z-index: 1;
-}
-
-.player-photo.silhouette {
-    opacity: 0.3;
-}
-
-/* Score section */
+/* Блок счёта по сетам в центре между командами */
 .score-section {
     position: absolute;
     bottom: 94px;
@@ -132,13 +114,13 @@ html, body {
     z-index: 5;
 }
 
-/* Single set score block */
+/* Блок одного сета (шапка + цифры) */
 .set-block {
     width: 478px;
     height: 136px;
 }
 
-/* Set header */
+/* Зелёная шапка сета с надписью «SET N» */
 .set-header {
     width: 478px;
     height: 36px;
@@ -157,7 +139,7 @@ html, body {
     color: #080609;
 }
 
-/* Set scores */
+/* Тёмный блок с цифрами счёта сета */
 .set-scores {
     width: 478px;
     height: 100px;
@@ -165,6 +147,7 @@ html, body {
     display: flex;
 }
 
+/* Счёт одной команды в сете */
 .set-score {
     flex: 1;
     display: flex;
@@ -178,7 +161,7 @@ html, body {
     position: relative;
 }
 
-/* Divider between scores */
+/* Вертикальный разделитель между счётами */
 .score-divider {
     width: 4px;
     height: 75px;
@@ -186,7 +169,7 @@ html, body {
     align-self: center;
 }
 
-/* Bottom plashka */
+/* Нижняя плашка с именами команд */
 .bottom-plashka {
     position: absolute;
     bottom: 60px;
@@ -197,6 +180,7 @@ html, body {
     z-index: 10;
 }
 
+/* Зелёная граница плашки */
 .plashka-border {
     position: absolute;
     width: 1824px;
@@ -205,6 +189,7 @@ html, body {
     border-radius: 5px;
 }
 
+/* Тёмное содержимое плашки поверх зелёной границы */
 .plashka-content {
     position: absolute;
     top: 7px;
@@ -219,7 +204,7 @@ html, body {
     padding: 0;
 }
 
-/* Team names in plashka */
+/* Блок имён одной команды внутри плашки */
 .team-names {
     display: flex;
     flex-direction: column;
@@ -227,23 +212,17 @@ html, body {
     padding: 25px 75px;
 }
 
-.team-names.team-left {
-    align-items: flex-start;
-    text-align: left;
-}
+.team-names.team-left  { align-items: flex-start; text-align: left; }
+.team-names.team-right { align-items: flex-end;   text-align: right; }
 
-.team-names.team-right {
-    align-items: flex-end;
-    text-align: right;
-}
-
-/* Player row with flag */
+/* Строка игрока с флагом и именем */
 .player-row {
     display: flex;
     align-items: center;
     gap: 15px;
 }
 
+/* Флаг страны игрока */
 .player-flag {
     width: 50px;
     height: 34px;
@@ -252,9 +231,10 @@ html, body {
     background-repeat: no-repeat;
     border-radius: 4px;
     flex-shrink: 0;
-	opacity: 1;
+    opacity: 1;
 }
 
+/* Имя игрока в плашке */
 .player-name {
     font-family: 'Onest', sans-serif;
     font-weight: 700;
@@ -265,7 +245,5 @@ html, body {
     text-transform: uppercase;
 }
 
-/* Hidden class */
-.hidden {
-    display: none !important;
-}
+/* Утилита скрытия */
+.hidden { display: none !important; }

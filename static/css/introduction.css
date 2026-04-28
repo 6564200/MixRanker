@@ -1,26 +1,19 @@
-/* introduction.css - Страница представления матча 16:9 */
-/* Базовое разрешение: FHD 1920x1080 */
+/* introduction.css — плашка представления матча перед началом. Базовое разрешение FHD 1920×1080 */
 
 @import url('/static/css/broadcast_tokens.css');
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* Сброс */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
     --green-gradient: linear-gradient(180deg, #AED753 0%, #83C000 100%);
-    --black-bg: #000000;
+    --black-bg:   #000000;
     --green-frame: #80BD00;
-    --text-white: #FFFFFF;
-    --text-dark: #202020;
-    
-    /* FHD базовые размеры */
-    --base-width: 1920;
-    --base-height: 339;
+    --text-white:  #FFFFFF;
+    --text-dark:   #202020;
 }
 
+/* Страница — прозрачный фон для наложения в vMix */
 html, body {
     width: 100%;
     height: 100%;
@@ -29,7 +22,7 @@ html, body {
     font-family: 'Onest';
 }
 
-/* Контейнер с масштабированием */
+/* Корневой контейнер: плашка центрирована по вертикали через padding */
 .intro-container {
     width: 1920px;
     height: 1080px;
@@ -41,7 +34,7 @@ html, body {
     background: transparent;
 }
 
-/* Header с названием раунда */
+/* Зелёная плашка с названием раунда над основным блоком */
 .intro-header {
     display: flex;
     flex-direction: column;
@@ -56,6 +49,7 @@ html, body {
     z-index: 10;
 }
 
+/* Текст раунда (например «ФИНАЛ», «1/2 ФИНАЛА») */
 .intro-header-text {
     font-family: 'Onest', Arial, sans-serif;
     font-weight: 700;
@@ -65,13 +59,13 @@ html, body {
     letter-spacing: 0.05em;
     color: var(--text-dark);
     text-transform: uppercase;
-    white-space: nowrap; /* Запрещает перенос текста */
-    overflow: hidden; /* Скрывает выходящий за границы текст */
-    text-overflow: ellipsis; /* Добавляет многоточие в конце */
-    width: 100%; /* Занимает всю ширину родителя */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
 }
 
-/* Основной контейнер */
+/* Основной тёмный блок с командами */
 .intro-main {
     display: flex;
     flex-direction: column;
@@ -80,6 +74,7 @@ html, body {
     height: 200px;
 }
 
+/* Зелёная рамка вокруг тёмного блока */
 .intro-frame {
     display: flex;
     flex-direction: column;
@@ -91,6 +86,7 @@ html, body {
     border-radius: 8px;
 }
 
+/* Тёмный прямоугольник с именами команд */
 .intro-info {
     position: relative;
     width: 1800px;
@@ -99,7 +95,7 @@ html, body {
     border-radius: 5px;
 }
 
-/* Команда 1 (слева) */
+/* Имя первого игрока команды 1 (левая сторона) */
 .team1-name1 {
     position: absolute;
     width: 781px;
@@ -118,6 +114,7 @@ html, body {
     text-overflow: ellipsis;
 }
 
+/* Имя второго игрока команды 1 (парный разряд, левая сторона) */
 .team1-name2 {
     position: absolute;
     width: 781px;
@@ -136,17 +133,17 @@ html, body {
     text-overflow: ellipsis;
 }
 
+/* Флаги команды 1 (скрыты — opacity: 0) */
 .team1-flag1 {
     position: absolute;
     width: 52px;
     height: 36px;
     left: 52px;
     top: 40px;
-	background-size: 0%;
-    /* background-size: contain; */
+    background-size: 0%;
     background-repeat: no-repeat;
     background-position: center;
-	opacity: 0;
+    opacity: 0;
 }
 
 .team1-flag2 {
@@ -155,14 +152,13 @@ html, body {
     height: 36px;
     left: 52px;
     top: 110px;
-    background-size: contain;
-	background-size: 0%;
+    background-size: 0%;
     background-repeat: no-repeat;
     background-position: center;
-	opacity: 0;
+    opacity: 0;
 }
 
-/* Команда 2 (справа) */
+/* Имя первого игрока команды 2 (правая сторона) */
 .team2-name1 {
     position: absolute;
     width: 781px;
@@ -182,6 +178,7 @@ html, body {
     text-overflow: ellipsis;
 }
 
+/* Имя второго игрока команды 2 (парный разряд, правая сторона) */
 .team2-name2 {
     position: absolute;
     width: 781px;
@@ -201,17 +198,17 @@ html, body {
     text-overflow: ellipsis;
 }
 
+/* Флаги команды 2 (скрыты — opacity: 0) */
 .team2-flag1 {
     position: absolute;
     width: 52px;
     height: 36px;
     left: 1700px;
     top: 40px;
-    background-size: contain;
-	background-size: 0%;
+    background-size: 0%;
     background-repeat: no-repeat;
     background-position: center;
-	opacity: 0;
+    opacity: 0;
 }
 
 .team2-flag2 {
@@ -220,82 +217,36 @@ html, body {
     height: 36px;
     left: 1700px;
     top: 110px;
-    background-size: contain;
-	background-size: 0%;
+    background-size: 0%;
     background-repeat: no-repeat;
     background-position: center;
-	opacity: 0;
+    opacity: 0;
 }
 
-/* === ANIMATIONS === */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
+/* === АНИМАЦИИ === */
 
-@keyframes slideInLeft {
-    from {
-        opacity: 0;
-        transform: translateX(-50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
+@keyframes fadeIn     { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInLeft  { from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(50px);  } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideInDown  { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
 
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
+/* Применение анимаций появления */
+.intro-container { animation: fadeIn     0.5s ease-out; }
+.intro-header    { animation: slideInDown 0.6s ease-out 0.1s both; }
 
-@keyframes slideInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+/* Левая команда выезжает слева */
+.team1-name1, .team1-name2,
+.team1-flag1, .team1-flag2 { animation: slideInLeft  0.6s ease-out 0.2s both; }
 
-/* Animation Classes */
-.intro-container {
-    animation: fadeIn 0.5s ease-out;
-}
+/* Правая команда выезжает справа */
+.team2-name1, .team2-name2,
+.team2-flag1, .team2-flag2 { animation: slideInRight 0.6s ease-out 0.2s both; }
 
-.intro-header {
-    animation: slideInDown 0.6s ease-out 0.1s both;
-}
-
-.team1-name1,
-.team1-name2,
-.team1-flag1,
-.team1-flag2 {
-    animation: slideInLeft 0.6s ease-out 0.2s both;
-}
-
-.team2-name1,
-.team2-name2,
-.team2-flag1,
-.team2-flag2 {
-    animation: slideInRight 0.6s ease-out 0.2s both;
-}
-
-/* Update animation */
-.updating {
-    animation: pulse 0.3s ease-out;
-}
+/* Мигание при live-обновлении */
+.updating { animation: pulse 0.3s ease-out; }
 
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.7; }
+    0%   { opacity: 1; }
+    50%  { opacity: 0.7; }
     100% { opacity: 1; }
 }

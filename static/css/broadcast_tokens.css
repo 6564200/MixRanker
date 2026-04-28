@@ -1,5 +1,11 @@
-/* Shared design tokens for generated/live pages */
+/**
+ * broadcast_tokens.css — общие дизайн-токены для всех live/broadcast страниц.
+ * Подключается первым через @import во всех страницах трансляции.
+ */
 
+/* === ШРИФТЫ === */
+
+/* Основной шрифт — полужирный (таблицы, расписание, имена) */
 @font-face {
     font-family: 'Onest';
     src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
@@ -7,6 +13,7 @@
     font-style: normal;
 }
 
+/* Средний вес Onest (счёт матча, второстепенный текст) */
 @font-face {
     font-family: 'Onest Med';
     src: url('/static/fonts/OnestLight1602-hint.ttf') format('truetype');
@@ -14,6 +21,7 @@
     font-style: normal;
 }
 
+/* Жирный Onest (алиас для явного указания bold) */
 @font-face {
     font-family: 'Onest Bol';
     src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
@@ -21,6 +29,7 @@
     font-style: normal;
 }
 
+/* Декоративный курсивный шрифт (заголовки, названия турниров) */
 @font-face {
     font-family: 'Bluescreens';
     src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
@@ -28,6 +37,7 @@
     font-style: italic;
 }
 
+/* Алиас Bluescreens с префиксом TT_ (используется в ряде старых файлов) */
 @font-face {
     font-family: 'TT_Bluescreens';
     src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
@@ -36,41 +46,42 @@
 }
 
 :root {
-    /* Fonts */
-    --font-primary: 'Bluescreens', sans-serif;
-    --font-title: 'TT_Bluescreens', sans-serif;
-    --font-onest: 'Onest', sans-serif;
+    /* Шрифтовые переменные */
+    --font-primary:    'Bluescreens', sans-serif;
+    --font-title:      'TT_Bluescreens', sans-serif;
+    --font-onest:      'Onest', sans-serif;
     --font-onest-bold: 'Onest Bol', sans-serif;
-    --font-onest-med: 'Onest Med', sans-serif;
+    --font-onest-med:  'Onest Med', sans-serif;
 
-    /* Text colors */
-    --text-dark: #070707;
-    --text-light: #f9f9f9;
-    --text-white: #ffffff;
-    --text-muted: #b5b5b5;
-    --text-m-light: #b5b5b5;
+    /* Цвета текста */
+    --text-dark:    #070707;  /* почти чёрный — на светлом фоне */
+    --text-light:   #f9f9f9;  /* почти белый — на тёмном фоне */
+    --text-white:   #ffffff;  /* чисто белый */
+    --text-muted:   #b5b5b5;  /* приглушённый серый */
+    --text-m-light: #b5b5b5;  /* алиас text-muted */
 
-    /* Core brand colors */
-    --green-line: #91bf1f;
-    --green-solid: #8dc900;
-    --green-frame: #80bd00;
-    --black-bg: #000000;
+    /* Фирменные цвета бренда */
+    --green-line:  #91bf1f;  /* зелёная разделительная линия */
+    --green-solid: #8dc900;  /* сплошной зелёный акцент */
+    --green-frame: #80bd00;  /* зелёная рамка/граница */
+    --black-bg:    #000000;  /* чёрный фон */
 
-    /* Common gradients */
-    --green-gradient: linear-gradient(180deg, #aed557 0%, #84c100 100%);
-    --dark-gradient: linear-gradient(180deg, #202020 0%, #070707 100%);
-    --gray-gradient: linear-gradient(360deg, #333333 0%, #737373 100%);
+    /* Готовые градиенты */
+    --green-gradient: linear-gradient(180deg, #aed557 0%, #84c100 100%); /* зелёный сверху вниз */
+    --dark-gradient:  linear-gradient(180deg, #202020 0%, #070707 100%); /* тёмный сверху вниз */
+    --gray-gradient:  linear-gradient(360deg, #333333 0%, #737373 100%); /* серый снизу вверх */
 
-    /* Legacy aliases used by older css files */
+    /* Алиасы для обратной совместимости со старыми CSS-файлами */
     --cell-gradient-b-bg: var(--dark-gradient);
-    --cell-line-bg: var(--green-line);
+    --cell-line-bg:       var(--green-line);
     --cell-gradient-l-bg: linear-gradient(180deg, #b6d569 0%, #91bf1f 100%);
     --cell-dark-gradient: var(--dark-gradient);
-    --cell-green-line: var(--green-line);
+    --cell-green-line:    var(--green-line);
     --cell-green-gradient: var(--cell-gradient-l-bg);
 
-    --b-radius: 6px;
-    --transition-fast: 0.2s ease-out;
+    /* Скругление углов и скорости переходов */
+    --b-radius:          6px;
+    --transition-fast:   0.2s ease-out;
     --transition-normal: 0.3s ease-out;
-    --transition-slow: 0.5s ease-out;
+    --transition-slow:   0.5s ease-out;
 }

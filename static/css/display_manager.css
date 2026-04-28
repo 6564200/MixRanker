@@ -1,0 +1,13 @@
+body { padding: 20px; background: var(--bg-secondary); }
+
+.page-header { margin-bottom: 30px; }
+.page-header h1 { color: var(--primary-color); font-weight: 700; }
+
+.nav-tabs .nav-link        { color: var(--text-secondary); }
+.nav-tabs .nav-link.active { color: var(--primary-color); font-weight: 600; }
+
+.window-card       { transition: transform 0.2s, box-shadow 0.2s; }
+.window-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+.badge-auto   { background-color: var(--success-color); }
+.badge-manual { background-color: var(--info-color); }

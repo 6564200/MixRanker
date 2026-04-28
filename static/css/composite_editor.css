@@ -1,19 +1,25 @@
-/**
- * Стили для редактора композитных страниц
- */
+/* composite_editor.css — интерфейс редактора composite-страниц */
 
-body {
-    background: var(--bg-secondary);
+/* Декоративный шрифт для предпросмотра текстовых слоёв */
+@font-face {
+    font-family: 'TT_Bluescreens';
+    src: url('../fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
 }
 
+/* Фон страницы редактора — берёт цвет из main.css */
+body { background: var(--bg-secondary); }
+
+/* Основной layout: левая панель + правая область предпросмотра */
 .editor-container {
     display: flex;
-    height: calc(100vh - 60px);
+    height: calc(100vh - 60px);  /* вычитаем высоту navbar */
     gap: 20px;
     padding: 20px;
 }
 
-/* Панель настроек слева */
+/* Левая панель настроек и слоёв */
 .settings-panel {
     width: 350px;
     min-width: 350px;
@@ -23,13 +29,14 @@ body {
     overflow-y: auto;
 }
 
-/* Область предпросмотра справа */
+/* Правая панель с предпросмотром */
 .preview-panel {
     flex: 1;
     display: flex;
     flex-direction: column;
 }
 
+/* Тёмная обёртка вокруг frame 1920×1080 */
 .preview-wrapper {
     flex: 1;
     background: #1a1a2e;
@@ -38,6 +45,7 @@ body {
     position: relative;
 }
 
+/* Внутренний контейнер 1920×1080 — масштабируется JS через transform */
 .preview-frame {
     position: absolute;
     width: 1920px;
@@ -46,6 +54,7 @@ body {
     background: #16213e;
 }
 
+/* Фоновый слой предпросмотра (iframe фона) */
 .preview-background {
     position: absolute;
     top: 0; left: 0;
@@ -56,9 +65,10 @@ body {
 .preview-background iframe {
     width: 100%; height: 100%;
     border: none;
-    pointer-events: none;
+    pointer-events: none;  /* фон не перехватывает события мыши */
 }
 
+/* Перетаскиваемый слой на canvas предпросмотра */
 .preview-layer {
     position: absolute;
     border: 2px dashed transparent;
@@ -67,26 +77,56 @@ body {
     overflow: hidden;
 }
 
-.preview-layer:hover {
-    border-color: #0d6efd;
-}
+/* Подсветка слоя при наведении */
+.preview-layer:hover { border-color: #0d6efd; }
 
+/* Выбранный слой — жёлтая сплошная рамка */
 .preview-layer.selected {
     border-color: #ffc107;
     border-style: solid;
 }
 
+/* iframe внутри слоя — не перехватывает мышь */
 .preview-layer iframe {
     border: none;
     pointer-events: none;
     transform-origin: top left;
 }
 
+/* Текстовый слой с названием турнира */
+.preview-text-layer.tournament-name {
+    font-family: 'TT_Bluescreens', serif;
+    font-style: italic;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: #FFFFFF;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    pointer-events: none;
+    padding: 0 8px;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Анимация появления текстового слоя при добавлении */
+.preview-text-layer.text-animate {
+    animation: previewTextFadeIn 0.5s ease-out both;
+}
+
+@keyframes previewTextFadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Метка-подпись слоя (показывается над рамкой при выборе) */
 .layer-label {
     position: absolute;
     top: -24px;
     left: 0;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0, 0, 0, 0.7);
     color: #fff;
     padding: 2px 8px;
     font-size: 11px;
@@ -94,21 +134,22 @@ body {
     white-space: nowrap;
 }
 
-/* Карточки слоёв */
+/* Карточка слоя в левой панели */
 .layer-card {
     border: 2px solid transparent;
     transition: border-color 0.2s;
 }
 
-.layer-card.selected {
-    border-color: #ffc107;
-}
+/* Выбранная карточка слоя — жёлтая рамка */
+.layer-card.selected { border-color: #ffc107; }
 
+/* Заголовок карточки — кликабелен для выбора */
 .layer-card .card-header {
     cursor: pointer;
     padding: 8px 12px;
 }
 
+/* Иконка перетаскивания для изменения порядка слоёв */
 .layer-handle {
     cursor: grab;
     color: var(--text-secondary);

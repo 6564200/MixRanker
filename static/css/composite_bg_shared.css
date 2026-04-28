@@ -1,0 +1,131 @@
+/* === ШРИФТЫ === */
+
+/* Основной шрифт composite-фонов */
+@font-face {
+    font-family: 'Onest';
+    src: url('../fonts/OnestBold1602-hint.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+/* Декоративный курсивный шрифт для названия турнира */
+@font-face {
+    font-family: 'TT_Bluescreens';
+    src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+}
+
+/* === СБРОС === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Страница — фиксированный размер FHD, прозрачный фон для наложения в vMix */
+html, body {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: transparent;
+}
+
+/* Корневой контейнер фонового слоя */
+.composite-bg {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+}
+
+/* Фоновое изображение — URL задаётся в slot-CSS каждого слота */
+.background-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Шапка с названием турнира и логотипами — left/right задаётся в slot-CSS */
+.header {
+    position: absolute;
+    top: 15px;
+    height: 130px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10;
+    opacity: 0;
+    animation: fadeIn 0.6s ease-out forwards;
+    animation-delay: 0.1s;
+}
+
+/* Название турнира — font-size задаётся в slot-CSS */
+.tournament-name {
+    flex: 1;
+    font-family: 'TT_Bluescreens', sans-serif;
+    font-style: italic;
+    font-weight: 800;
+    line-height: 1.1;
+    color: #FFFFFF;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* Блок логотипов справа — gap/height задаётся в slot-CSS */
+.logos {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+/* Один логотип — width/height задаётся в slot-CSS, появляется с масштабированием */
+.logo {
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0;
+    animation: fadeInScale 0.5s ease-out forwards;
+}
+
+/* Горизонтальная разделительная линия под шапкой — top/left/right/background задаётся в slot-CSS */
+.header-line {
+    position: absolute;
+    height: 3px;
+    z-index: 10;
+    opacity: 0;
+    animation: expandLine 0.8s ease-out forwards;
+    animation-delay: 0.4s;
+}
+
+/* === АНИМАЦИИ === */
+
+/* Шапка появляется, выезжая сверху */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Логотипы появляются с лёгким увеличением */
+@keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.8); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+/* Линия разворачивается слева направо */
+@keyframes expandLine {
+    from { opacity: 0; transform: scaleX(0); transform-origin: left; }
+    to   { opacity: 1; transform: scaleX(1); }
+}

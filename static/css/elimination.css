@@ -1,24 +1,20 @@
-﻿/**
- * Elimination CSS
- * РЎС‚РёР»Рё РґР»СЏ С‚СѓСЂРЅРёСЂРЅРѕР№ СЃРµС‚РєРё РЅР° РІС‹Р±С‹РІР°РЅРёРµ
- * Р‘Р°Р·РѕРІРѕРµ СЂР°Р·СЂРµС€РµРЅРёРµ: FHD 1920x1080
- * РђРґР°РїС‚РёРІРЅРѕСЃС‚СЊ: HD (1280x720), FHD (1920x1080), UHD (3840x2160)
- */
+﻿@import url('/static/css/broadcast_tokens.css');
 
-@import url('/static/css/broadcast_tokens.css');
-
+/* Локальная переменная скругления углов карточек */
 :root {
     --b-radius: 8px;
 }
 
+/* Сброс отступов */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* Страница — прозрачный фон для наложения в vMix */
 body {
-    background: transparent;  
+    background: transparent;
     font-family: var(--font-onest-bold);
     width: 100%;
     height: 100%;
@@ -28,7 +24,7 @@ body {
     padding: 0;
 }
 
-/* === РљРћРќРўР•Р™РќР•Р  === */
+/* Корневой контейнер сетки — 4K-размер, масштабируется через JS */
 .elimination-container {
     width: 3840px;
     height: 2160px;
@@ -42,7 +38,7 @@ body {
     left: 0;
 }
 
-/* === Р—РђР“РћР›РћР’РћРљ === */
+/* Заголовок турнира над сеткой */
 .tournament-header {
     text-align: left;
     margin-bottom: 40px;
@@ -54,7 +50,7 @@ body {
     color: transparent;
 }
 
-/* === РљРћР›РћРќРљРђ Р РђРЈРќР”РћР’ === */
+/* Горизонтальная строка раундов (1/4, 1/2, финал...) */
 .round-column {
     display: flex;
     flex-direction: row;
@@ -63,17 +59,17 @@ body {
     gap: 0px;
 }
 
-/* === РЎР•РўРљРђ Р РђРЈРќР”Рђ === */
+/* Вертикальный столбец матчей одного раунда */
 .bracket-grid {
     display: flex;
     flex-direction: column;
-    justify-content: space-evenly; 
+    justify-content: space-evenly;
     gap: 12px;
     width: 600px;
     max-width: 100%;
 }
 
-/* === РќРђР—Р’РђРќРР• Р­РўРђРџРђ === */
+/* Метка места (3-4, 5-8 и т.п.) */
 .places {
     text-transform: uppercase;
     font-size: 28px;
@@ -85,7 +81,7 @@ body {
 	opacity: 0;
 }
 
-/* === РљРћРќРўР•Р™РќР•Р  РњРђРўР§Рђ === */
+/* Карточка одного матча (две строки: верхний и нижний игрок) */
 .container {
     display: flex;
     flex-direction: column;
@@ -93,14 +89,13 @@ body {
     font-family: 'Onest', sans-serif;
     margin-bottom: 20px;
     margin-left: 20px;
-    
-    /* РђРЅРёРјР°С†РёСЏ РїРѕСЏРІР»РµРЅРёСЏ */
+
     opacity: 0;
     transform: translateY(10px);
     animation: fadeInUp 0.4s ease-out forwards;
 }
 
-/* Р—Р°РґРµСЂР¶РєР° Р°РЅРёРјР°С†РёРё РґР»СЏ РєР°Р¶РґРѕРіРѕ РјР°С‚С‡Р° */
+/* Каскадная задержка появления карточек в раунде */
 .bracket-grid .container:nth-child(1) { animation-delay: 0.1s; }
 .bracket-grid .container:nth-child(2) { animation-delay: 0.15s; }
 .bracket-grid .container:nth-child(3) { animation-delay: 0.2s; }
@@ -110,25 +105,27 @@ body {
 .bracket-grid .container:nth-child(7) { animation-delay: 0.4s; }
 .bracket-grid .container:nth-child(8) { animation-delay: 0.45s; }
 
-/* === РЎРўР РћРљРђ РљРћРњРђРќР”Р« === */
+/* Строка одного игрока внутри карточки матча */
 .row {
     display: flex;
     align-items: center;
-    height: 56px; /* 56 РїРѕ РґРёР·Р°Р№РЅСѓ */
+    height: 56px;
     transition: background var(--transition-fast);
 }
 
+/* Верхняя строка карточки — скругление сверху */
 .row-top {
     background: linear-gradient(180deg, #202020 0%, #080808 100%);
     border-radius: var(--b-radius) var(--b-radius) 0px 0px;
 }
 
+/* Нижняя строка карточки — скругление снизу */
 .row-bottom {
     background: linear-gradient(180deg, #202020 0%, #080808 100%);
     border-radius: 0px 0px var(--b-radius) var(--b-radius);
 }
 
-/* === Р‘Р›РћРљ РћР‘Р©Р•Р“Рћ РЎР§РЃРўРђ === */
+/* Зелёный квадрат с посевным номером (seed) */
 .rank {
     width: 56px;
     height: 56px;
@@ -139,14 +136,10 @@ body {
     transition: transform var(--transition-fast);
 }
 
-.rank-top {
-    border-radius: var(--b-radius) var(--b-radius) 0px 0px;
-}
+.rank-top    { border-radius: var(--b-radius) var(--b-radius) 0px 0px; }
+.rank-bottom { border-radius: 0px 0px var(--b-radius) var(--b-radius); }
 
-.rank-bottom {
-    border-radius: 0px 0px var(--b-radius) var(--b-radius);
-}
-
+/* Цифра посевного номера */
 .rank-number {
     font-weight: 700;
     font-size: 36px;
@@ -154,9 +147,9 @@ body {
     transition: transform var(--transition-normal);
 }
 
-/* === Р‘Р›РћРљ РРњРЃРќ === */
+/* Область имён игроков (пара / одиночка) */
 .names {
-    flex-grow: 1; 
+    flex-grow: 1;
     display: flex;
     align-items: center;
     padding-left: 16px;
@@ -164,6 +157,7 @@ body {
     overflow: hidden;
 }
 
+/* Имя игрока */
 .name-main {
     font-weight: 700;
     font-size: 26px;
@@ -176,13 +170,13 @@ body {
     transition: color var(--transition-normal), opacity var(--transition-normal);
 }
 
-/* РџСЂРѕРёРіСЂР°РІС€РёР№ - Р·Р°С‚РµРјРЅС‘РЅРЅС‹Р№ */
+/* Проигравший — чуть приглушён */
 .name-main.lost {
     color: #FFFFFF;
     opacity: 0.8;
 }
 
-/* === Р‘Р›РћРљ РЎР§РЃРўРђ РЎР•РўРћР’ === */
+/* Блок счёта справа от имени */
 .score {
     font-weight: 700;
     font-size: 26px;
@@ -193,6 +187,7 @@ body {
     gap: 4px;
 }
 
+/* Счёт одного сета */
 .set-score {
     display: inline-block;
     width: 28px;
@@ -201,82 +196,42 @@ body {
     transition: color var(--transition-fast), transform var(--transition-fast);
 }
 
-/* === РђРќРРњРђР¦РР === */
+/* === Анимации === */
 
-/* РџРѕСЏРІР»РµРЅРёРµ СЃРЅРёР·Сѓ */
+/* Карточка появляется снизу */
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
-/* РџРѕСЏРІР»РµРЅРёРµ СЃРІРµСЂС…Сѓ */
+/* Метка места появляется сверху */
 @keyframes fadeInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
-/* РџРѕРґСЃРІРµС‚РєР° РїСЂРё РѕР±РЅРѕРІР»РµРЅРёРё */
+/* Подсветка карточки при обновлении счёта */
 @keyframes highlightUpdate {
-    0% {
-        box-shadow: 0 0 0 0 rgba(174, 211, 91, 0.8);
-    }
-    30% {
-        box-shadow: 0 0 20px 6px rgba(174, 211, 91, 0.6);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(174, 211, 91, 0);
-    }
+    0%   { box-shadow: 0 0 0 0 rgba(174, 211, 91, 0.8); }
+    30%  { box-shadow: 0 0 20px 6px rgba(174, 211, 91, 0.6); }
+    100% { box-shadow: 0 0 0 0 rgba(174, 211, 91, 0); }
 }
 
-/* РџСѓР»СЊСЃР°С†РёСЏ СЃС‡С‘С‚Р° */
+/* Пульсация посевного номера при обновлении */
 @keyframes scorePulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.25); }
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.25); }
     100% { transform: scale(1); }
 }
 
-/* РљР»Р°СЃСЃ РѕР±РЅРѕРІР»РµРЅРёСЏ (РґРѕР±Р°РІР»СЏРµС‚СЃСЏ JS) */
-.container.updated {
-    animation: highlightUpdate 1.5s ease-out;
-}
+.container.updated            { animation: highlightUpdate 1.5s ease-out; }
+.container.updated .rank-number { animation: scorePulse 0.5s ease-out; }
 
-.container.updated .rank-number {
-    animation: scorePulse 0.5s ease-out;
-}
-
-/* Fade out */
+/* Исчезновение строки при удалении */
 @keyframes fadeOut {
     from { opacity: 1; }
-    to { opacity: 0; }
+    to   { opacity: 0; }
 }
 
-.fade-out {
-    animation: fadeOut 0.3s ease-out forwards;
-}
-
-/* === РђР”РђРџРўРР’РќР«Р• РЎРўРР›Р === */
-
-/* Hover СЌС„С„РµРєС‚С‹ (РґР»СЏ desktop) */
-@media (hover: hover) {
-    .container:hover {
-        transform: translateX(4px);
-        transition: transform var(--transition-fast);
-    }
-    
-    .container:hover .rank {
-        transform: scale(1.05);
-    }
-}
+.fade-out { animation: fadeOut 0.3s ease-out forwards; }
 

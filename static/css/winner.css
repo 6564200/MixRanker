@@ -1,25 +1,18 @@
-/* winner.css - Страница победителя */
-/* Базовое разрешение: FHD 1920x1080 */
+/* winner.css — страница победителя. Базовое разрешение FHD 1920×1080 */
 
 @import url('/static/css/broadcast_tokens.css');
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* Сброс */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
     --green-gradient: linear-gradient(180deg, #A4D33E 0%, #82C100 100%);
-    --dark-gradient: linear-gradient(180deg, #202020 0%, #070707 100%);
-    --green-solid: #8DC900;
-    --text-white: #FAFAFA;
-    
-    /* FHD базовые размеры */
-    --base-width: 1920;
-    --base-height: 1080;
+    --dark-gradient:  linear-gradient(180deg, #202020 0%, #070707 100%);
+    --green-solid:    #8DC900;
+    --text-white:     #FAFAFA;
 }
 
+/* Страница — прозрачный фон для наложения в vMix */
 html, body {
     width: 100%;
     height: 100%;
@@ -28,20 +21,11 @@ html, body {
     font-family: 'Onest', sans-serif;
 }
 
-.winner {
-    position: relative;
-    width: 1920px;
-    height: 1080px;
-    transform-origin: top left;
-}
+/* Корневые контейнеры страницы */
+.winner           { position: relative; width: 1920px; height: 1080px; transform-origin: top left; }
+.winner_container { position: relative; width: 1920px; height: 1080px; }
 
-.winner_container {
-    position: relative;
-    width: 1920px;
-    height: 1080px;
-}
-
-/* Название категории */
+/* Название категории (зелёный градиентный текст) */
 .class_name {
     position: absolute;
     left: 95px;
@@ -59,7 +43,7 @@ html, body {
     display: inline-block;
 }
 
-/* ПОБЕДИТЕЛЬ */
+/* Надпись «ПОБЕДИТЕЛЬ» крупным декоративным шрифтом */
 .txt_winner {
     position: absolute;
     left: 85px;
@@ -73,7 +57,7 @@ html, body {
     color: var(--text-white);
 }
 
-/* Таблица победителей */
+/* Таблица победителей (1-е и 2-е место) */
 .winners_table {
     position: absolute;
     left: 94px;
@@ -83,6 +67,7 @@ html, body {
     gap: 34px;
 }
 
+/* Строка одного победителя: флаг + имя */
 .winners_table > div {
     display: flex;
     flex-direction: row;
@@ -90,14 +75,16 @@ html, body {
     align-items: flex-start;
 }
 
+/* Флаг страны победителя */
 .flag-icon {
     width: 70px;
     height: 49px;
     flex-shrink: 0;
     margin-top: 13px;
-	opacity: 1;
+    opacity: 1;
 }
 
+/* Имя победителя */
 .win_name {
     font-family: 'Onest', sans-serif;
     font-weight: 700;
@@ -109,6 +96,7 @@ html, body {
     margin: 0;
 }
 
+/* Страна победителя (скрыта opacity: 0 — не используется) */
 .country_name {
     font-family: 'Onest', sans-serif;
     font-weight: 700;
@@ -118,16 +106,17 @@ html, body {
     color: var(--text-white);
     text-transform: uppercase;
     margin: 0;
-	opacity: 0.0;
+    opacity: 0.0;
 }
 
+/* Вертикальный блок имя + страна */
 .player-info {
     display: flex;
     flex-direction: column;
     gap: 3px;
 }
 
-/* Контейнер с фото */
+/* Контейнер с фото победителей (правая половина экрана) */
 .image_container {
     position: absolute;
     display: flex;
@@ -139,6 +128,7 @@ html, body {
     height: 1080px;
 }
 
+/* Фото игроков — наложение: первый уходит назад */
 .image_container img {
     width: 750px;
     height: 1000px;
@@ -146,21 +136,13 @@ html, body {
     flex-shrink: 0;
 }
 
-.image_container img:first-child {
-    margin-right: -478px;
-    z-index: 1;
-}
+.image_container img:first-child { margin-right: -478px; z-index: 1; }
+.image_container img:last-child  { transform: scaleX(1); z-index: 2; }
 
-.image_container img:last-child {
-    transform: scaleX(1);
-    z-index: 2;
-}
+/* Силуэт (нет фото) — приглушённый */
+.image_container img.silhouette { opacity: 0.3; }
 
-.image_container img.silhouette {
-    opacity: 0.3;
-}
-
-/* Блок информации снизу */
+/* Нижняя информационная полоса (соперник + счёт) */
 .info_block {
     position: absolute;
     left: 75px;
@@ -168,13 +150,14 @@ html, body {
     width: 1750px;
     height: 160px;
     padding: 14px 0 14px 75px;
-    background: var(--green-solid);
+    background: var(--green-solid);   /* зелёная граница */
     border-radius: 2px;
     display: flex;
     flex-direction: column;
     gap: 3px;
 }
 
+/* Тёмное содержимое полосы поверх зелёной границы */
 .info_block::before {
     content: '';
     position: absolute;
@@ -187,11 +170,9 @@ html, body {
     z-index: 0;
 }
 
-.info_block > * {
-    position: relative;
-    z-index: 1;
-}
+.info_block > * { position: relative; z-index: 1; }
 
+/* Подпись «ФИНАЛ / ПРОТИВ» */
 .info_block > span:first-child {
     font-family: 'Onest', sans-serif;
     font-weight: 700;
@@ -201,6 +182,7 @@ html, body {
     color: var(--green-solid);
 }
 
+/* Имя проигравшего финалиста */
 .info_block .loser {
     font-family: 'Onest', sans-serif;
     font-weight: 700;
@@ -210,12 +192,14 @@ html, body {
     text-transform: uppercase;
 }
 
+/* Строка со счётом финала */
 .info_block .score {
     display: flex;
     flex-direction: row;
     gap: 25px;
 }
 
+/* Счёт одного сета */
 .set_score {
     font-family: 'Onest', sans-serif;
     font-weight: 700;
@@ -225,7 +209,7 @@ html, body {
     color: var(--text-white);
 }
 
-/* No winner */
+/* Заглушка — нет данных о победителе */
 .no-winner {
     position: absolute;
     top: 50%;
@@ -238,101 +222,32 @@ html, body {
     text-transform: uppercase;
 }
 
-/* Hidden */
-.hidden {
-    display: none !important;
-}
+/* Утилита скрытия */
+.hidden { display: none !important; }
 
-/* === ANIMATIONS === */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
+/* === АНИМАЦИИ === */
 
-@keyframes slideInLeft {
-    from {
-        opacity: 0;
-        transform: translateX(-50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
+@keyframes fadeIn     { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInLeft  { from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(50px);  } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideInUp    { from { opacity: 0; transform: translateY(30px);  } to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn      { from { opacity: 0; transform: scale(0.9); }        to { opacity: 1; transform: scale(1); } }
 
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
+/* Применение анимаций появления */
+.winner          { animation: fadeIn      0.5s ease-out; }
+.class_name      { animation: slideInLeft 0.6s ease-out 0.1s both; }
+.txt_winner      { animation: slideInLeft 0.7s ease-out 0.2s both; }
+.winners_table   { animation: slideInLeft 0.6s ease-out 0.3s both; }
+.winners_table > div:nth-child(1) { animation: slideInUp 0.5s ease-out 0.4s both; }
+.winners_table > div:nth-child(2) { animation: slideInUp 0.5s ease-out 0.5s both; }
+.image_container { animation: slideInRight 0.7s ease-out 0.3s both; }
+.info_block      { animation: slideInUp   0.6s ease-out 0.5s both; }
 
-@keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes scaleIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-/* Animation Classes */
-.winner {
-    animation: fadeIn 0.5s ease-out;
-}
-
-.class_name {
-    animation: slideInLeft 0.6s ease-out 0.1s both;
-}
-
-.txt_winner {
-    animation: slideInLeft 0.7s ease-out 0.2s both;
-}
-
-.winners_table {
-    animation: slideInLeft 0.6s ease-out 0.3s both;
-}
-
-.winners_table > div:nth-child(1) {
-    animation: slideInUp 0.5s ease-out 0.4s both;
-}
-
-.winners_table > div:nth-child(2) {
-    animation: slideInUp 0.5s ease-out 0.5s both;
-}
-
-.image_container {
-    animation: slideInRight 0.7s ease-out 0.3s both;
-}
-
-.info_block {
-    animation: slideInUp 0.6s ease-out 0.5s both;
-}
-
-/* Update animation */
-.updating {
-    animation: pulse 0.3s ease-out;
-}
+/* Мигание при live-обновлении данных */
+.updating { animation: pulse 0.3s ease-out; }
 
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.7; }
+    0%   { opacity: 1; }
+    50%  { opacity: 0.7; }
     100% { opacity: 1; }
 }

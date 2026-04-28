@@ -1,7 +1,3 @@
-/**
- * Display Windows - стили окон трансляции
- */
-
 * {
     margin: 0;
     padding: 0;
@@ -29,12 +25,14 @@ html, body {
     flex-direction: column;
     gap: 0px;
     width: 120%;
-    height: 110%;
+    height: 100%;
     padding: 0px;
     background: #175CD1;
     position: absolute;
     top: 0;
-    left: 0;
+    left: -5%; 
+    /* Гарантируем, что ничего не вылезет за границы body */
+    overflow: hidden
 }
 
 .bg-matrix.active { display: flex; }
@@ -43,7 +41,7 @@ html, body {
     display: flex;
     flex: 1;
     gap: 0px;
-}
+} 
 
 .bg-matrix-rect {
     flex: 1;
@@ -51,12 +49,13 @@ html, body {
     height: 100%;
     transform-origin: left;
     animation: bg-matrix-wave 10s ease-in-out infinite alternate;
-    animation-delay: calc(var(--i) * 0.2s);
+
+    animation-delay: calc(var(--i) * 0.4s - 10s); 
 }
 
 @keyframes bg-matrix-wave {
-    0%   { transform: skewX(-5deg) scaleX(-1); }
-    100% { transform: skewX(-40deg) scaleX(1); }
+    100%   { transform: skewX(0deg) scaleX(-1);}
+    0% { transform: skewX(-40deg) scaleX(1);}
 }
 
 /* === ФОНОВОЕ ИЗОБРАЖЕНИЕ === */
@@ -124,7 +123,7 @@ html, body {
     background: #0944BD;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.2s ease-in-out;
+    transition: opacity 0.3s ease-in-out;
 }
 
 .fade-overlay.active {
@@ -167,9 +166,9 @@ html, body {
 }
 
 .fade-in {
-    animation: fadeIn 0.2s ease-in-out forwards;
+    animation: fadeIn 0.3s ease-in-out forwards;
 }
 
 .fade-out {
-    animation: fadeOut 0.2s ease-in-out forwards;
+    animation: fadeOut 0.3s ease-in-out forwards;
 }

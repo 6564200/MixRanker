@@ -1,5 +1,8 @@
-﻿@import url('/static/css/broadcast_tokens.css');
+/* scoreboard.css — компактный scoreboard для корта (накладывается в vMix) */
 
+@import url('/static/css/broadcast_tokens.css');
+
+/* Страница — прозрачный фон для наложения */
 body {
     margin: 0;
     padding: 10px;
@@ -8,18 +11,20 @@ body {
     display: flex;
 }
 
-
+/* Внешний контейнер scoreboard */
 .scoreboard-container {
     width: 570px;
     height: 150px;
-	padding: 30px;
+    padding: 30px;
 }
 
+/* Обёртка таблицы счёта */
 .scoreboard {
-  position: flex;
-  flex-direction: column;
+    position: flex;
+    flex-direction: column;
 }
-/* cort & text_cort container */
+
+/* Плашка с номером/именем корта */
 .cort {
     width: 110px;
     height: 24px;
@@ -30,6 +35,7 @@ body {
     justify-content: center;
 }
 
+/* Текст на плашке корта */
 .text-cort {
     font-weight: 700;
     font-size: 16px;
@@ -39,60 +45,51 @@ body {
     text-transform: uppercase;
 }
 
-/* РћР±С‰РёРµ СЃС‚РёР»Рё РґР»СЏ СЃС‚СЂРѕРє РєРѕРјР°РЅРґ РґР»СЏ СѓРїСЂРѕС‰РµРЅРёСЏ СЃС‚СЂСѓРєС‚СѓСЂС‹ */
+/* Строка одной команды */
 .team-row {
     width: 100%;
     height: 43px;
 }
 
-.team-row:first-of-type {
-    top: 24px; 
-}
+.team-row:first-of-type { top: 24px; }
+.team-row:last-of-type  { top: 67px; }
 
-.team-row:last-of-type {
-    top: 67px; 
-}
-
-
+/* Тёмный фон строки команды */
 .bg-team {
-    display: flex; 
+    display: flex;
     align-items: center;
-    position: relative; 
+    position: relative;
     width: 100%;
     height: 100%;
     background: var(--cell-gradient-b-bg);
-	border-radius: 0px var(--b-radius) var(--b-radius) 0px ;
+    border-radius: 0px var(--b-radius) var(--b-radius) 0px;
 }
 
+/* Зелёная разделительная полоска между командами */
 .divider-bar {
     width: 100%;
-    height: 3px; 
-    background-color: var(--cell-line-bg); 
-
+    height: 3px;
+    background-color: var(--cell-line-bg);
 }
 
-/* bg_score1 & bg_score2 */
+/* Зелёный блок с текущим счётом (прижат к правому краю строки) */
 .main-score-area {
-    position: absolute; /* РџРѕР·РёС†РёРѕРЅРёСЂСѓРµРј РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ .bg-team */
+    position: absolute;
     width: 58px;
     height: 100%;
-    right: 0px; /* РџСЂРёР¶РёРјР°РµРј Рє РїСЂР°РІРѕРјСѓ РєСЂР°СЋ .bg-team */
+    right: 0px;
     top: 0px;
     background: linear-gradient(180deg, #AED756 0%, #85C200 100%);
 }
 
-.bg-rad1 {
-    border-radius: 0px var(--b-radius) 0px 0px;
-}
+/* Скругление углов зелёного блока: верхний — для первой строки */
+.bg-rad1 { border-radius: 0px var(--b-radius) 0px 0px; }
+/* Скругление углов зелёного блока: нижний — для второй строки */
+.bg-rad2 { border-radius: 0px 0px var(--b-radius) 0px; }
 
-.bg-rad2 {
-    border-radius: 0px 0px var(--b-radius) 0px;
-}
-
-/* team1 & team2 text styles */
+/* Имя команды/игрока */
 .team-name {
     padding-left: 18px;
-
     font-weight: 700;
     font-size: 22px;
     line-height: 28px;
@@ -100,26 +97,25 @@ body {
     align-items: center;
     color: #FFFFFF;
     text-transform: uppercase;
-
-    flex-grow: 1; 
-
+    flex-grow: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-right: 10px; /* РќРµР±РѕР»СЊС€РѕР№ РѕС‚СЃС‚СѓРї РїРµСЂРµРґ СЃС‡РµС‚РѕРј */
+    padding-right: 10px;
 }
 
-/* Styles for set scores (set1_1, set1_2, etc.) */
+/* Контейнер счётов по сетам (расположен левее основного счёта) */
 .sets-container {
     position: absolute;
-    right: 58px; /* РЎРїСЂР°РІР° РѕС‚ РѕСЃРЅРѕРІРЅРѕРіРѕ СЃС‡С‘С‚Р° */
+    right: 58px;
     top: 0;
     height: 43px;
     display: flex;
-    flex-direction: row; /* РЎРµС‚С‹ СЃР»РµРІР° РЅР°РїСЂР°РІРѕ: 1, 2, 3... */
+    flex-direction: row;
     align-items: center;
 }
 
+/* Счёт одного сета (обычный, проигранный) */
 .set {
     width: 43px;
     height: 43px;
@@ -133,6 +129,7 @@ body {
     color: #FFFFFF;
 }
 
+/* Счёт одного сета (выигранный — тёмный фон) */
 .setV {
     width: 43px;
     height: 43px;
@@ -147,7 +144,7 @@ body {
     background: linear-gradient(180deg, #5C5C5C 0%, #333333 100%);
 }
 
-
+/* Крупная цифра текущего гейма внутри зелёного блока */
 .score-text {
     width: 100%;
     height: 100%;
@@ -161,7 +158,9 @@ body {
     color: #080609;
 }
 
-/* === SERVE INDICATOR === */
+/* === ИНДИКАТОР ПОДАЧИ === */
+
+/* Контейнер иконки подачи слева от имени */
 .serve-indicator {
     width: 28px;
     height: 43px;
@@ -171,15 +170,15 @@ body {
     flex-shrink: 0;
 }
 
+/* Иконка подачи — видна только у подающего игрока */
 .serve-indicator img {
     width: 20px;
     height: 20px;
     opacity: 0;
     transition: opacity 0.3s ease;
-	margin-left: 20px;
+    margin-left: 20px;
 }
 
 .team-row.serving .serve-indicator img {
     opacity: 1;
 }
-

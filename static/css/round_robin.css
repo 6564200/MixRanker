@@ -1,14 +1,13 @@
-﻿/* round_robin.css - Р“СЂСѓРїРїРѕРІР°СЏ С‚Р°Р±Р»РёС†Р° 16:9 */
-/* Р‘Р°Р·РѕРІРѕРµ СЂР°Р·СЂРµС€РµРЅРёРµ: FHD 1920x1080 */
+﻿@import url('/static/css/broadcast_tokens.css');
 
-@import url('/static/css/broadcast_tokens.css');
-
+/* Сброс отступов */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* Страница — прозрачный фон для наложения в vMix */
 html, body {
     width: 100%;
     height: 100%;
@@ -18,7 +17,7 @@ html, body {
     color: var(--text-dark);
 }
 
-/* РљРѕРЅС‚РµР№РЅРµСЂ СЃ РјР°СЃС€С‚Р°Р±РёСЂРѕРІР°РЅРёРµРј */
+/* Корневой контейнер таблицы — масштабируется через JS */
 .round-robin-container {
     transform-origin: top left;
     display: flex;
@@ -27,6 +26,7 @@ html, body {
     padding: 20px;
 }
 
+/* Внешняя обёртка таблицы — зелёная разделительная линия между строками */
 .round-robin-table {
     display: flex;
     flex-direction: column;
@@ -36,7 +36,7 @@ html, body {
     overflow: hidden;
 }
 
-/* Р—Р°РіРѕР»РѕРІРѕРє С‚Р°Р±Р»РёС†С‹ */
+/* Шапка таблицы (зелёный фон с названием группы) */
 .table-title {
     display: flex;
     flex-direction: row;
@@ -44,12 +44,14 @@ html, body {
     background: var(--cell-green-gradient);
 }
 
+/* Строка заголовков столбцов (номера команд, очки, место) */
 .table-header {
     display: flex;
     align-items: center;
     height: 65px;
 }
 
+/* Ячейка с порядковым номером строки */
 .cell-num {
     display: flex;
     align-items: center;
@@ -58,6 +60,7 @@ html, body {
     height: 65px;
 }
 
+/* Ячейка с названием группы в шапке */
 .cell-gpp {
     display: flex;
     align-items: center;
@@ -69,7 +72,7 @@ html, body {
     padding-left: 0px;
 }
 
-/* Р—Р°РіРѕР»РѕРІРєРё РЅРѕРјРµСЂРѕРІ РєРѕРјР°РЅРґ */
+/* Заголовок столбца с номером команды (для матрицы результатов) */
 .team-number-header {
     display: flex;
     align-items: center;
@@ -77,6 +80,7 @@ html, body {
     height: 65px;
 }
 
+/* Цифра номера команды в заголовке */
 .team-number {
     display: flex;
     align-items: center;
@@ -88,7 +92,7 @@ html, body {
     color: var(--text-dark);
 }
 
-/* Р—Р°РіРѕР»РѕРІРєРё РѕС‡РєРѕРІ/РјРµСЃС‚Р° */
+/* Заголовок столбца очков */
 .points-header {
     display: flex;
     align-items: center;
@@ -96,6 +100,7 @@ html, body {
     height: 65px;
 }
 
+/* Подпись «О» / «M» в заголовке */
 .points {
     display: flex;
     align-items: center;
@@ -107,7 +112,7 @@ html, body {
     color: var(--text-dark);
 }
 
-/* РЎС‚СЂРѕРєРё С‚Р°Р±Р»РёС†С‹ */
+/* Строка команды в таблице */
 .team-row {
     display: flex;
     flex-direction: row;
@@ -115,12 +120,14 @@ html, body {
     background: var(--cell-dark-gradient);
 }
 
+/* Обёртка ячейки с порядковым номером команды */
 .team-number-cell {
     display: flex;
     align-items: center;
     height: 80px;
 }
 
+/* Порядковый номер команды (левый столбец) */
 .team-num {
     display: flex;
     align-items: center;
@@ -132,6 +139,7 @@ html, body {
     color: var(--text-muted);
 }
 
+/* Ячейка с именем команды */
 .team-name-cell {
     display: flex;
     align-items: center;
@@ -146,7 +154,7 @@ html, body {
     text-overflow: ellipsis;
 }
 
-/* Р”РёР°РіРѕРЅР°Р»СЊРЅР°СЏ СЏС‡РµР№РєР° */
+/* Диагональная ячейка (команда vs сама себя) — зелёный блок */
 .diagonal-cell {
     display: flex;
     align-items: center;
@@ -155,7 +163,7 @@ html, body {
     background: var(--cell-green-gradient);
 }
 
-/* РЇС‡РµР№РєР° РјР°С‚С‡Р° */
+/* Ячейка сыгранного матча */
 .match-cell {
     display: flex;
     flex-direction: column;
@@ -166,6 +174,7 @@ html, body {
     transition: all 0.3s ease;
 }
 
+/* Ячейка ещё не сыгранного матча */
 .match-cell-empty-cell {
     display: flex;
     flex-direction: column;
@@ -175,6 +184,7 @@ html, body {
     background: var(--cell-dark-gradient);
 }
 
+/* Ячейка BYE (нет соперника) */
 .match-cell-bye-cell {
     display: flex;
     align-items: center;
@@ -185,6 +195,7 @@ html, body {
     font-size: 24px;
 }
 
+/* Строка со счётом матча (например «2:1») */
 .match-score {
 	font-family: var(--font-onest-med);
     font-weight: 500;
@@ -193,14 +204,14 @@ html, body {
     margin-bottom: -3px;
 }
 
+/* Счёт по сетам (крупнее, жирнее) */
 .match-sets {
-    
     font-weight: 700;
     font-size: 30px;
     color: var(--text-light);
 }
 
-/* РЇС‡РµР№РєРё РѕС‡РєРѕРІ Рё РјРµСЃС‚Р° */
+/* Ячейки очков и места (правые столбцы таблицы) */
 .points-cell,
 .place-cell {
     display: flex;
@@ -210,7 +221,8 @@ html, body {
     background: var(--cell-dark-gradient);
 }
 
-.points-z{
+/* Значение очков команды */
+.points-z {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -219,9 +231,9 @@ html, body {
     font-weight: 700;
     font-size: 36px;
     color: var(--text-light);
-
 }
 
+/* Значение места команды */
 .place-z {
     display: flex;
     align-items: center;
@@ -234,115 +246,72 @@ html, body {
 	opacity: 1;
 }
 
-/* Hidden */
+/* Утилита: скрыть элемент */
 .hidden {
     display: none !important;
 }
 
-/* === ANIMATIONS === */
+/* === Анимации === */
+
+/* Плавное появление всей таблицы */
 @keyframes fadeIn {
     from { opacity: 0; }
-    to { opacity: 1; }
+    to   { opacity: 1; }
 }
 
+/* Шапка выезжает справа */
 @keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
 }
 
+/* Строки команд выезжают слева */
 @keyframes slideInLeft {
-    from {
-        opacity: 0;
-        transform: translateX(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    from { opacity: 0; transform: translateX(-20px); }
+    to   { opacity: 1; transform: translateX(0); }
 }
 
+/* Пульсация счёта при обновлении */
 @keyframes scoreUpdate {
-    0% {
-        transform: scale(1);
-        text-shadow: 0 0 0 transparent;
-    }
-    50% {
-        transform: scale(1.15);
-        text-shadow: 0 0 15px rgba(174, 213, 87, 0.8);
-    }
-    100% {
-        transform: scale(1);
-        text-shadow: 0 0 0 transparent;
-    }
+    0%   { transform: scale(1);    text-shadow: 0 0 0 transparent; }
+    50%  { transform: scale(1.15); text-shadow: 0 0 15px rgba(174, 213, 87, 0.8); }
+    100% { transform: scale(1);    text-shadow: 0 0 0 transparent; }
 }
 
+/* Подсветка ячейки при обновлении */
 @keyframes highlightCell {
-    0% {
-        box-shadow: inset 0 0 0 0 rgba(174, 213, 87, 0);
-    }
-    50% {
-        box-shadow: inset 0 0 20px 5px rgba(174, 213, 87, 0.4);
-    }
-    100% {
-        box-shadow: inset 0 0 0 0 rgba(174, 213, 87, 0);
-    }
+    0%   { box-shadow: inset 0 0 0 0   rgba(174, 213, 87, 0); }
+    50%  { box-shadow: inset 0 0 20px 5px rgba(174, 213, 87, 0.4); }
+    100% { box-shadow: inset 0 0 0 0   rgba(174, 213, 87, 0); }
 }
 
+/* Исчезновение строки при удалении */
 @keyframes fadeOut {
-    from {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    to {
-        opacity: 0;
-        transform: translateY(10px);
-    }
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(10px); }
 }
 
-/* Animation Classes */
-.round-robin-container {
-    animation: fadeIn 0.5s ease-out;
-}
+/* Применение анимаций появления */
+.round-robin-container { animation: fadeIn 0.5s ease-out; }
+.table-title           { animation: slideInUp 0.5s ease-out 0.1s both; }
+.team-row              { animation: slideInLeft 0.4s ease-out both; }
 
-.table-title {
-    animation: slideInUp 0.5s ease-out 0.1s both;
-}
-
-.team-row {
-    animation: slideInLeft 0.4s ease-out both;
-}
-
+/* Каскадная задержка строк команд */
 .team-row:nth-child(2) { animation-delay: 0.15s; }
 .team-row:nth-child(3) { animation-delay: 0.2s; }
 .team-row:nth-child(4) { animation-delay: 0.25s; }
 .team-row:nth-child(5) { animation-delay: 0.3s; }
 .team-row:nth-child(6) { animation-delay: 0.35s; }
 
-/* Update animations */
-.match-cell.updating .match-score {
-    animation: scoreUpdate 0.5s ease-out;
-}
-
-.match-cell.updated {
-    animation: highlightCell 1s ease-out;
-}
-
+/* Триггеры анимаций при live-обновлении данных */
+.match-cell.updating .match-score { animation: scoreUpdate 0.5s ease-out; }
+.match-cell.updated               { animation: highlightCell 1s ease-out; }
 .points-z.updating,
-.place-z.updating {
-    animation: scoreUpdate 0.5s ease-out;
-}
+.place-z.updating                 { animation: scoreUpdate 0.5s ease-out; }
 
-.fade-out {
-    animation: fadeOut 0.3s ease-out forwards !important;
-}
+.fade-out { animation: fadeOut 0.3s ease-out forwards !important; }
 
-/* Transition for smooth updates */
+/* Плавный переход при любом изменении значений */
 .match-score,
 .match-sets,
 .points-z,

@@ -1,11 +1,11 @@
+/* schedule.css — страница расписания (все корты). Базовое разрешение FHD 1920×1080 */
+
 @import url('/static/css/broadcast_tokens.css');
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* Сброс */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* Страница — прозрачный фон для наложения в vMix */
 body {
     font-family: 'Onest';
     background: transparent;
@@ -16,6 +16,7 @@ body {
     position: relative;
 }
 
+/* Корневой контейнер расписания — масштабируется JS */
 .schedule-container {
     width: 1920px;
     height: 1080px;
@@ -25,7 +26,7 @@ body {
     transform-origin: top left;
 }
 
-/* === HEADER === */
+/* === ШАПКА === */
 .header {
     display: flex;
     align-items: center;
@@ -92,7 +93,7 @@ body {
 .logo3 { width: 0px; }
 
 
-/* === MAIN GRID === */
+/* === ОСНОВНАЯ СЕТКА КОРТОВ === */
 .main-grid {
     display: flex;
     flex: 1;
@@ -105,7 +106,7 @@ body {
 }
 
 
-/* === COURTS === */
+/* === КОЛОНКИ КОРТОВ === */
 .courts-container {
     flex: 1;
     min-height: 0;
@@ -145,7 +146,7 @@ body {
     margin: 0;
 }
 
-/* === MATCHES GRID === */
+/* === СЕТКА МАТЧЕЙ (grid по числу кортов) === */
 .matches-grid {
     flex: 1;
     min-height: 0;
@@ -162,7 +163,7 @@ body {
     overflow: hidden;
 }
 
-/* === MATCH ITEM - COMPACT === */
+/* === КАРТОЧКА МАТЧА === */
 .match-item {
     width: 100%;
     height: 116px;
@@ -205,7 +206,6 @@ body {
     border-radius: 6px 0px 6px 6px;
 }
 
-/* Контейнер для имён игроков - вертикальное расположение */
 .match-team-names {
     flex: 1;
     display: flex;
@@ -227,7 +227,6 @@ body {
     text-overflow: ellipsis;
 }
 
-/* Fallback для старого формата с одним именем */
 .match-team-name {
     flex: 1;
     font-size: 10px;
@@ -265,6 +264,16 @@ body {
     align-items: center;
 }
 
+.match-team-ret {
+    padding-right: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 22px;
+    color: #C0792A;
+    display: flex;
+    align-items: center;
+}
+
 .match-team:first-child .match-team-score {
     border-radius: 4px 4px 0 0;
 }
@@ -273,7 +282,7 @@ body {
     border-radius: 0 0 4px 4px;
 }
 
-/* === MATCH STATUSES === */
+/* === СТАТУСЫ МАТЧА (цвет имён: завершён / активен / будущий) === */
 .match-finished .match-player-name,
 .match-finished .match-team-name {
     color: #8F8F8F;
@@ -297,7 +306,7 @@ body {
     color: #FFFFFF;
 }
 
-/* === ANIMATIONS === */
+/* === АНИМАЦИИ === */
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -356,7 +365,7 @@ body {
     }
 }
 
-/* Animation delays for time slots */
+/* Каскадные задержки для слотов времени */
 .time-slot:nth-child(1) { animation-delay: 0.1s; }
 .time-slot:nth-child(2) { animation-delay: 0.15s; }
 .time-slot:nth-child(3) { animation-delay: 0.2s; }
@@ -376,7 +385,7 @@ body {
 .time-slot:nth-child(17) { animation-delay: 0.9s; }
 .time-slot:nth-child(18) { animation-delay: 0.95s; }
 
-/* Animation delays for match rows */
+/* Каскадные задержки для строк матчей */
 .match-item.row-1 { animation-delay: 0.2s; }
 .match-item.row-2 { animation-delay: 0.25s; }
 .match-item.row-3 { animation-delay: 0.3s; }
@@ -396,7 +405,7 @@ body {
 .match-item.row-17 { animation-delay: 1.0s; }
 .match-item.row-18 { animation-delay: 1.05s; }
 
-/* Update animations */
+/* Анимации live-обновления данных */
 .hide-for-refresh {
     animation: fadeOut 0.4s ease-out forwards !important;
 }
@@ -417,7 +426,7 @@ body {
     }
 }
 
-/* === EMPTY MESSAGE === */
+/* Сообщение «нет матчей» */
 .empty-message {
     text-align: center;
     margin-top: 100px;

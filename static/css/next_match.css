@@ -1,5 +1,8 @@
-﻿@import url('/static/css/broadcast_tokens.css');
+/* next_match.css — плашка «Следующий матч» на корте. Базовое разрешение 4K (3840×2160), масштабируется браузером через zoom */
 
+@import url('/static/css/broadcast_tokens.css');
+
+/* Декоративный курсивный шрифт для заголовков */
 @font-face {
     font-family: 'TT Bluescreens';
     src: url('/static/fonts/TT Bluescreens Trial Bold Italic.ttf') format('truetype');
@@ -7,6 +10,7 @@
     font-style: italic;
 }
 
+/* Страница — 4K-размер, прозрачный фон для наложения в vMix */
 body {
     font-family: var(--font-primary), sans-serif;
     background: transparent;
@@ -17,4 +21,3 @@ body {
     position: relative;
     text-transform: uppercase;
 }
-
