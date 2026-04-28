@@ -219,6 +219,18 @@
     }
 
     /**
+     * Определяет бейдж и чистый счёт из строки результата rankedin API.
+     * 'Won W.O.' → бейдж 'W.O.', счёт пустой
+     * 'Won R'    → бейдж 'Ret.', счёт пустой
+     * иначе      → бейдж пустой, счёт как есть
+     */
+    function parseResult(raw) {
+        if (raw === 'Won W.O.') return { badge: 'W.O.',  badgeClass: 'match-team-wo',  score: '' };
+        if (raw === 'Won R')    return { badge: 'Ret.',  badgeClass: 'match-team-ret', score: '' };
+        return { badge: '', badgeClass: '', score: raw || '' };
+    }
+
+    /**
      * Обновление элемента матча
      */
     function updateMatchElement(el, data) {
@@ -234,7 +246,7 @@
         // Обновляем имена (поддержка обоих форматов)
         const teamNamesContainers = el.querySelectorAll('.match-team-names');
         const teamNamesSingle = el.querySelectorAll('.match-team-name');
-        
+
         if (teamNamesContainers.length >= 2) {
             // Новый формат с вертикальными именами
             updatePlayerNames(teamNamesContainers[0], data.challenger_players || [data.challenger]);
@@ -245,31 +257,38 @@
             teamNamesSingle[1].textContent = data.challenged;
         }
 
-        // Обновляем счёт
+        // Обновляем бейджи (W.O. / Ret.) и счёт
         const scores = el.querySelectorAll('.match-team-score');
-        const teams = el.querySelectorAll('.match-team');
+        const teams  = el.querySelectorAll('.match-team');
 
-        if (data.challenger_score && data.challenger_score !== 'Won W.O.') {
-            if (scores[0]) {
-                scores[0].textContent = data.challenger_score;
-            } else if (teams[0]) {
-                const scoreDiv = document.createElement('div');
-                scoreDiv.className = 'match-team-score';
-                scoreDiv.textContent = data.challenger_score;
-                teams[0].appendChild(scoreDiv);
-            }
-        }
+        [
+            { result: parseResult(data.challenger_score), teamEl: teams[0], scoreEl: scores[0] },
+            { result: parseResult(data.challenged_score), teamEl: teams[1], scoreEl: scores[1] },
+        ].forEach(({ result, teamEl, scoreEl }) => {
+            if (!teamEl) return;
 
-        if (data.challenged_score && data.challenged_score !== 'Won W.O.') {
-            if (scores[1]) {
-                scores[1].textContent = data.challenged_score;
-            } else if (teams[1]) {
-                const scoreDiv = document.createElement('div');
-                scoreDiv.className = 'match-team-score';
-                scoreDiv.textContent = data.challenged_score;
-                teams[1].appendChild(scoreDiv);
+            // Убираем старые бейджи и обновляем/удаляем элемент счёта
+            teamEl.querySelectorAll('.match-team-wo, .match-team-ret').forEach(b => b.remove());
+
+            if (result.badge) {
+                const badgeDiv = document.createElement('div');
+                badgeDiv.className = result.badgeClass;
+                badgeDiv.textContent = result.badge;
+                teamEl.appendChild(badgeDiv);
+                if (scoreEl) scoreEl.remove();
+            } else if (result.score) {
+                if (scoreEl) {
+                    scoreEl.textContent = result.score;
+                } else {
+                    const scoreDiv = document.createElement('div');
+                    scoreDiv.className = 'match-team-score';
+                    scoreDiv.textContent = result.score;
+                    teamEl.appendChild(scoreDiv);
+                }
+            } else {
+                if (scoreEl) scoreEl.remove();
             }
-        }
+        });
 
         const matchNumber = el.querySelector('.match-number');
         if (matchNumber) matchNumber.textContent = data.episode;
@@ -309,22 +328,22 @@
         const el = document.createElement('div');
         el.className = `match-item match-${data.status}`;
 
-        const challengerWO = data.challenger_score === 'Won W.O.';
-        const challengedWO = data.challenged_score === 'Won W.O.';
+        const chR  = parseResult(data.challenger_score);
+        const cdR  = parseResult(data.challenged_score);
         const challengerPlayers = data.challenger_players || splitTeamName(data.challenger);
         const challengedPlayers = data.challenged_players || splitTeamName(data.challenged);
 
-        function teamHtml(players, wo, score) {
-            const woHtml    = wo ? `<div class="match-team-wo">W.O.</div>` : '';
-            const scoreHtml = score && !wo ? `<div class="match-team-score">${score}</div>` : '';
+        function teamHtml(players, result) {
+            const badgeHtml = result.badge ? `<div class="${result.badgeClass}">${result.badge}</div>` : '';
+            const scoreHtml = result.score ? `<div class="match-team-score">${result.score}</div>` : '';
             if (players.length === 1) {
-                return `<div class="match-team"><div class="match-team-name">${players[0]}</div>${woHtml}${scoreHtml}</div>`;
+                return `<div class="match-team"><div class="match-team-name">${players[0]}</div>${badgeHtml}${scoreHtml}</div>`;
             }
             const ph = players.slice(0, 2).map(p => `<div class="match-player-name">${p}</div>`).join('');
-            return `<div class="match-team"><div class="match-team-names">${ph}</div>${woHtml}${scoreHtml}</div>`;
+            return `<div class="match-team"><div class="match-team-names">${ph}</div>${badgeHtml}${scoreHtml}</div>`;
         }
 
-        el.innerHTML = `<div class="match-content"><div class="match-teams-wrapper">${teamHtml(challengerPlayers, challengerWO, data.challenger_score)}${teamHtml(challengedPlayers, challengedWO, data.challenged_score)}</div></div>`;
+        el.innerHTML = `<div class="match-content"><div class="match-teams-wrapper">${teamHtml(challengerPlayers, chR)}${teamHtml(challengedPlayers, cdR)}</div></div>`;
         return el;
     }
 

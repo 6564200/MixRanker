@@ -16,6 +16,7 @@
     let mode = 'auto';
     let currentPage = null;
     let currentState = null;
+    let currentBgType = null;
     let checkTimer = null;
     let loadRequestId = 0;
 
@@ -55,7 +56,14 @@
             
             const data = await response.json();
             applyPlaceholderImage(data.placeholder_url);
-            
+
+            // Обновляем тип фона если изменился
+            if (data.background_type && data.background_type !== currentBgType) {
+                currentBgType = data.background_type;
+                applyBackgroundType(currentBgType);
+                console.log(`Background type changed to: ${currentBgType}`);
+            }
+
             // РћР±РЅРѕРІР»СЏРµРј СЂРµР¶РёРј РµСЃР»Рё РёР·РјРµРЅРёР»СЃСЏ
             if (data.mode && data.mode !== mode) {
                 mode = data.mode;
@@ -214,9 +222,18 @@
             buildMatrix(matrix);
             matrix.classList.add('active');
             if (bgImage) bgImage.style.display = 'none';
+            document.documentElement.style.background = '';
+            document.body.style.background = '';
+        } else if (type === 'transparent') {
+            matrix.classList.remove('active');
+            if (bgImage) bgImage.style.display = 'none';
+            document.documentElement.style.background = 'transparent';
+            document.body.style.background = 'transparent';
         } else {
             matrix.classList.remove('active');
             if (bgImage) bgImage.style.display = '';
+            document.documentElement.style.background = '';
+            document.body.style.background = '';
         }
     }
 

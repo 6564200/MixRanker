@@ -19,6 +19,7 @@
     let mode = 'auto';
     let currentManualPage = null;
     let currentLoadedUrl = null;  // Текущий загруженный URL
+    let currentBgType = null;
 
     /**
      * Инициализация
@@ -54,7 +55,15 @@
             
             const windowData = await response.json();
             applyPlaceholderImage(windowData.placeholder_url);
-            
+
+            // Проверяем изменился ли тип фона
+            const newBgType = windowData.settings?.background_type || 'image';
+            if (newBgType !== currentBgType) {
+                currentBgType = newBgType;
+                applyBackgroundType(currentBgType);
+                console.log(`Background type changed to: ${currentBgType}`);
+            }
+
             // Проверяем изменился ли режим
             if (windowData.mode !== mode) {
                 mode = windowData.mode;
@@ -114,9 +123,18 @@
             buildMatrix(matrix);
             matrix.classList.add('active');
             if (bgImage) bgImage.style.display = 'none';
+            document.documentElement.style.background = '';
+            document.body.style.background = '';
+        } else if (type === 'transparent') {
+            matrix.classList.remove('active');
+            if (bgImage) bgImage.style.display = 'none';
+            document.documentElement.style.background = 'transparent';
+            document.body.style.background = 'transparent';
         } else {
             matrix.classList.remove('active');
             if (bgImage) bgImage.style.display = '';
+            document.documentElement.style.background = '';
+            document.body.style.background = '';
         }
     }
 

@@ -1,5 +1,6 @@
-﻿// static/js/main.js
-// Глобальные переменные
+// static/js/main.js
+
+// === ГЛОБАЛЬНОЕ СОСТОЯНИЕ ===
 let tournaments = [];
 let courts = [];
 let currentTournamentId = null;
@@ -8,20 +9,22 @@ let refreshInterval = 30000; // 30 секунд
 let isAuthenticated = false;
 let currentUsername = '';
 let pendingAuthAction = null;
-let xmlFiles = [];
 let mediaImages = [];
+
+// Опции popup-окна 4K (используется во всех окнах трансляции)
+const POPUP_4K = 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no';
 
 document.addEventListener('DOMContentLoaded', function() {
     loadSettings();
     initializeTheme();
-	checkAuthStatus();
+    checkAuthStatus();
     loadTournaments();
     setupEventListeners();
     startAutoRefresh();
     updateSystemInfo();
 });
 
-// Настройка обработчиков событий
+// === ОБРАБОТЧИКИ СОБЫТИЙ ===
 function setupEventListeners() {
     initializeScheduleDateInput();
     document.getElementById('tournamentForm').addEventListener('submit', handleTournamentSubmit);
@@ -34,18 +37,14 @@ function setupEventListeners() {
         mediaTab.addEventListener('shown.bs.tab', loadMediaImages);
     }
 
-    // Обработчик формы авторизации
     document.getElementById('authForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        
         const username = document.getElementById('authUsername').value.trim();
         const password = document.getElementById('authPassword').value.trim();
-        
         if (!username || !password) {
             showAlert('Введите имя пользователя и пароль', 'warning');
             return;
         }
-        
         await performLogin(username, password);
     });
 
@@ -60,9 +59,7 @@ function setupEventListeners() {
 
 function initializeScheduleDateInput() {
     const dateInput = document.getElementById('scheduleDateInput');
-    if (!dateInput || dateInput.value) {
-        return;
-    }
+    if (!dateInput || dateInput.value) return;
     const now = new Date();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
@@ -71,23 +68,17 @@ function initializeScheduleDateInput() {
 
 function getSelectedScheduleDate() {
     const dateInput = document.getElementById('scheduleDateInput');
-    if (!dateInput || !dateInput.value) {
-        return null;
-    }
+    if (!dateInput || !dateInput.value) return null;
     const [year, month, day] = dateInput.value.split('-');
-    if (!year || !month || !day) {
-        return null;
-    }
+    if (!year || !month || !day) return null;
     return `${day}.${month}.${year}`;
 }
 
-// ФУНКЦИИ для аутентификации
+// === АУТЕНТИФИКАЦИЯ ===
 async function checkAuthStatus() {
-    // Проверяет статус аутентификации при загрузке страницы
     try {
         const response = await fetch('/api/auth/status');
         const data = await response.json();
-        
         if (data.authenticated) {
             isAuthenticated = true;
             currentUsername = data.username;
@@ -104,14 +95,13 @@ async function checkAuthStatus() {
 }
 
 function updateAuthUI(authenticated) {
-    // Обновляет интерфейс в зависимости от статуса аутентификации
     const authUserInfo = document.getElementById('authUserInfo');
     const currentUsernameSpan = document.getElementById('currentUsername');
     const settingsTab = document.getElementById('settings-tab');
     const settingsPane = document.getElementById('settings-pane');
     const mediaTab = document.getElementById('media-tab');
     const mediaPane = document.getElementById('media-pane');
-    
+
     if (authenticated && currentUsername) {
         authUserInfo.style.display = 'flex';
         currentUsernameSpan.textContent = currentUsername;
@@ -125,11 +115,12 @@ function updateAuthUI(authenticated) {
         if (settingsPane) settingsPane.style.display = 'none';
         if (mediaTab) mediaTab.style.display = 'none';
         if (mediaPane) mediaPane.style.display = 'none';
-        if (settingsPane && settingsPane.classList.contains('active')) {
-            const tournamentTab = document.getElementById('tournament-tab');
-            if (tournamentTab) tournamentTab.click();
-        }
-        if (mediaPane && mediaPane.classList.contains('active')) {
+
+        // Если активна скрытая вкладка — откатываемся на "Турниры"
+        const isHiddenActive =
+            (settingsPane && settingsPane.classList.contains('active')) ||
+            (mediaPane && mediaPane.classList.contains('active'));
+        if (isHiddenActive) {
             const tournamentTab = document.getElementById('tournament-tab');
             if (tournamentTab) tournamentTab.click();
         }
@@ -151,28 +142,21 @@ async function performLogin(username, password) {
     try {
         const response = await fetch('/api/auth/login', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
         });
-        
         const data = await response.json();
-        
+
         if (response.ok && data.success) {
             isAuthenticated = true;
             currentUsername = data.username;
             updateAuthUI(true);
             closeAuthModal();
-            
             showAlert('Успешная авторизация!', 'success');
-            
-            // Выполняем отложенное действие
             if (pendingAuthAction) {
                 pendingAuthAction();
                 pendingAuthAction = null;
             }
-            
             return true;
         } else {
             showAlert(data.error || 'Ошибка авторизации', 'danger');
@@ -189,11 +173,8 @@ async function logout() {
     try {
         const response = await fetch('/api/auth/logout', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
+            headers: { 'Content-Type': 'application/json' }
         });
-        
         if (response.ok) {
             isAuthenticated = false;
             currentUsername = '';
@@ -216,9 +197,7 @@ async function changePassword() {
     const newPasswordInput = document.getElementById('newPassword');
     const confirmPasswordInput = document.getElementById('confirmPassword');
 
-    if (!currentPasswordInput || !newPasswordInput || !confirmPasswordInput) {
-        return;
-    }
+    if (!currentPasswordInput || !newPasswordInput || !confirmPasswordInput) return;
 
     const current_password = currentPasswordInput.value;
     const new_password = newPasswordInput.value;
@@ -228,12 +207,10 @@ async function changePassword() {
         showAlert('Заполните все поля пароля', 'warning');
         return;
     }
-
     if (new_password !== confirm_password) {
         showAlert('Новый пароль и подтверждение не совпадают', 'warning');
         return;
     }
-
     if (new_password.length < 6) {
         showAlert('Минимальная длина нового пароля: 6 символов', 'warning');
         return;
@@ -242,16 +219,12 @@ async function changePassword() {
     try {
         const response = await fetch('/api/auth/change-password', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ current_password, new_password, confirm_password })
         });
 
         if (response.status === 401) {
-            isAuthenticated = false;
-            updateAuthUI(false);
-            showAuthModal(changePassword);
+            handleUnauthorized(changePassword);
             return;
         }
 
@@ -276,6 +249,13 @@ function requireAuth(action) {
     } else {
         showAuthModal(action);
     }
+}
+
+/** Обрабатывает 401 от сервера: сбрасывает сессию и открывает форму входа. */
+function handleUnauthorized(retryAction) {
+    isAuthenticated = false;
+    updateAuthUI(false);
+    showAuthModal(retryAction);
 }
 
 // === ТЕМА ИНТЕРФЕЙСА ===
@@ -319,7 +299,6 @@ function updateThemeIcon(theme) {
 // === УПРАВЛЕНИЕ ТУРНИРАМИ ===
 async function handleTournamentSubmit(e) {
     e.preventDefault();
-    
     const tournamentId = document.getElementById('tournamentId').value.trim();
     if (!tournamentId) {
         showAlert('Введите ID турнира', 'warning');
@@ -329,38 +308,29 @@ async function handleTournamentSubmit(e) {
         showAuthModal(() => loadTournamentWithAuth(tournamentId));
         return;
     }
-    
     loadTournamentWithAuth(tournamentId);
 }
 
 async function loadTournamentWithAuth(tournamentId) {
     showLoading(true);
-    
     try {
         const response = await fetch(`/api/tournament/${tournamentId}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
+            headers: { 'Content-Type': 'application/json' }
         });
-
         const data = await response.json();
-        
+
         if (response.status === 401 && data.auth_required) {
-            // Требуется повторная аутентификация
-            isAuthenticated = false;
-            updateAuthUI(false);
-            showAuthModal(() => loadTournamentWithAuth(tournamentId));
+            handleUnauthorized(() => loadTournamentWithAuth(tournamentId));
             return;
         }
-        
+
         if (data.success) {
             currentTournamentId = tournamentId;
             loadTournaments();
             updateTournamentSelects();
             showAlert(`Турнир "${data.name}" успешно загружен!`, 'success');
             document.getElementById('tournamentForm').reset();
-            
             setTimeout(() => {
                 document.getElementById('courts-tab').click();
                 refreshCourts();
@@ -390,7 +360,7 @@ async function loadTournaments() {
 function renderTournaments() {
     const container = document.getElementById('tournamentList');
     const countBadge = document.getElementById('tournamentCount');
-    
+
     if (tournaments.length === 0) {
         container.innerHTML = `
             <div class="text-center text-muted py-5">
@@ -410,7 +380,7 @@ function renderTournaments() {
                     <h6 class="mb-2">${tournament.name}</h6>
                     <div class="mb-2">
                         <small class="text-muted">
-                            <i class="fas fa-hashtag me-1"></i>ID: ${tournament.id} | 
+                            <i class="fas fa-hashtag me-1"></i>ID: ${tournament.id} |
                             <i class="fas fa-globe me-1"></i>${tournament.country || 'Неизвестная страна'} |
                             <i class="fas fa-calendar me-1"></i>${formatDate(tournament.created_at)}
                         </small>
@@ -434,9 +404,6 @@ function renderTournaments() {
                     <button class="btn btn-sm btn-outline-warning" onclick="fetchParticipants('${tournament.id}')" title="Загрузить фотографии">
                         <i class="fas fa-camera"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-success" onclick="generateAllXML('${tournament.id}')" title="Генерировать все XML">
-                        <i class="fas fa-code"></i>
-                    </button>
                     <button class="btn btn-sm btn-outline-danger" onclick="deleteTournament('${tournament.id}')" title="Удалить">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -444,25 +411,22 @@ function renderTournaments() {
             </div>
         </div>
     `).join('');
-    
+
     countBadge.textContent = tournaments.length;
 }
 
 function updateTournamentSelects() {
     const select = document.getElementById('xmlTournamentSelect');
-    
     if (tournaments.length === 0) {
         select.innerHTML = '<option value="">Сначала загрузите турнир</option>';
         return;
     }
-
     select.innerHTML = '<option value="">Выберите турнир</option>' +
         tournaments.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
 }
 
 // === ЗАГРУЗКА ФОТО УЧАСТНИКОВ ===
 
-// Кэш участников для поиска
 let allParticipants = [];
 
 function openUploadModal() {
@@ -501,7 +465,7 @@ async function fetchParticipants(tournamentId) {
         document.getElementById('participantList').innerHTML = '<div class="text-danger p-2">Ошибка загрузки</div>';
     }
 
-    // Загружаем группы независимо — не влияет на основной поток
+    // Группы загружаются независимо — не блокируют основной поток
     try {
         const r = await fetch(`/api/tournament/${tournamentId}/participant-classes`);
         if (!r.ok) return;
@@ -532,12 +496,10 @@ function filterParticipants() {
 
 function renderParticipantsList(participants) {
     const list = document.getElementById('participantList');
-    
     if (participants.length === 0) {
         list.innerHTML = '<div class="text-muted p-2">Не найдено</div>';
         return;
     }
-    
     list.innerHTML = participants.map(p => `
         <div class="participant-item" data-id="${p.id}" data-photo="${p.photo_url || ''}"
              onclick="selectParticipantById(${p.id})">
@@ -553,28 +515,23 @@ function selectParticipantById(id) {
 }
 
 function selectParticipant(participant) {
-    // Обновляем UI
     document.getElementById('selectedParticipantName').textContent = `${participant.first_name} ${participant.last_name}`;
     document.getElementById('selectedParticipantId').value = participant.id;
     document.getElementById('uploadFormArea').classList.remove('d-none');
     document.getElementById('uploadFormArea').classList.add('d-flex');
     document.getElementById('noSelectionMessage').style.display = 'none';
-    
-    // Подсвечиваем выбранного
+
     document.querySelectorAll('.participant-item').forEach(el => el.classList.remove('active'));
     const item = document.querySelector(`.participant-item[data-id="${participant.id}"]`);
     if (item) item.classList.add('active');
-    
-    // Область превью
+
     const previewArea = document.getElementById('previewArea');
     const editorControls = document.getElementById('editorControls');
-    
+
     if (participant.photo_url) {
-        // Фото есть - показываем статично
         previewArea.innerHTML = `<img class="existing-photo" src="${participant.photo_url}?t=${Date.now()}" alt="Фото">`;
         editorControls.classList.add('d-none');
     } else {
-        // Фото нет - плейсхолдер
         previewArea.innerHTML = `
             <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
                 <img src="/static/images/silhouette.png" style="opacity:0.3;max-height:80%;">
@@ -583,14 +540,12 @@ function selectParticipant(participant) {
         `;
         editorControls.classList.add('d-none');
     }
-    
-    // Заполняем поля из сохранённого info
+
     let info = {};
     try { info = JSON.parse(participant.info || '{}'); } catch (e) {}
     photoEditor.destroy();
     document.getElementById('photoFile').value = '';
 
-    // Страна: info.country имеет приоритет над country_code от Rankedin
     const countryCode = info.country || participant.country_code || 'RUS';
     if (window.countryAutocomplete) {
         window.countryAutocomplete.clear();
@@ -609,14 +564,12 @@ function selectParticipant(participant) {
 function handleFileSelect(input) {
     const file = input.files[0];
     if (!file) return;
-    
     const previewArea = document.getElementById('previewArea');
     const editorControls = document.getElementById('editorControls');
-    
     const reader = new FileReader();
     reader.onload = (e) => {
         photoEditor.init(previewArea, e.target.result);
-        photoEditor.file = file; // Устанавливаем ПОСЛЕ init, чтобы не сбросился
+        photoEditor.file = file;
         editorControls.classList.remove('d-none');
     };
     reader.readAsDataURL(file);
@@ -625,13 +578,12 @@ function handleFileSelect(input) {
 async function uploadPhoto() {
     const participantId = document.getElementById('selectedParticipantId').value;
     const previewArea = document.getElementById('previewArea');
-    
+
     if (!participantId) {
         showAlert('Выберите участника', 'warning');
         return;
     }
-    
-    // Валидация страны: если в поле что-то введено, это должно быть из справочника
+
     const countryField = document.getElementById('country');
     if (window.countryAutocomplete && countryField.value.trim()) {
         if (!window.countryAutocomplete.isValidSelection()) {
@@ -640,18 +592,15 @@ async function uploadPhoto() {
         }
     }
 
-    // Собираем данные
     const formData = new FormData();
     formData.append('participant_id', participantId);
-    // Отправляем 3-буквенный код (из autocomplete), а не отображаемое имя
     const selectedCountry = window.countryAutocomplete ? window.countryAutocomplete.getSelectedCountry() : null;
     formData.append('country', selectedCountry ? selectedCountry.code : countryField.value);
     formData.append('rating', document.getElementById('rating').value);
     formData.append('height', document.getElementById('height').value);
     formData.append('position', document.getElementById('position').value);
     formData.append('english', document.getElementById('english-name').value);
-    
-    // Если есть файл - добавляем с параметрами кропа
+
     if (photoEditor.file) {
         formData.append('photo', photoEditor.file);
         const crop = photoEditor.getCropParams();
@@ -661,13 +610,12 @@ async function uploadPhoto() {
         formData.append('natural_width', crop.naturalWidth);
         formData.append('natural_height', crop.naturalHeight);
     }
-    
-    // UI загрузки
+
     const btn = document.getElementById('uploadPhotoButton');
     const btnText = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Сохранение...';
-    
+
     try {
         const response = await fetch('/api/participants/upload-photo', {
             method: 'POST',
@@ -675,19 +623,16 @@ async function uploadPhoto() {
         });
 
         if (response.status === 401) {
-            isAuthenticated = false;
-            updateAuthUI(false);
-            showAuthModal(uploadPhoto);
+            handleUnauthorized(uploadPhoto);
             return;
         }
 
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Ошибка сервера');
-        
+
         if (result.success) {
             showAlert('Сохранено', 'success');
 
-            // Обновляем info в кэше всегда — даже если фото не менялось
             const p = allParticipants.find(x => x.id == participantId);
             if (p) {
                 let cachedInfo = {};
@@ -701,21 +646,16 @@ async function uploadPhoto() {
                 p.info = JSON.stringify(cachedInfo);
             }
 
-            // Обновляем превью если было новое фото
             if (result.preview_url) {
                 previewArea.innerHTML = `<img class="existing-photo" src="${result.preview_url}?t=${Date.now()}" alt="Фото">`;
                 document.getElementById('editorControls').classList.add('d-none');
-
-                // Галочка в списке
                 const item = document.querySelector(`.participant-item[data-id="${participantId}"]`);
                 if (item && !item.querySelector('.fa-check-circle')) {
                     item.insertAdjacentHTML('beforeend', '<i class="fas fa-check-circle"></i>');
                 }
-
                 if (p) p.photo_url = result.preview_url;
             }
 
-            // Очищаем редактор
             photoEditor.file = null;
             document.getElementById('photoFile').value = '';
         } else {
@@ -735,7 +675,7 @@ async function refreshCourts() {
     if (!currentTournamentId && tournaments.length > 0) {
         currentTournamentId = tournaments[0].id;
     }
-    
+
     if (!currentTournamentId) {
         document.getElementById('courtGrid').innerHTML = `
             <div class="text-center text-muted py-5 w-100">
@@ -774,10 +714,9 @@ async function toggleReferee(tournamentId, courtId, hasReferee) {
 function renderCourts() {
     const container = document.getElementById('courtGrid');
     const countBadge = document.getElementById('courtCount');
-    
+
     if (!Array.isArray(courts)) {
         console.error('Courts data is not an array:', courts);
-
         if (courts && courts.error) {
             container.innerHTML = `
                 <div class="text-center text-muted py-5 w-100">
@@ -803,7 +742,7 @@ function renderCourts() {
         countBadge.textContent = '0 кортов';
         return;
     }
-    
+
     if (courts.length === 0) {
         container.innerHTML = `
             <div class="text-center text-muted py-5 w-100">
@@ -817,39 +756,34 @@ function renderCourts() {
     }
 
     container.innerHTML = courts.map(court => {
-        // Определяем активный матч
-        const hasCurrentMatch = (court.first_participant && court.first_participant.length > 0) || 
+        const hasCurrentMatch = (court.first_participant && court.first_participant.length > 0) ||
                                (court.current_first_participant && court.current_first_participant.length > 0);
-        
+
         const currentPlayers1 = court.current_first_participant || court.first_participant || [];
         const currentPlayers2 = court.current_second_participant || court.second_participant || [];
-        const currentScore1 = court.current_first_participant_score || court.first_participant_score || 0;
-        const currentScore2 = court.current_second_participant_score || court.second_participant_score || 0;
-        const currentSets = court.current_detailed_result || court.detailed_result || [];
-        const currentClass = court.current_class_name || court.class_name || '';
-        const eventState = court.event_state || '';
-        
-        // Определяем статус матча для отображения
-        const isFinished = eventState.toLowerCase() === 'finished';
+        const currentScore1   = court.current_first_participant_score || court.first_participant_score || 0;
+        const currentScore2   = court.current_second_participant_score || court.second_participant_score || 0;
+        const currentSets     = court.current_detailed_result || court.detailed_result || [];
+        const currentClass    = court.current_class_name || court.class_name || '';
+        const eventState      = court.event_state || '';
+
+        const isFinished   = eventState.toLowerCase() === 'finished';
         const isInProgress = eventState.toLowerCase() === 'inprogress' || eventState.toLowerCase() === 'in progress';
-        const matchLabel = isFinished ? '⏹ Завершён' : isInProgress ? '▶ Сейчас' : eventState;
+        const matchLabel      = isFinished ? '⏹ Завершён' : isInProgress ? '▶ Сейчас' : eventState;
         const matchLabelClass = isFinished ? 'text-muted' : isInProgress ? 'text-success' : 'text-secondary';
-        
-        // Информация о следующем матче
-        const hasNextMatch = court.next_first_participant && court.next_first_participant.length > 0;
-        const nextPlayers1 = court.next_first_participant || [];
-        const nextPlayers2 = court.next_second_participant || [];
-        const nextClass = court.next_class_name || '';
+
+        const hasNextMatch  = court.next_first_participant && court.next_first_participant.length > 0;
+        const nextPlayers1  = court.next_first_participant || [];
+        const nextPlayers2  = court.next_second_participant || [];
+        const nextClass     = court.next_class_name || '';
         const nextStartTime = court.next_start_time || court.next_scheduled_time || '';
-        
-        // Формат сетов: "6-4 3-6 7-5"
-        const setsDisplay = currentSets && currentSets.length > 0 
+
+        const setsDisplay = currentSets && currentSets.length > 0
             ? currentSets.map(set => `${set.firstParticipantScore}-${set.secondParticipantScore}`).join(' ')
             : '';
-        
-        // Корт свободен только если нет ни текущего, ни следующего матча
+
         const isCourtFree = !hasCurrentMatch && !hasNextMatch;
-        
+
         return `
             <div class="court-card slide-in">
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -861,13 +795,13 @@ function renderCourts() {
                         <span class="badge ${court.has_referee === false ? 'bg-warning text-dark' : 'bg-light text-secondary border'}"
                               style="cursor:pointer; font-size:0.7em;"
                               onclick="toggleReferee('${currentTournamentId}', '${court.court_id}', ${court.has_referee === false})"
-                              title="${court.has_referee === false ? 'Режим: без судьи. Показываются участники следующего матча. Кликни чтобы вернуть режим с судьёй.' : 'Кликни чтобы переключить в режим без судьи'}">
+                              title="${court.has_referee === false ? 'Режим: без судьи. Кликни чтобы вернуть режим с судьёй.' : 'Кликни чтобы переключить в режим без судьи'}">
                             <i class="fas fa-user-tie me-1"></i>${court.has_referee === false ? 'Без судьи' : 'Судья'}
                         </span>
                         <small class="text-muted"><i class="fas fa-sync me-1"></i>${formatTime(new Date())}</small>
                     </div>
                 </div>
-                
+
                 ${hasCurrentMatch ? `
                     <div class="mb-2 small d-flex justify-content-between align-items-center">
                         <span>
@@ -887,7 +821,7 @@ function renderCourts() {
                         ${setsDisplay ? `<div class="text-muted small text-end">${setsDisplay}</div>` : ''}
                     </div>
                 ` : ''}
-                
+
                 ${hasNextMatch ? `
                     <div class="${hasCurrentMatch ? 'border-top pt-2' : ''} mb-2 small">
                         <div class="d-flex justify-content-between align-items-center mb-1">
@@ -898,36 +832,33 @@ function renderCourts() {
                         <div>${formatPlayerNames(nextPlayers1, true)} <span class="text-muted">vs</span> ${formatPlayerNames(nextPlayers2, true)}</div>
                     </div>
                 ` : ''}
-                
+
                 ${isCourtFree ? `
                     <div class="text-center text-muted py-2 mb-2">
                         <i class="fas fa-pause-circle me-1"></i>Корт свободен
                     </div>
                 ` : ''}
-                
+
                 <div class="d-flex justify-content-end">
-					<div class="d-flex gap-1">
-						${hasCurrentMatch || hasNextMatch ? `
-<button class="btn btn-sm btn-outline-info" onclick="openCourtINTRO(this.dataset.tournamentId, '${court.court_id}')" data-tournament-id="${currentTournamentId}" title="HTML VS">
-    <i class="fas fa-users me-1"></i>INTRO
-</button>
-
-
-<button class="btn btn-sm btn-outline-primary" onclick="openCourtVS(this.dataset.tournamentId, '${court.court_id}')" data-tournament-id="${currentTournamentId}" title="HTML VS">
-    <i class="fas fa-users me-1"></i>VS
-</button>
-							<button class="btn btn-sm btn-warning" onclick="openCourtHTML('${currentTournamentId}', '${court.court_id}')" title="HTML Scoreboard">
-								<i class="fa-solid fa-address-card"></i>SM
-							</button>
-<button class="btn btn-sm btn-success" onclick="openCourtScoreFull('${currentTournamentId}', '${court.court_id}')" title="HTML Scoreboard Full 4K">
-	<i class="fas fa-tv me-1"></i>4K
-</button>
-
-<button class="btn btn-sm btn-outline-danger" onclick="openCourtWIN(this.dataset.tournamentId, '${court.court_id}')" data-tournament-id="${currentTournamentId}" title="HTML VS">
-    <i class="fas fa-users me-1"></i>VIN
-</button>
-						` : ''}
-					</div>
+                    <div class="d-flex gap-1">
+                        ${hasCurrentMatch || hasNextMatch ? `
+                            <button class="btn btn-sm btn-outline-info" onclick="openCourtPage(this.dataset.tournamentId, '${court.court_id}', 'introduction')" data-tournament-id="${currentTournamentId}" title="INTRO">
+                                <i class="fas fa-users me-1"></i>INTRO
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="openCourtPage(this.dataset.tournamentId, '${court.court_id}', 'vs')" data-tournament-id="${currentTournamentId}" title="VS">
+                                <i class="fas fa-users me-1"></i>VS
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="openCourtHTML('${currentTournamentId}', '${court.court_id}')" title="HTML Scoreboard">
+                                <i class="fa-solid fa-address-card"></i>SM
+                            </button>
+                            <button class="btn btn-sm btn-success" onclick="openCourtPage('${currentTournamentId}', '${court.court_id}', 'score_full')" title="HTML Scoreboard Full 4K">
+                                <i class="fas fa-tv me-1"></i>4K
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="openCourtPage(this.dataset.tournamentId, '${court.court_id}', 'winner')" data-tournament-id="${currentTournamentId}" title="Winner">
+                                <i class="fas fa-users me-1"></i>WIN
+                            </button>
+                        ` : ''}
+                    </div>
                 </div>
             </div>
         `;
@@ -936,12 +867,11 @@ function renderCourts() {
     countBadge.textContent = `${courts.length} кортов`;
 }
 
-// === LIVE XML ФУНКЦИИ ===
+// === LIVE XML ===
 async function loadLiveXMLList(tournamentId) {
     if (!tournamentId) {
         tournamentId = document.getElementById('xmlTournamentSelect').value;
     }
-    
     if (!tournamentId) {
         showAlert('Выберите турнир', 'warning');
         return;
@@ -958,19 +888,10 @@ async function loadLiveXMLList(tournamentId) {
 
     try {
         const response = await fetch(`/api/tournament/${tournamentId}/live-xml-info`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         const liveXMLInfo = await response.json();
-        
-        if (liveXMLInfo.error) {
-            throw new Error(liveXMLInfo.error);
-        }
-        
+        if (liveXMLInfo.error) throw new Error(liveXMLInfo.error);
         renderLiveXMLList(liveXMLInfo);
-        
     } catch (error) {
         console.error('Live XML info error:', error);
         document.getElementById('liveXMLList').innerHTML = `
@@ -987,11 +908,10 @@ async function loadLiveXMLList(tournamentId) {
     }
 }
 
-
 function renderLiveXMLList(liveXMLInfo) {
     const container = document.getElementById('liveXMLList');
     const tournament_id = liveXMLInfo.tournament_id || document.getElementById('xmlTournamentSelect').value;
-    
+
     if (!liveXMLInfo.live_xml_types || liveXMLInfo.live_xml_types.length === 0) {
         container.innerHTML = `
             <div class="text-center text-muted py-5">
@@ -1004,7 +924,7 @@ function renderLiveXMLList(liveXMLInfo) {
     }
 
     const baseUrl = window.location.origin;
-    
+
     container.innerHTML = `
         <div class="alert alert-success mb-3">
             <div class="d-flex justify-content-between align-items-center">
@@ -1015,7 +935,7 @@ function renderLiveXMLList(liveXMLInfo) {
                 <span class="badge bg-success">${liveXMLInfo.live_xml_count} Live XML</span>
             </div>
         </div>
-        
+
         ${liveXMLInfo.live_xml_types.map(xmlType => `
             <div class="live-xml-card mb-3 p-3 border rounded">
                 <div class="d-flex justify-content-between align-items-start mb-2">
@@ -1030,44 +950,38 @@ function renderLiveXMLList(liveXMLInfo) {
                         </div>
                     </div>
                     <div class="d-flex flex-column gap-1">
-                        <button class="btn btn-sm btn-success" onclick="testLiveXML('${xmlType.live_url}')" title="Тест">
-                            <i class="fas fa-play"></i>
-                        </button>
-
                         <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('${baseUrl}${xmlType.live_url}')" title="Копировать">
                             <i class="fas fa-copy"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-info" onclick="openInNewTab('${xmlType.live_url}')" title="Открыть">
                             <i class="fas fa-external-link-alt"></i>
                         </button>
-
-						${xmlType.type === 'tournament_table' && xmlType.draw_type === 'elimination' ? `
-							<button class="btn btn-sm btn-warning" onclick="openEliminationHTML('${tournament_id}', '${xmlType.class_id}', ${xmlType.draw_index}, '${xmlType.stage_name}')" title="HTML Турнирная сетка">
-								<i class="fas fa-tv"></i>
-							</button>
-						` : ''}
-						${xmlType.type === 'tournament_table' && xmlType.draw_type === 'round_robin' ? `
-							<button class="btn btn-sm btn-warning" onclick="openRoundRobinHTML('${tournament_id}', '${xmlType.class_id}', ${xmlType.draw_index}, '${xmlType.group_name}')" title="HTML Групповая таблица">
-								<i class="fas fa-tv"></i>
-							</button>
-						` : ''}
-						
+                        ${xmlType.type === 'tournament_table' && xmlType.draw_type === 'elimination' ? `
+                            <button class="btn btn-sm btn-warning" onclick="openEliminationHTML('${tournament_id}', '${xmlType.class_id}', ${xmlType.draw_index})" title="HTML Турнирная сетка">
+                                <i class="fas fa-tv"></i>
+                            </button>
+                        ` : ''}
+                        ${xmlType.type === 'tournament_table' && xmlType.draw_type === 'round_robin' ? `
+                            <button class="btn btn-sm btn-warning" onclick="openRoundRobinHTML('${tournament_id}', '${xmlType.class_id}', ${xmlType.draw_index})" title="HTML Групповая таблица">
+                                <i class="fas fa-tv"></i>
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
-                
+
                 <div class="mt-2">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-success text-white">
                             <i class="fas fa-broadcast-tower"></i>
                         </span>
-                        <input type="text" class="form-control font-monospace" 
-                               value="${baseUrl}${xmlType.live_url}" 
+                        <input type="text" class="form-control font-monospace"
+                               value="${baseUrl}${xmlType.live_url}"
                                readonly onclick="this.select()">
                     </div>
                 </div>
             </div>
         `).join('')}
-        
+
         <div class="alert alert-info mt-3">
             <h6><i class="fas fa-lightbulb me-2"></i>Как использовать в vMix:</h6>
             <ol class="mb-0">
@@ -1075,75 +989,56 @@ function renderLiveXMLList(liveXMLInfo) {
                 <li>В vMix добавьте Data Source → Web</li>
                 <li>Вставьте ссылку в поле URL</li>
                 <li>Настройте интервал обновления (рекомендуется 5-30 секунд)</li>
-                <li>Для HTML турнирных сеток используйте кнопку <i class="fas fa-tv"></i> - откроется Live версия в формате UHD 3840x2160</li>
+                <li>Для HTML турнирных сеток используйте кнопку <i class="fas fa-tv"></i> — откроется Live версия в формате UHD 3840×2160</li>
             </ol>
         </div>
     `;
 }
 
+// === ОТКРЫТИЕ ОКОН ТРАНСЛЯЦИИ ===
 
-
-// === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
-
-
-function openCourtVS(tournamentId, courtId) {
-   
-    const liveUrl = `/api/html-live/${tournamentId}/${courtId}/vs`;
-    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+/** Открывает страницу корта по суффиксу пути: vs, score_full, winner, introduction */
+function openCourtPage(tournamentId, courtId, path) {
+    window.open(`/api/html-live/${tournamentId}/${courtId}/${path}`, '_blank', POPUP_4K);
 }
 
-function openCourtScoreFull(tournamentId, courtId) {
-    const liveUrl = `/api/html-live/${tournamentId}/${courtId}/score_full`;
-    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+function openCourtHTML(tournamentId, courtId) {
+    window.open(`/api/html-live/${tournamentId}/${courtId}`, '_blank',
+        'width=600,height=200,resizable=yes,scrollbars=no,menubar=no,toolbar=no');
 }
 
-function openCourtWIN(tournamentId, courtId) {
-    const liveUrl = `/api/html-live/${tournamentId}/${courtId}/winner`;
-    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+function openRoundRobinHTML(tournamentId, classId, drawIndex) {
+    window.open(`/api/html-live/round-robin/${tournamentId}/${classId}/${drawIndex}`, '_blank', POPUP_4K);
 }
 
-function openCourtINTRO(tournamentId, courtId) {
-    const liveUrl = `/api/html-live/${tournamentId}/${courtId}/introduction`;
-    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+function openEliminationHTML(tournamentId, classId, drawIndex) {
+    window.open(`/api/html-live/elimination/${tournamentId}/${classId}/${drawIndex}`, '_blank', POPUP_4K);
 }
-
-function openRoundRobinHTML(tournamentId, classId, drawIndex, groupName) {
-    const liveUrl = `/api/html-live/round-robin/${tournamentId}/${classId}/${drawIndex}`;
-    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
-}
-
 
 function openScheduleHTML() {
     const tournamentId = document.getElementById('xmlTournamentSelect').value;
-    if (!tournamentId) {
-        showAlert('Выберите турнир', 'warning');
-        return;
-    }
-
+    if (!tournamentId) { showAlert('Выберите турнир', 'warning'); return; }
     const selectedDate = getSelectedScheduleDate();
     const query = selectedDate ? `?date=${encodeURIComponent(selectedDate)}` : '';
-    const liveUrl = `/api/html-live/schedule/${tournamentId}${query}`;
-    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+    window.open(`/api/html-live/schedule/${tournamentId}${query}`, '_blank', POPUP_4K);
 }
 
 function openScheduleHalfHTML(half) {
     const tournamentId = document.getElementById('xmlTournamentSelect').value;
-    if (!tournamentId) {
-        showAlert('Выберите турнир', 'warning');
-        return;
-    }
-
+    if (!tournamentId) { showAlert('Выберите турнир', 'warning'); return; }
     const selectedDate = getSelectedScheduleDate();
     const query = selectedDate ? `?date=${encodeURIComponent(selectedDate)}` : '';
-    const liveUrl = `/api/html-live/schedule/${tournamentId}/half/${half}${query}`;
-    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
+    window.open(`/api/html-live/schedule/${tournamentId}/half/${half}${query}`, '_blank', POPUP_4K);
 }
 
-function openCourtHTML(tournamentId, courtId) {
-    const liveUrl = `/api/html-live/${tournamentId}/${courtId}`;
-    window.open(liveUrl, '_blank', 'width=600, height=200, resizable=yes, scrollbars=no,menubar=no,toolbar=no');
+function openMediaDashboard() {
+    const tid = currentTournamentId || (tournaments.length > 0 ? tournaments[0].id : null);
+    if (!tid) { showAlert('Сначала загрузите турнир', 'warning'); return; }
+    window.open(`/display/media-dashboard/${tid}`, '_blank',
+        'width=1920,height=1080,resizable=yes,scrollbars=no,menubar=no,toolbar=no');
 }
 
+// === УТИЛИТЫ XML ===
 function getXMLTypeIcon(type) {
     const icons = {
         'court_score': 'scoreboard',
@@ -1153,64 +1048,25 @@ function getXMLTypeIcon(type) {
     return icons[type] || 'code';
 }
 
-function testLiveXML(liveUrl) {
-    showLoading(true);
-    
-    fetch(liveUrl)
-        .then(response => {
-            if (response.ok) {
-                showAlert('Live XML работает корректно!', 'success');
-                return response.text();
-            } else {
-                throw new Error(`HTTP ${response.status}`);
-            }
-        })
-        .then(xmlContent => {
-            console.log('Live XML content preview:', xmlContent.substring(0, 200) + '...');
-        })
-        .catch(error => {
-            showAlert(`Ошибка тестирования Live XML: ${error.message}`, 'danger');
-        })
-        .finally(() => {
-            showLoading(false);
-        });
-}
-
 function openInNewTab(url) {
     window.open(url, '_blank');
 }
 
-function copyAllLiveXML() {
-    const liveXMLInputs = document.querySelectorAll('#liveXMLList input[readonly]');
-    const urls = Array.from(liveXMLInputs).map(input => input.value);
-    
-    if (urls.length === 0) {
-        showAlert('Нет доступных Live XML ссылок', 'warning');
-        return;
-    }
-    
-    const allUrls = urls.join('\n');
-    navigator.clipboard.writeText(allUrls).then(() => {
-        showAlert(`Скопированы все Live XML ссылки (${urls.length} шт.)`, 'success');
-    }).catch(() => {
-        showAlert('Не удалось скопировать ссылки', 'danger');
-    });
-}
-
 function updateXMLTypes() {
     const tournamentId = document.getElementById('xmlTournamentSelect').value;
-    const showLiveXMLBtn = document.getElementById('showLiveXMLBtn');
-    const openLiveScheduleBtn = document.getElementById('openLiveScheduleBtn');
+    const showLiveXMLBtn     = document.getElementById('showLiveXMLBtn');
+    const openLiveScheduleBtn  = document.getElementById('openLiveScheduleBtn');
     const openScheduleHalf1Btn = document.getElementById('openScheduleHalf1Btn');
     const openScheduleHalf2Btn = document.getElementById('openScheduleHalf2Btn');
 
-    if (!tournamentId) {
-        if (showLiveXMLBtn) showLiveXMLBtn.disabled = true;
-        if (openLiveScheduleBtn) openLiveScheduleBtn.disabled = true;
-        if (openScheduleHalf1Btn) openScheduleHalf1Btn.disabled = true;
-        if (openScheduleHalf2Btn) openScheduleHalf2Btn.disabled = true;
-        enableCompositeButtons(false);
-        
+    const enabled = !!tournamentId;
+    if (showLiveXMLBtn)      showLiveXMLBtn.disabled      = !enabled;
+    if (openLiveScheduleBtn)  openLiveScheduleBtn.disabled  = !enabled;
+    if (openScheduleHalf1Btn) openScheduleHalf1Btn.disabled = !enabled;
+    if (openScheduleHalf2Btn) openScheduleHalf2Btn.disabled = !enabled;
+    enableCompositeButtons(enabled);
+
+    if (!enabled) {
         document.getElementById('liveXMLList').innerHTML = `
             <div class="text-center text-muted py-5">
                 <i class="fas fa-broadcast-tower fa-3x mb-3 opacity-50"></i>
@@ -1221,30 +1077,17 @@ function updateXMLTypes() {
         return;
     }
 
-    if (showLiveXMLBtn) showLiveXMLBtn.disabled = false;
-    if (openLiveScheduleBtn) openLiveScheduleBtn.disabled = false;
-    if (openScheduleHalf1Btn) openScheduleHalf1Btn.disabled = false;
-    if (openScheduleHalf2Btn) openScheduleHalf2Btn.disabled = false;
-    enableCompositeButtons(true);
-    
     loadLiveXMLList(tournamentId);
 }
 
-// === УТИЛИТЫ ===
+// === АЛЕРТЫ И UI ===
 function showAlert(message, type = 'info') {
-    const alertHtml = `
-        <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
-             style="top: 20px; right: 20px; z-index: 10000; min-width: 350px;">
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', alertHtml);
-    
-    setTimeout(() => {
-        const alert = document.querySelector('.alert');
-        if (alert) alert.remove();
-    }, 5000);
+    const div = document.createElement('div');
+    div.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    div.style.cssText = 'top:20px;right:20px;z-index:10000;min-width:350px;';
+    div.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), 5000);
 }
 
 function showLoading(show) {
@@ -1252,103 +1095,47 @@ function showLoading(show) {
 }
 
 function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showAlert('Ссылка скопирована в буфер обмена!', 'success');
-    }).catch(() => {
-        showAlert('Не удалось скопировать ссылку', 'danger');
-    });
+    navigator.clipboard.writeText(text)
+        .then(() => showAlert('Ссылка скопирована в буфер обмена!', 'success'))
+        .catch(() => showAlert('Не удалось скопировать ссылку', 'danger'));
 }
 
+// === ФОРМАТИРОВАНИЕ ===
 function formatPlayerNames(players, compact = false) {
     if (!players || players.length === 0) return 'TBD';
-    
     return players.map(p => {
         const firstName = (p.firstName || '').trim();
-        const lastName = (p.lastName || '').trim();
-        
+        const lastName  = (p.lastName  || '').trim();
         if (compact) {
-            // Компактный формат: A.Фамилия
-            if (firstName && lastName) {
-                return `${firstName.charAt(0)}.${lastName}`;
-            } else if (lastName) {
-                return lastName;
-            } else if (firstName) {
-                return firstName.charAt(0);
-            }
+            if (firstName && lastName) return `${firstName.charAt(0)}.${lastName}`;
+            if (lastName)  return lastName;
+            if (firstName) return firstName.charAt(0);
             return '?';
         } else {
-            // Полный формат
-            if (firstName && lastName) {
-                return `${firstName} ${lastName}`;
-            } else if (firstName) {
-                return firstName;
-            } else if (lastName) {
-                return lastName;
-            }
+            if (firstName && lastName) return `${firstName} ${lastName}`;
+            if (firstName) return firstName;
+            if (lastName)  return lastName;
             return 'Игрок';
         }
     }).filter(name => name && name !== 'Игрок' && name !== '?').join('/') || 'TBD';
 }
 
-
 function getCourtStatus(court) {
     const eventState = court.event_state?.toLowerCase();
-    
-    if (eventState === 'finished') {
-        return 'finished';
-    }
-    
-    if ((court.first_participant && court.first_participant.length > 0) || 
-        (court.current_first_participant && court.current_first_participant.length > 0)) {
-        return 'playing';
-    }
-    
-    if (court.next_first_participant && court.next_first_participant.length > 0) {
-        return 'scheduled';
-    }
-    
+    if (eventState === 'finished') return 'finished';
+    if ((court.first_participant && court.first_participant.length > 0) ||
+        (court.current_first_participant && court.current_first_participant.length > 0)) return 'playing';
+    if (court.next_first_participant && court.next_first_participant.length > 0) return 'scheduled';
     return 'free';
 }
 
-async function refreshSingleCourt(courtId) {
-    if (!currentTournamentId) return;
-    
-    try {
-        const response = await fetch(`/api/tournament/${currentTournamentId}/courts`);
-        const allCourts = await response.json();
-        const courtIndex = courts.findIndex(c => c.court_id == courtId);
-        const updatedCourt = allCourts.find(c => c.court_id == courtId);
-        
-        if (courtIndex !== -1 && updatedCourt) {
-            courts[courtIndex] = updatedCourt;
-            renderCourts(); // Перерисовываем все корты
-            showAlert(`Корт ${updatedCourt.court_name || courtId} обновлен`, 'success');
-        } else {
-            showAlert('Корт не найден', 'warning');
-        }
-    } catch (error) {
-        console.error('Single court refresh error:', error);
-        showAlert('Ошибка обновления корта', 'danger');
-    }
-}
-
 function getCourtStatusText(court) {
-    const status = getCourtStatus(court);
-    const statusMap = {
-        'playing': 'Играет',
-        'finished': 'Завершен',
-        'scheduled': 'Запланирован',
-        'free': 'Свободен'
-    };
-    return statusMap[status] || 'Неизвестно';
+    const statusMap = { playing: 'Играет', finished: 'Завершен', scheduled: 'Запланирован', free: 'Свободен' };
+    return statusMap[getCourtStatus(court)] || 'Неизвестно';
 }
 
 function getStatusText(status) {
-    const statusMap = {
-        'active': 'Активный',
-        'finished': 'Завершен', 
-        'pending': 'Ожидание'
-    };
+    const statusMap = { active: 'Активный', finished: 'Завершен', pending: 'Ожидание' };
     return statusMap[status] || status;
 }
 
@@ -1362,87 +1149,66 @@ function formatTime(date) {
 
 function formatDateTime(dateTimeString) {
     if (!dateTimeString) return '';
-    
     try {
-        const date = new Date(dateTimeString);
-        return date.toLocaleString('ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
+        return new Date(dateTimeString).toLocaleString('ru-RU', {
+            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
         });
-    } catch (error) {
+    } catch (e) {
         return dateTimeString;
     }
 }
 
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function formatBytes(size) {
+    if (!Number.isFinite(size)) return '0 B';
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// === НАСТРОЙКИ ===
 async function loadSettings() {
     try {
         const response = await fetch('/api/settings');
         if (!response.ok) throw new Error('Ошибка загрузки настроек с сервера');
-        
         const settings = await response.json();
-
         localStorage.setItem('vmixSettings', JSON.stringify(settings));
-
-        refreshInterval = (settings.refreshInterval || 30) * 1000;
-
-        if (document.getElementById('refreshIntervalInput')) {
-            document.getElementById('refreshIntervalInput').value = settings.refreshInterval || 30;
-        }
-        if (document.getElementById('autoRefreshEnabled')) {
-            document.getElementById('autoRefreshEnabled').checked = settings.autoRefresh !== false;
-        }
-        if (document.getElementById('debugMode')) {
-            document.getElementById('debugMode').checked = settings.debugMode || false;
-				if (document.getElementById('finishedMatchesCount')) {
-					document.getElementById('finishedMatchesCount').value = settings.finishedMatchesCount || 3;
-				}
-        }
-        if (document.getElementById('themeSelect')) {
-            document.getElementById('themeSelect').value = settings.theme || 'light';
-        }
-        if (document.getElementById('finishedMatchesCount')) {
-            document.getElementById('finishedMatchesCount').value = settings.finishedMatchesCount || 3;
-        }
-
-        if (document.getElementById('refreshInterval')) {
-            document.getElementById('refreshInterval').textContent = settings.refreshInterval;
-        }
-
+        applySettings(settings);
     } catch (error) {
         console.error('Ошибка загрузки настроек:', error);
-        // fallback — из localStorage
+        // Fallback — из localStorage
         const saved = localStorage.getItem('vmixSettings');
         if (saved) {
-            try {
-                const settings = JSON.parse(saved);
-                refreshInterval = (settings.refreshInterval || 30) * 1000;
-				if (document.getElementById('refreshIntervalInput')) {
-					document.getElementById('refreshIntervalInput').value = settings.refreshInterval || 30;
-				}
-				if (document.getElementById('autoRefreshEnabled')) {
-					document.getElementById('autoRefreshEnabled').checked = settings.autoRefresh !== false;
-				}
-				if (document.getElementById('debugMode')) {
-					document.getElementById('debugMode').checked = settings.debugMode || false;
-				if (document.getElementById('finishedMatchesCount')) {
-					document.getElementById('finishedMatchesCount').value = settings.finishedMatchesCount || 3;
-				}
-				}
-            } catch (error) {
-                console.error('Ошибка из localStorage:', error);
+            try { applySettings(JSON.parse(saved)); } catch (e) {
+                console.error('Ошибка из localStorage:', e);
             }
         }
     }
 }
 
+function applySettings(settings) {
+    refreshInterval = (settings.refreshInterval || 30) * 1000;
+
+    const el = id => document.getElementById(id);
+    if (el('refreshIntervalInput'))   el('refreshIntervalInput').value   = settings.refreshInterval || 30;
+    if (el('autoRefreshEnabled'))     el('autoRefreshEnabled').checked   = settings.autoRefresh !== false;
+    if (el('debugMode'))              el('debugMode').checked             = settings.debugMode || false;
+    if (el('themeSelect'))            el('themeSelect').value             = settings.theme || 'light';
+    if (el('finishedMatchesCount'))   el('finishedMatchesCount').value   = settings.finishedMatchesCount || 3;
+    if (el('refreshInterval'))        el('refreshInterval').textContent  = settings.refreshInterval || 30;
+}
+
 function startAutoRefresh() {
-    if (autoRefreshTimer) {
-        clearInterval(autoRefreshTimer);
-    }
-    
-    if (document.getElementById('autoRefreshEnabled') && document.getElementById('autoRefreshEnabled').checked) {
+    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+    if (document.getElementById('autoRefreshEnabled')?.checked) {
         autoRefreshTimer = setInterval(() => {
             if (currentTournamentId) {
                 refreshCourts();
@@ -1457,7 +1223,6 @@ async function saveSettings() {
         showAuthModal(saveSettingsWithAuth);
         return;
     }
-    
     saveSettingsWithAuth();
 }
 
@@ -1470,38 +1235,26 @@ async function saveSettingsWithAuth() {
         finishedMatchesCount: parseInt(document.getElementById('finishedMatchesCount').value) || 3,
         lastSaved: new Date().toISOString()
     };
-    
+
     try {
         const response = await fetch('/api/settings', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(settings)
         });
-        
+
         if (response.status === 401) {
-            isAuthenticated = false;
-            updateAuthUI(false);
-            showAuthModal(saveSettingsWithAuth);
+            handleUnauthorized(saveSettingsWithAuth);
             return;
         }
-        
+
         if (response.ok) {
             localStorage.setItem('vmixSettings', JSON.stringify(settings));
             refreshInterval = settings.refreshInterval * 1000;
-            
             if (document.getElementById('refreshInterval')) {
                 document.getElementById('refreshInterval').textContent = settings.refreshInterval;
             }
-            
-            if (settings.autoRefresh) {
-                if (autoRefreshTimer) {
-                    clearInterval(autoRefreshTimer);
-                }
-                startAutoRefresh();
-            }
-            
+            if (settings.autoRefresh) startAutoRefresh();
             showAlert('Настройки сохранены', 'success');
         } else {
             const data = await response.json();
@@ -1514,18 +1267,10 @@ async function saveSettingsWithAuth() {
 }
 
 function updateSystemInfo() {
-    if (document.getElementById('totalTournaments')) {
-        document.getElementById('totalTournaments').textContent = tournaments.length;
-    }
-    if (document.getElementById('totalCourts')) {
-        document.getElementById('totalCourts').textContent = Array.isArray(courts) ? courts.length : 0;
-    }
-    if (document.getElementById('totalXMLFiles')) {
-        document.getElementById('totalXMLFiles').textContent = Array.isArray(xmlFiles) ? xmlFiles.length : 0;
-    }
-    if (document.getElementById('lastUpdate')) {
-        document.getElementById('lastUpdate').textContent = formatTime(new Date());
-    }
+    const el = id => document.getElementById(id);
+    if (el('totalTournaments')) el('totalTournaments').textContent = tournaments.length;
+    if (el('totalCourts'))      el('totalCourts').textContent      = Array.isArray(courts) ? courts.length : 0;
+    if (el('lastUpdate'))       el('lastUpdate').textContent       = formatTime(new Date());
 }
 
 function viewTournament(id) {
@@ -1536,40 +1281,31 @@ function viewTournament(id) {
 
 async function deleteTournament(id) {
     if (!confirm('Вы уверены, что хотите удалить этот турнир?')) return;
-    
     if (!isAuthenticated) {
         showAuthModal(() => deleteTournamentWithAuth(id));
         return;
     }
-    
     deleteTournamentWithAuth(id);
 }
 
 async function deleteTournamentWithAuth(id) {
     showLoading(true);
-    
     try {
         const response = await fetch(`/api/tournament/${id}`, {
             method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-            }
+            headers: { 'Content-Type': 'application/json' }
         });
-        
         const result = await response.json();
-        
+
         if (response.status === 401 && result.auth_required) {
-            isAuthenticated = false;
-            updateAuthUI(false);
-            showAuthModal(() => deleteTournamentWithAuth(id));
+            handleUnauthorized(() => deleteTournamentWithAuth(id));
             return;
         }
-        
+
         if (response.ok && result.success) {
             await loadTournaments();
             updateTournamentSelects();
             showAlert('Турнир удален', 'warning');
-            
             if (currentTournamentId === id) {
                 currentTournamentId = null;
                 courts = [];
@@ -1586,64 +1322,8 @@ async function deleteTournamentWithAuth(id) {
     }
 }
 
-async function generateAllXML(id) {
-    showLoading(true);
-    
-    try {
-        const response = await fetch(`/api/xml/${id}/all`, {
-            method: 'POST'
-        });
-        
-        if (response.ok) {
-            const xmlFiles = await response.json();
-            showAlert(`Созданы XML файлы для турнира (${xmlFiles.length} шт.)`, 'success');
-            document.getElementById('xml-tab').click();
-        } else {
-            showAlert('Ошибка массовой генерации XML', 'danger');
-        }
-    } catch (error) {
-        console.error('Generate all XML error:', error);
-        showAlert('Ошибка подключения к серверу', 'danger');
-    } finally {
-        showLoading(false);
-    }
-}
-
-async function generateCourtXML(courtId) {
-    if (!currentTournamentId) {
-        showAlert('Сначала выберите турнир', 'warning');
-        return;
-    }
-    
-    showLoading(true);
-    
-    try {
-        const response = await fetch(`/api/xml/${currentTournamentId}/court_${courtId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
-        
-        if (response.ok) {
-            const xmlInfo = await response.json();
-            showAlert('XML для корта создан!', 'success');
-            console.log('Generated court XML:', xmlInfo);
-        } else {
-            const error = await response.json();
-            showAlert(error.error || 'Ошибка создания XML для корта', 'danger');
-        }
-    } catch (error) {
-        console.error('Court XML error:', error);
-        showAlert('Ошибка подключения к серверу', 'danger');
-    } finally {
-        showLoading(false);
-    }
-}
-
 function toggleAutoRefresh() {
-    const enabled = document.getElementById('autoRefreshEnabled').checked;
-    if (enabled) {
+    if (document.getElementById('autoRefreshEnabled').checked) {
         startAutoRefresh();
     } else {
         if (autoRefreshTimer) {
@@ -1655,13 +1335,8 @@ function toggleAutoRefresh() {
 
 async function refreshAllData() {
     showLoading(true);
-    
     try {
-        await Promise.all([
-            loadTournaments(),
-            refreshCourts()
-        ]);
-        
+        await Promise.all([loadTournaments(), refreshCourts()]);
         updateSystemInfo();
         showAlert('Все данные обновлены', 'success');
     } catch (error) {
@@ -1682,22 +1357,15 @@ function showLiveXMLList() {
 }
 
 // === КОМПОЗИТНЫЕ СТРАНИЦЫ ===
-
 function openCompositePage(pageType, slotNumber) {
     const tournamentId = document.getElementById('xmlTournamentSelect').value;
-    if (!tournamentId) {
-        showAlert('Выберите турнир', 'warning');
-        return;
-    }
+    if (!tournamentId) { showAlert('Выберите турнир', 'warning'); return; }
     window.open(`/composite/${tournamentId}/${pageType}/${slotNumber}`, '_blank');
 }
 
 function openCompositeEditor(pageType, slotNumber) {
     const tournamentId = document.getElementById('xmlTournamentSelect').value;
-    if (!tournamentId) {
-        showAlert('�������� ������', 'warning');
-        return;
-    }
+    if (!tournamentId) { showAlert('Турнир не найден!', 'warning'); return; }
     if (!isAuthenticated) {
         showAuthModal(() => openCompositeEditor(pageType, slotNumber));
         return;
@@ -1706,18 +1374,16 @@ function openCompositeEditor(pageType, slotNumber) {
 }
 
 function enableCompositeButtons(enabled) {
-    // Round buttons
     for (let i = 1; i <= 4; i++) {
-        const btn = document.getElementById(`compositeRound${i}Btn`);
+        const btn     = document.getElementById(`compositeRound${i}Btn`);
         const editBtn = document.getElementById(`compositeRound${i}EditBtn`);
-        if (btn) btn.disabled = !enabled;
+        if (btn)     btn.disabled     = !enabled;
         if (editBtn) editBtn.disabled = !enabled;
     }
-    // Elimination buttons
     for (let i = 1; i <= 4; i++) {
-        const btn = document.getElementById(`compositeElimination${i}Btn`);
+        const btn     = document.getElementById(`compositeElimination${i}Btn`);
         const editBtn = document.getElementById(`compositeElimination${i}EditBtn`);
-        if (btn) btn.disabled = !enabled;
+        if (btn)     btn.disabled     = !enabled;
         if (editBtn) editBtn.disabled = !enabled;
     }
 }
@@ -1739,33 +1405,21 @@ function updateRefreshInterval() {
         if (document.getElementById('refreshInterval')) {
             document.getElementById('refreshInterval').textContent = newInterval;
         }
-        if (document.getElementById('autoRefreshEnabled') && document.getElementById('autoRefreshEnabled').checked) {
-            if (autoRefreshTimer) {
-                clearInterval(autoRefreshTimer);
-            }
-            startAutoRefresh();
+        if (document.getElementById('autoRefreshEnabled')?.checked) {
+            startAutoRefresh(); // startAutoRefresh сам делает clearInterval перед запуском
         }
     }
 }
 
-function openEliminationHTML(tournamentId, classId, drawIndex, stageName) {
-    const liveUrl = `/api/html-live/elimination/${tournamentId}/${classId}/${drawIndex}`;
-    window.open(liveUrl, '_blank', 'width=3840,height=2160,resizable=yes,scrollbars=yes,menubar=no,toolbar=no');
-}
-
-// === MEDIA TAB ===
+// === МЕДИА ===
 async function loadMediaImages() {
     try {
         const response = await fetch('/api/media/images');
         if (response.status === 401) {
-            isAuthenticated = false;
-            updateAuthUI(false);
-            showAuthModal(loadMediaImages);
+            handleUnauthorized(loadMediaImages);
             return;
         }
-        if (!response.ok) {
-            throw new Error('Failed to load media list');
-        }
+        if (!response.ok) throw new Error('Failed to load media list');
         mediaImages = await response.json();
         renderMediaList();
     } catch (error) {
@@ -1775,8 +1429,8 @@ async function loadMediaImages() {
 }
 
 function renderMediaList() {
-    const container = document.getElementById('mediaList');
-    const count = document.getElementById('mediaCount');
+    const container   = document.getElementById('mediaList');
+    const count       = document.getElementById('mediaCount');
     const searchInput = document.getElementById('mediaSearchInput');
     if (!container || !count) return;
 
@@ -1799,7 +1453,7 @@ function renderMediaList() {
     container.innerHTML = items.map(item => `
         <div class="col-md-6 col-xl-4">
             <div class="card h-100">
-                <img src="${item.url}" class="card-img-top" alt="${escapeHtml(item.name)}" style="height: 180px; object-fit: cover;">
+                <img src="${item.url}" class="card-img-top" alt="${escapeHtml(item.name)}" style="height:180px;object-fit:cover;">
                 <div class="card-body">
                     <h6 class="card-title text-truncate mb-2" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</h6>
                     <div class="d-flex justify-content-between gap-2">
@@ -1829,26 +1483,12 @@ async function uploadMediaImage() {
     requireAuth(async () => {
         const formData = new FormData();
         formData.append('image', input.files[0]);
-
         try {
             showLoading(true);
-            const response = await fetch('/api/media/images', {
-                method: 'POST',
-                body: formData
-            });
+            const response = await fetch('/api/media/images', { method: 'POST', body: formData });
+            if (response.status === 401) { handleUnauthorized(uploadMediaImage); return; }
             const data = await response.json();
-
-            if (response.status === 401) {
-                isAuthenticated = false;
-                updateAuthUI(false);
-                showAuthModal(uploadMediaImage);
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Upload failed');
-            }
-
+            if (!response.ok) throw new Error(data.error || 'Upload failed');
             showAlert(data.replaced ? 'Файл заменён' : 'Файл загружен', 'success');
             input.value = '';
             await loadMediaImages();
@@ -1868,22 +1508,10 @@ function deleteMediaImage(encodedName) {
     requireAuth(async () => {
         try {
             showLoading(true);
-            const response = await fetch(`/api/media/images/${encodeURIComponent(name)}`, {
-                method: 'DELETE'
-            });
+            const response = await fetch(`/api/media/images/${encodeURIComponent(name)}`, { method: 'DELETE' });
+            if (response.status === 401) { handleUnauthorized(() => deleteMediaImage(encodedName)); return; }
             const data = await response.json();
-
-            if (response.status === 401) {
-                isAuthenticated = false;
-                updateAuthUI(false);
-                showAuthModal(() => deleteMediaImage(encodedName));
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Delete failed');
-            }
-
+            if (!response.ok) throw new Error(data.error || 'Delete failed');
             showAlert('Файл удалён', 'success');
             await loadMediaImages();
         } catch (error) {
@@ -1908,19 +1536,9 @@ function renameMediaImage(encodedName) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ old_name: oldName, new_name: newName })
             });
+            if (response.status === 401) { handleUnauthorized(() => renameMediaImage(encodedName)); return; }
             const data = await response.json();
-
-            if (response.status === 401) {
-                isAuthenticated = false;
-                updateAuthUI(false);
-                showAuthModal(() => renameMediaImage(encodedName));
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Rename failed');
-            }
-
+            if (!response.ok) throw new Error(data.error || 'Rename failed');
             showAlert('Файл переименован', 'success');
             await loadMediaImages();
         } catch (error) {
@@ -1931,20 +1549,3 @@ function renameMediaImage(encodedName) {
         }
     });
 }
-
-function escapeHtml(value) {
-    return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-function formatBytes(size) {
-    if (!Number.isFinite(size)) return '0 B';
-    if (size < 1024) return `${size} B`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-}
-
