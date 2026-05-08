@@ -11,10 +11,7 @@ sudo apt install python3 python3-venv python3-pip nginx git ufw mc fail2ban unzi
 sudo mkdir -p /var/www/MixRanker
 sudo chown -R \$USER:www-data /var/www/MixRanker
 cd /var/www/MixRanker
-# Замени ссылку на актуальную, если она изменится
-git clone https://github.com .
-
-# Подготовка структуры папок
+https://github.com/6564200/MixRanker.git
 mkdir -p /var/www/MixRanker/data /var/www/MixRanker/logs
 cd /var/www/MixRanker/static/flags && unzip 4x3.zip
 ```
@@ -29,14 +26,14 @@ pip install gunicorn flask -r requirements.txt
 deactivate
 ```
 
-### 4. Настройка прав (важно для SQLite и логов)
+### 4. Настройка прав
 ```bash
 sudo chown -R \$USER:www-data /var/www/MixRanker/data /var/www/MixRanker/logs
 chmod -R 775 /var/www/MixRanker/data /var/www/MixRanker/logs
 ```
 
 ### 5. Systemd Service
-Создайте файл: `sudo nano /etc/systemd/system/mixranker.service`
+файл: `sudo nano /etc/systemd/system/mixranker.service`
 ```ini
 [Unit]
 Description=Gunicorn instance to serve MixRanker Flask app
@@ -66,7 +63,7 @@ sudo systemctl status mixranker
 ```
 
 ### 6. Nginx
-Создайте конфиг: `sudo nano /etc/nginx/sites-available/mixranker`
+конфиг: `sudo nano /etc/nginx/sites-available/mixranker`
 ```nginx
 server {
     listen 80;
