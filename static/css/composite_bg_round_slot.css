@@ -24,9 +24,9 @@
 .logo  { height: 150px; }
 
 /* Ширина и задержка появления каждого логотипа */
-.logo3 { width:  70px; animation-delay: 0.7s; }
-.logo2 { width:  90px; animation-delay: 0.4s; }
-.logo1 { width: 120px; animation-delay: 0.3s; }
+.logo3 { width:  140px; animation-delay: 0.7s; }
+.logo2 { width:  180px; animation-delay: 0.4s; }
+.logo1 { width: 100px; animation-delay: 0.3s; }
 
 /* Разделительная линия под шапкой */
 .header-line {

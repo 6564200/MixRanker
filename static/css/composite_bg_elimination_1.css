@@ -156,7 +156,7 @@ html, body {
     animation: fadeInScale 0.5s ease-out forwards;
 }
 .logo3 { 
-    width: 140px; 
+    width: 180px; 
 	animation-delay: 0.7s;
 	opacity: 0;
 

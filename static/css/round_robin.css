@@ -152,6 +152,7 @@ html, body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+	letter-spacing: -1px;
 }
 
 /* Диагональная ячейка (команда vs сама себя) — зелёный блок */

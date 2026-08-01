@@ -88,9 +88,9 @@ body {
     background-position: center;
 }
 
-.logo1 { width: 145px; }
-.logo2 { width: 120px; }
-.logo3 { width: 0px; }
+.logo1 { width: 100px; }
+.logo2 { width: 140px; }
+.logo3 { width: 100px; }
 
 
 /* === ОСНОВНАЯ СЕТКА КОРТОВ === */
@@ -99,7 +99,7 @@ body {
     flex: 1;
     gap: 60px;
     width: 97%;
-    max-height: 1100px;
+    max-height: 842px;
     overflow: hidden;
     position: relative;
 	margin-left: 00px;
@@ -225,11 +225,12 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+	animation: fadeInUp 1s ease-out forwards;
 }
 
 .match-team-name {
     flex: 1;
-    font-size: 10px;
+    font-size: 15px;
     font-weight: 700;
     line-height: 22px;
     padding-left: 12px;
@@ -238,6 +239,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+	animation: fadeInUp 1.5s ease-out forwards;
 }
 
 .match-team-score {
@@ -326,11 +328,11 @@ body {
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateX(10px);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateX(0);
     }
 }
 
