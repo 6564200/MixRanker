@@ -125,7 +125,7 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
               <div class="table-header-block">
                 {sets_header_html}
                 
-                <div class="header-cell total">СЧЕТ</div>
+                <div class="header-cell total">SCORE</div>
               </div>
             </div>
             
@@ -206,7 +206,7 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
         num_sets = len(detailed_result) if detailed_result else 0
         html = ""
         for i in range(num_sets):
-            html += f'<div class="header-cell">СЕТ {i + 1}</div>'
+            html += f'<div class="header-cell">SET {i + 1}</div>'
         return html
 
     def _render_team_sets(self, detailed_result: List, team: str) -> str:

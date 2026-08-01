@@ -91,30 +91,30 @@ class IntroductionGenerator(HTMLBaseGenerator):
             return ""
         
         # Прямые флаги
-        if match_info.get("IsFinal"):
-            return "ФИНАЛ"
-        if match_info.get("IsSemiFinal"):
-            return "1/2 ФИНАЛА"
-        if match_info.get("IsQuarterFinal"):
-            return "1/4 ФИНАЛА"
+        #if match_info.get("IsFinal"):
+        #    return "ФИНАЛ"
+        #if match_info.get("IsSemiFinal"):
+        #    return "1/2 ФИНАЛА"
+        #if match_info.get("IsQuarterFinal"):
+        #    return "1/4 ФИНАЛА"
         
         # По Places
-        places = match_info.get("Places", {})
-        if places:
-            place1 = places.get("Item1", 0)
-            place2 = places.get("Item2", 0)
-            diff = abs(place2 - place1) + 1
+        #places = match_info.get("Places", {})
+        #if places:
+        #    place1 = places.get("Item1", 0)
+        #    place2 = places.get("Item2", 0)
+        #    diff = abs(place2 - place1) + 1
             
-            if diff == 2:
-                return "ФИНАЛ"
-            elif diff == 4:
-                return "1/2 ФИНАЛА"
-            elif diff == 8:
-                return "1/4 ФИНАЛА"
-            elif diff == 16:
-                return "1/8 ФИНАЛА"
-            elif diff == 32:
-                return "1/16 ФИНАЛА"
+        #    if diff == 2:
+        #        return "ФИНАЛ"
+        #    elif diff == 4:
+        #        return "1/2 ФИНАЛА"
+        #    elif diff == 8:
+        #        return "1/4 ФИНАЛА"
+        #    elif diff == 16:
+        #        return "1/8 ФИНАЛА"
+        #    elif diff == 32:
+        #        return "1/16 ФИНАЛА"
         
         # Групповой этап
         pool_name = match_info.get("PoolName", "")

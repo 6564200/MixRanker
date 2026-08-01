@@ -15,17 +15,10 @@ DEFAULT_PLACEHOLDER_IMAGE = 'bg_001.png'
 ALLOWED_PLACEHOLDER_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'}
 
 def _is_authenticated() -> bool:
-    """Проверяет, авторизован ли текущий пользователь через сессию Flask."""
     return bool(session.get('authenticated'))
 
 
 def _normalize_placeholder_image(name: Optional[str]) -> str:
-    """
-    Проверяет и нормализует имя файла изображения-заглушки (placeholder).
-    Допустимые расширения: png, jpg, jpeg, webp, gif, svg.
-    Запрещены пути с каталогами (только basename).
-    Возвращает переданное имя или DEFAULT_PLACEHOLDER_IMAGE при невалидном значении.
-    """
     if not name:
         return DEFAULT_PLACEHOLDER_IMAGE
     if name != basename(name):
@@ -39,7 +32,6 @@ def _normalize_placeholder_image(name: Optional[str]) -> str:
 
 
 def _to_int_safe(value) -> int:
-    """Безопасно приводит значение к int. При ошибке (None, строка, и т.п.) возвращает 0."""
     try:
         return int(value)
     except (TypeError, ValueError):

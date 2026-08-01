@@ -93,11 +93,11 @@ class WinnerGenerator(HTMLBaseGenerator):
     <div class="winner" data-tournament-id="{tournament_id or ''}" data-court-id="{court_id or ''}">
         <div class="winner_container">
             <div class="class_name" data-field="class_name">{class_name}</div>
-            <div class="txt_winner">ПОБЕДИТЕЛЬ</div>
+            <div class="txt_winner">WINNER</div>
             <div class="winners_table">{''.join(winners_table)}</div>
             <div class="image_container">{''.join(winners_images)}</div>
             <div class="info_block">
-                <span>ПРОТИВ</span>
+                <span>OPPONENTS</span>
                 <span class="loser" data-field="loser_name">{losers_name}</span>
                 <div class="score">{scores_html}</div>
             </div>

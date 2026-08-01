@@ -235,7 +235,7 @@ class ScheduleGenerator(HTMLBaseGenerator):
         return ids
 
     def _build_matches_index(self, matches_data: Dict, court_names_map: Dict) -> Dict:
-        """Создаёт индекс матчей по дате + корту для быстрого поиска"""
+        """Создаёт индекс матчей по дате и корту для быстрого поиска"""
         matches_index = {"by_date_court": {}, "by_date": {}, "by_id": {}}
         matches_list = matches_data.get("Matches", []) if isinstance(matches_data, dict) else []
 
@@ -292,7 +292,8 @@ class ScheduleGenerator(HTMLBaseGenerator):
     def _team_matches(self, team_abbrev: str, team_data: Dict) -> bool:
         # Заглушка «PENDING» / «TBD» / «BYE» — считаем, что подходит к любому участнику
         if self._is_pending(team_abbrev):
-            return True
+            n1, n2 = self._extract_team_player_names(team_data)
+            return (not n1 and not n2) or self._is_pending(n1) or self._is_pending(n2)
         parts = [p.strip() for p in re.split(r"[\\/|]", (team_abbrev or "")) if p.strip()]
         ab1 = parts[0] if len(parts) > 0 else ""
         ab2 = parts[1] if len(parts) > 1 else ""
