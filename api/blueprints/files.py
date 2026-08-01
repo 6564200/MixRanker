@@ -8,6 +8,7 @@ from werkzeug.exceptions import NotFound
 
 from api import (
     get_tournament_data,
+    get_court_ids_for_tournament,
     save_xml_file_info,
     get_xml_type_description,
     get_update_frequency,
@@ -26,6 +27,36 @@ def create_files_blueprint(api_client, xml_manager):
         if '.' not in filename:
             return False
         return filename.rsplit('.', 1)[1].lower() in allowed_ext
+
+    def _xml_escape(value) -> str:
+        return (
+            str(value if value is not None else '')
+            .replace('&', '&amp;')
+            .replace('<', '&lt;')
+            .replace('>', '&gt;')
+            .replace('"', '&quot;')
+            .replace("'", '&apos;')
+        )
+
+    def _build_vmix_html_xml(tournament_id: str) -> str:
+        screen_paths = {
+            'score': '',
+            'vs': 'vs',
+            'introduction': 'introduction',
+            'score_full': 'score_full',
+            'winner': 'winner',
+        }
+        court_sections = []
+
+        for index, court_id in enumerate(get_court_ids_for_tournament(str(tournament_id)), start=1):
+            screen_tags = []
+            for screen_type, path in screen_paths.items():
+                suffix = f'/{path}' if path else ''
+                url = f'/api/html-live/{tournament_id}/{court_id}{suffix}'
+                screen_tags.append(f'<{screen_type}>{_xml_escape(url)}</{screen_type}>')
+            court_sections.append(f'<court_{index}>{"".join(screen_tags)}</court_{index}>')
+
+        return f'<?xml version="1.0" encoding="UTF-8"?><vmix>{"".join(court_sections)}</vmix>'
 
     @bp.route('/api/xml/<tournament_id>/<xml_type_id>')
     def generate_xml(tournament_id, xml_type_id):
@@ -68,6 +99,16 @@ def create_files_blueprint(api_client, xml_manager):
             return jsonify(file_info)
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
+    @bp.route('/api/xml-live/<tournament_id>/vmix.html')
+    def get_live_xml_vmix(tournament_id):
+        try:
+            if not get_tournament_data(tournament_id):
+                return Response("<!-- Турнир не найден -->", mimetype='application/xml; charset=utf-8'), 404
+            return Response(_build_vmix_html_xml(tournament_id), mimetype='application/xml; charset=utf-8')
+        except Exception as e:
+            return Response(f"<!-- Ошибка: {_xml_escape(e)} -->", mimetype='application/xml; charset=utf-8'), 500
+
 
     @bp.route('/api/xml-live/<tournament_id>/<xml_type_id>')
     def get_live_xml_data(tournament_id, xml_type_id):
