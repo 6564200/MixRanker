@@ -212,7 +212,6 @@
     }
 
     /**
-     * ИСПРАВЛЕНО: Получение счёта текущего гейма из detailed_result
      * В тай-брейке показывает очки тай-брейка, иначе теннисный формат (0, 15, 30, 40, AD)
      */
     function getGameScore(detailed, fallbackScore, participant) {
@@ -236,7 +235,6 @@
     }
 
     /**
-     * ИСПРАВЛЕНО: Обновление текущего счёта (СЧЁТ в total колонке)
      * Показывает теннисный счет текущего гейма
      */
     function updateGameScore(data) {
@@ -295,7 +293,7 @@
             // Заголовок
             const headerCell = document.createElement('div');
             headerCell.className = 'header-cell';
-            headerCell.textContent = `СЕТ ${i + 1}`;
+            headerCell.textContent = `SET ${i + 1}`;
             tableHeader.insertBefore(headerCell, insertBeforeHeader);
             
             // Счёт команды 1

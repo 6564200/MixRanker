@@ -134,9 +134,9 @@ function addLayer() {
         url: '',
         x: 100 + layers.length * 50,
         y: 100 + layers.length * 50,
-        width: 900,
-        height: 400,
-        scale: 0.5
+        width: 1400,
+        height: 500,
+        scale: 1
     });
     renderLayers();
     selectLayer(layers.length - 1);
@@ -165,6 +165,7 @@ function addTextLayer() {
 function removeLayer(index) {
     layers.splice(index, 1);
     selectedLayerIndex = -1;
+	console.log("Кнопка была нажата!", index);
     renderLayers();
 }
 
@@ -260,7 +261,7 @@ function renderLayers() {
                         <span class="flex-grow-1 small">${label}</span>
                         <button class="btn btn-outline-danger btn-sm py-0 px-1"
                                 onclick="event.stopPropagation(); removeLayer(${idx})">
-                            <i class="fas fa-times"></i>
+                            <i class="fas fa-trash-alt"></i>
                         </button>
                     </div>
                     <div class="card-body py-2 px-2" style="display: ${isActive ? 'block' : 'none'}">
@@ -303,6 +304,7 @@ function renderLayers() {
         `;
     }).join('');
 }
+
 
 /**
  * Экранирование HTML-спецсимволов для вставки в атрибуты/текст

@@ -1,13 +1,13 @@
 ﻿/**
- * Display Court - Р»РѕРіРёРєР° Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРіРѕ/СЂСѓС‡РЅРѕРіРѕ СЂРµР¶РёРјР°
+ * Display Court - логика автоматического/ручного режима
  */
 
 (function() {
     'use strict';
 
     const CONFIG = {
-        checkInterval: 1000,      // РџСЂРѕРІРµСЂРєР° СЃРѕСЃС‚РѕСЏРЅРёСЏ РєР°Р¶РґС‹Рµ 2 СЃРµРє
-        fadeTime: 250             // Р’СЂРµРјСЏ fade СЌС„С„РµРєС‚Р° (РјСЃ)
+        checkInterval: 1000,      
+        fadeTime: 250             
     };
 
     let slotNumber = null;
@@ -21,7 +21,7 @@
     let loadRequestId = 0;
 
     /**
-     * РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ
+     * Инициализация
      */
     function init() {
         const container = document.querySelector('.display-container');
@@ -39,15 +39,15 @@
 
         console.log(`Display Court ${slotNumber}: initialized, tournament=${tournamentId}, court=${courtId}, mode=${mode}`);
 
-        // РџРµСЂРІР°СЏ РїСЂРѕРІРµСЂРєР°
+        // Первая проверка
         checkState();
         
-        // РџРµСЂРёРѕРґРёС‡РµСЃРєР°СЏ РїСЂРѕРІРµСЂРєР° СЃРѕСЃС‚РѕСЏРЅРёСЏ
+        // Периодическая проверка состояния
         checkTimer = setInterval(checkState, CONFIG.checkInterval);
     }
 
     /**
-     * РџСЂРѕРІРµСЂРєР° СЃРѕСЃС‚РѕСЏРЅРёСЏ РєРѕСЂС‚Р°
+     * Проверка состояния корта
      */
     async function checkState() {
         try {
@@ -64,19 +64,19 @@
                 console.log(`Background type changed to: ${currentBgType}`);
             }
 
-            // РћР±РЅРѕРІР»СЏРµРј СЂРµР¶РёРј РµСЃР»Рё РёР·РјРµРЅРёР»СЃСЏ
+            // Обновляем режим если изменился
             if (data.mode && data.mode !== mode) {
                 mode = data.mode;
                 console.log(`Mode changed to: ${mode}`);
             }
             
-            // Р’ СЂСѓС‡РЅРѕРј СЂРµР¶РёРјРµ РёСЃРїРѕР»СЊР·СѓРµРј manual_page
+            // В ручном режиме используем manual_page
             if (mode === 'manual' && data.manual_page) {
                 handleManualMode(data);
                 return;
             }
             
-            // Р’ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРј СЂРµР¶РёРјРµ
+            // В автоматическом режиме
             handleAutoMode(data);
             
         } catch (error) {
@@ -85,14 +85,14 @@
     }
 
     /**
-     * РћР±СЂР°Р±РѕС‚РєР° Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРіРѕ СЂРµР¶РёРјР°
+     * Обработка автоматического режима
      */
     function handleAutoMode(data) {
         const newState = data.state;
         const newPage = data.page;
         const newUrl = data.url;
         
-        // РџРѕРєР°Р·С‹РІР°РµРј Р·Р°РіР»СѓС€РєСѓ РµСЃР»Рё РєРѕСЂС‚ РїСѓСЃС‚
+        // Показываем заглушку если корт пуст
         if (newPage === 'empty' || newState === 'empty' || newState === 'not_configured') {
             showEmptyState();
             currentPage = 'empty';
@@ -100,10 +100,10 @@
             return;
         }
         
-        // РЎРєСЂС‹РІР°РµРј Р·Р°РіР»СѓС€РєСѓ
+        // Скрываем заглушку
         hideEmptyState();
         
-        // Р•СЃР»Рё СЃС‚СЂР°РЅРёС†Р° РЅРµ РёР·РјРµРЅРёР»Р°СЃСЊ - РЅРµ РїРµСЂРµР·Р°РіСЂСѓР¶Р°РµРј
+        // Если страница не изменилась - не перезагружаем
         if (newPage === currentPage && newState === currentState) {
             return;
         }
@@ -119,17 +119,17 @@
     }
 
     /**
-     * РћР±СЂР°Р±РѕС‚РєР° СЂСѓС‡РЅРѕРіРѕ СЂРµР¶РёРјР°
+     * Обработка ручного режима
      */
     function handleManualMode(data) {
         const manualPage = data.manual_page;
         
-        // Р•СЃР»Рё СЃС‚СЂР°РЅРёС†Р° РЅРµ РёР·РјРµРЅРёР»Р°СЃСЊ
+        // Если страница не изменилась
         if (manualPage === currentPage && mode === 'manual') {
             return;
         }
         
-        // Р—Р°РіР»СѓС€РєР° - РїРѕРєР°Р·С‹РІР°РµРј empty state
+        // Заглушка - показываем empty state
         if (manualPage === 'empty') {
             showEmptyState();
             currentPage = 'empty';
@@ -138,7 +138,7 @@
         
         hideEmptyState();
         
-        // РџРѕР»СѓС‡Р°РµРј РЅР°СЃС‚СЂРѕР№РєРё РѕРєРЅР° РґР»СЏ tournament_id, court_id Рё custom_url
+        // Получаем настройки окна для  tournament_id, court_id Рё custom_url
         fetchWindowConfig().then(window => {
             if (!window) {
                 console.log('No window config');
@@ -146,7 +146,7 @@
                 return;
             }
             
-            // РџСЂРѕРёР·РІРѕР»СЊРЅС‹Р№ URL
+            // Произвольный URL
             if (manualPage === 'custom') {
                 const customUrl = window.settings?.custom_url;
                 if (customUrl) {
@@ -159,7 +159,7 @@
                 return;
             }
             
-            // РЎС‚Р°РЅРґР°СЂС‚РЅС‹Рµ СЃС‚СЂР°РЅРёС†С‹ - С‚СЂРµР±СѓСЋС‚ tournament_id Рё court_id
+            // Стандартные страницы - требуются‚ tournament_id и court_id
             if (!window.tournament_id || !window.court_id) {
                 console.log('No tournament/court configured');
                 showEmptyState();
@@ -182,7 +182,7 @@
     }
 
     /**
-     * РџРѕР»СѓС‡РµРЅРёРµ РєРѕРЅС„РёРіСѓСЂР°С†РёРё РѕРєРЅР°
+     * Получение конфигурации окна
      */
     async function fetchWindowConfig() {
         try {
@@ -265,7 +265,7 @@
     }
 
     /**
-     * РџРѕРєР°Р·Р°С‚СЊ Р·Р°РіР»СѓС€РєСѓ СЃ fade СЌС„С„РµРєС‚РѕРј
+     * Показать заглушку с fade эффектом
      */
     function showEmptyState() {
         const emptyState = document.querySelector('.empty-state');
@@ -273,7 +273,7 @@
         
         if (!emptyState) return;
         
-        // Р•СЃР»Рё Р·Р°РіР»СѓС€РєР° СѓР¶Рµ РїРѕРєР°Р·Р°РЅР° - РЅРёС‡РµРіРѕ РЅРµ РґРµР»Р°РµРј
+        // Если заглушка уже показана - ничего не делаем
         if (emptyState.style.display === 'flex' && emptyState.style.opacity === '1') {
             return;
         }
@@ -283,7 +283,7 @@
     }
 
     /**
-     * РЎРєСЂС‹С‚СЊ Р·Р°РіР»СѓС€РєСѓ СЃ fade СЌС„С„РµРєС‚РѕРј
+     * Скрыть заглушку с fade эффектом
      */
     function hideEmptyState() {
         const emptyState = document.querySelector('.empty-state');
@@ -305,7 +305,7 @@
     }
 
     /**
-     * Р—Р°РіСЂСѓР·РєР° СЃС‚СЂР°РЅРёС†С‹ РІ iframe СЃ fade СЌС„С„РµРєС‚РѕРј
+     * Загрузка страницы в iframe с fade эффектом
      */
     function loadPage(url) {
         const iframe = document.getElementById('display-frame');
@@ -338,7 +338,7 @@
     }
 
     /**
-     * РћС‡РёСЃС‚РєР° РїСЂРё Р·Р°РєСЂС‹С‚РёРё
+     * Очистка при закрытии
      */
     function cleanup() {
         if (checkTimer) {
@@ -347,7 +347,7 @@
         }
     }
 
-    // РђРІС‚РѕРїР°СѓР·Р° РїСЂРё СЃРєСЂС‹С‚РёРё РІРєР»Р°РґРєРё
+    // Автопауза при скрытии вкладки
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
             if (checkTimer) {
@@ -360,17 +360,17 @@
         }
     });
 
-    // РћС‡РёСЃС‚РєР° РїСЂРё Р·Р°РєСЂС‹С‚РёРё
+    // Очистка при закрытии
     window.addEventListener('beforeunload', cleanup);
 
-    // Р—Р°РїСѓСЃРє
+    // Запуск
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();
     }
 
-    // Р­РєСЃРїРѕСЂС‚ РґР»СЏ РѕС‚Р»Р°РґРєРё
+    // Экспорт для отладки
     window.DisplayCourt = { 
         checkState, 
         loadPage,
