@@ -10,7 +10,7 @@ html, body {
     background: radial-gradient(circle at 50% 50%, #1e293b 0%, #080c14 100%);
 }
 
-/* ── КОРЕНЬ / МАСШТАБИРОВАНИЕ ── */
+/* ── МАСШТАБИРОВАНИЕ ── */
 .dashboard-root {
     position: absolute;
     width: 1920px;
@@ -54,6 +54,8 @@ html, body {
     font-weight: 700;
     font-size: 56px;
     line-height: 1;
+	padding-left: 0.25em;
+	margin-left: -0.25em;
     letter-spacing: -0.02em;
     background: linear-gradient(to right, #ffffff, #94a3b8);
     -webkit-background-clip: text;
@@ -63,6 +65,7 @@ html, body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+	padding-right: 0.15em;
 }
 
 .dash-header-right {
@@ -162,9 +165,9 @@ html, body {
     display: inline-flex;    /* Делает блок оберткой по размеру контента */
     align-items: center;     /* Центрирует по вертикали */
     justify-content: center;  /* Центрирует по горизонтали */
-	
+
     font-family: var(--font-onest);
-    font-size: 15px;
+    font-size: 0px;   /* ------------ */
     font-weight: 700;
     padding: 4px 10px;
     border-radius: 20px;
@@ -174,7 +177,7 @@ html, body {
 }
 
 .badge-stage.group   { background: rgba(29, 78, 216, 0.8);  color: #BFDBFE; }
-.badge-stage.playoff { background: rgba(124, 58, 237, 0.8); color: #EDE9FE; }
+.badge-stage.playoff { background: rgba(124, 58, 237, 0.1); color: #EDE9FE; }
 
 .badge-status {
     font-family: var(--font-onest);

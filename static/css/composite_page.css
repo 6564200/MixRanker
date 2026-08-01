@@ -55,7 +55,8 @@ html, body {
 .text-layer {
     position: absolute;
     z-index: 2;
-    overflow: hidden;
+    overflow: visible;
+    #padding-left: 15px;
 }
 
 .text-layer .tournament-name {
@@ -70,7 +71,7 @@ html, body {
     height: 100%;
     display: flex;
     align-items: center;
-    overflow: hidden;
+    overflow: visible;
     opacity: 0;
     animation: textLayerFadeIn 0.7s ease-out forwards;
 }

@@ -102,6 +102,7 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     padding-right: 10px;
+	letter-spacing: -1px;
 }
 
 /* Контейнер счётов по сетам (расположен левее основного счёта) */

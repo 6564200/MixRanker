@@ -54,6 +54,7 @@ html, body {
     font-style: italic;
     font-weight: 800;
     font-size: 190px;
+	padding-left: 0.25em;
     line-height: 226px;
     letter-spacing: 0em;
     color: var(--text-white);
@@ -81,9 +82,9 @@ html, body {
     background-position: center;
 }
 
-.logo1 { width: 360px; }
-.logo2 { width: 240px; }
-.logo3 { width: 340px; }
+.logo1 { width: 200px; }
+.logo2 { width: 350px; }
+.logo3 { width: 250px; }
 .logo4 { width: 0px; }  /* резервный слот */
 
 /* === ТАБЛИЦА === */
@@ -93,6 +94,10 @@ html, body {
     flex-direction: column;
     align-items: flex-start;
     width: 3450px;
+}
+
+.table-header, .header-cell {
+    color-scheme: only light; /* Запрещает браузеру менять цвета */
 }
 
 /* Заголовок таблицы: названия колонок (SET 1, SET 2, ИТОГО) */
@@ -106,6 +111,7 @@ html, body {
     height: 159px;
     background: var(--green-gradient);
     border-radius: 10px 10px 0 0;
+	color: #080609;
 }
 
 /* Ячейка заголовка (SET N) */
@@ -120,7 +126,7 @@ html, body {
     align-items: center;
     justify-content: center;
     text-align: center;
-    color: var(--text-dark);
+    color: #080609;
 }
 
 /* Ячейка итогового счёта чуть шире */
@@ -161,7 +167,7 @@ html, body {
     background-repeat: no-repeat;
     background-position: center;
     flex-shrink: 0;
-    opacity: 1;
+    opacity: 0;  /* скрыть флаги */
 }
 
 /* Имя игрока */

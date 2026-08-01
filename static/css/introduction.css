@@ -41,7 +41,7 @@ html, body {
     justify-content: center;
     align-items: center;
     padding: 12px 0 0;
-    width: 307px;
+    width: 577px;
     height: 52px;
     background: var(--green-gradient);
     border-radius: 5px;
@@ -57,12 +57,14 @@ html, body {
     line-height: 40px;
     text-align: center;
     letter-spacing: 0.05em;
-    color: var(--text-dark);
+	color: var(--text-dark);
+    margin-top: -10px;    
     text-transform: uppercase;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     width: 100%;
+
 }
 
 /* Основной тёмный блок с командами */
