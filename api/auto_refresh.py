@@ -188,8 +188,9 @@ class AutoRefreshService:
                                  first_participant_score, second_participant_score, 
                                  detailed_result, first_participant, second_participant,
                                  is_tiebreak, is_super_tiebreak, is_first_participant_serving, is_serving_left, match_id,
+                                 next_class_name, next_first_participant, next_second_participant, next_start_time,
                                  updated_at)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                             ''', (
                                 tid, str(court["court_id"]), court.get("court_name", ""),
                                 court.get("event_state", ""), court.get("current_match_state", ""),
@@ -201,7 +202,11 @@ class AutoRefreshService:
                                 1 if court.get("is_super_tiebreak") else 0,
                                 1 if court.get("is_first_participant_serving") else (0 if court.get("is_first_participant_serving") is False else None),
                                 1 if court.get("is_serving_left") else (0 if court.get("is_serving_left") is False else None),
-                                court.get("match_id", "")
+                                court.get("match_id", ""),
+                                court.get("next_class_name", ""),
+                                json.dumps(court.get("next_first_participant", [])),
+                                json.dumps(court.get("next_second_participant", [])),
+                                court.get("next_start_time", "")
                             ))
                             updated += 1
 
