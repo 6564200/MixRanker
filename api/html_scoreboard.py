@@ -196,7 +196,7 @@ class ScoreboardGenerator(HTMLBaseGenerator):
         # Генерируем заголовки сетов с классом hidden для пустых
         def set_header(i):
             hidden = "" if (show_score and i < num_sets) else " hidden"
-            return f'<div class="text_set{hidden}" data-field="set_header_{i}">SET {i+1}</div>'
+            return f'<div class="text_set{hidden}" data-field="set_header_{i}">СЕТ {i+1}</div>'
 
         # Генерируем ячейки счёта с классом hidden для пустых
         def set_score(i, score, team):

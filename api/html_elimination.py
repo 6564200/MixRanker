@@ -26,11 +26,13 @@ class EliminationGenerator(HTMLBaseGenerator):
         elimination_data = class_data.get("elimination", [])
 
         if draw_index >= len(elimination_data):
-            return self._generate_empty_html("Нет данных турнирной сетки")
+            logger.error(f"Нет данных турнирной сетки")
+            return self._generate_empty_html(" ") #"Нет данных турнирной сетки"
 
         elim_data = elimination_data[draw_index]
         if not elim_data or "Elimination" not in elim_data:
-            return self._generate_empty_html("Неверные данные турнирной сетки")
+            logger.error(f"Неверные данные турнирной сетки")
+            return self._generate_empty_html(" ") #"Неверные данные турнирной сетки"
 
         bracket = elim_data["Elimination"]
         class_name = (xml_type_info.get("class_name", "Категория")).upper()

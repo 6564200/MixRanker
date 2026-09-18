@@ -76,11 +76,13 @@ class RoundRobinGenerator(HTMLBaseGenerator):
         round_robin_data = class_data.get("round_robin", [])
 
         if draw_index >= len(round_robin_data):
-            return self._generate_empty_html("Нет данных групповой таблицы")
+            logger.error(f"Нет данных групповой таблицы")
+            return self._generate_empty_html(" ") #"Нет данных групповой таблицы"
 
         rr_data = round_robin_data[draw_index]
         if not rr_data or "RoundRobin" not in rr_data:
-            return self._generate_empty_html("Неверные данные групповой таблицы")
+            logger.error(f"Неверные данные групповой таблицы")
+            return self._generate_empty_html(" ") #"Неверные данные групповой таблицы"
 
         group_data = rr_data["RoundRobin"]
         class_name = (xml_type_info.get("class_name", "Категория")).upper()
@@ -161,10 +163,10 @@ class RoundRobinGenerator(HTMLBaseGenerator):
                 </div>
                 {num_cols_html}
                 <div class="points-header" style="width:{points_col_width}px;">
-                    <div class="points" style="width:{points_col_width}px;">POINTS</div>
+                    <div class="points" style="width:{points_col_width}px;">ОЧКИ</div>
                 </div>
                 <div class="points-header" style="width:{points_col_width}px;">
-                    <div class="points" style="width:{points_col_width}px;">PLACE</div>
+                    <div class="points" style="width:{points_col_width}px;">МЕСТО</div>
                 </div>
             </div>'''
 
