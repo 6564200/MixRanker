@@ -1,176 +1,200 @@
-Install
+# MixRanker
 
-    sudo apt update && sudo apt upgrade -y
+Flask-приложение, работающее на связке Gunicorn + Nginx.
 
-    sudo apt install python3 python3-venv python3-pip nginx git ufw htop mc fail2ban unzip -y
+## 1. Установка зависимостей
 
-CLONE
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install python3 python3-venv python3-pip nginx git ufw htop mc fail2ban unzip -y
+```
 
-    cd /var/www && sudo git clone https://github.com/6564200/MixRanker.git
+## 2. Клонирование и подготовка
 
-sudo chown -R *user:*user MixRanker
+```bash
+cd /var/www && sudo git clone https://github.com/6564200/MixRanker.git
+sudo chown -R $USER:$USER MixRanker
+cd MixRanker
+```
 
-    cd MixRanker
+Распаковка флагов:
+```bash
+cd /var/www/MixRanker/static/flags && unzip 4x3.zip
+cd /var/www/MixRanker
+```
 
-FLAGS
+## 3. Виртуальное окружение
 
-    cd /var/www/MixRanker/static/flags && unzip 4x3.zip
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip && pip install -r requirements.txt
+```
 
-VENV
+## 4. Переменные окружения
 
-    python3 -m venv venv
+Добавьте переменные в конец файла `~/.bashrc`:
+```bash
+nano ~/.bashrc
+```
 
-    source venv/bin/activate
+```bash
+export SECRET_KEY="ваш_случайный_строковый_ключ"
+export FLASK_APP=app.py
+export FLASK_ENV=production
+```
 
-    pip install --upgrade pip && pip install -r requirements.txt
-
-SECRET_KEY
-
-    nano ~/.bashrc
-  Добавь в конец:
-
-    export SECRET_KEY="тут_любой_случайный_строковый_ключ"
-    export FLASK_APP=app.py
-    export FLASK_ENV=production
-
+Примените изменения:
+```bash
 source ~/.bashrc
+```
 
-TEST
+## 5. Первый безопасный запуск (Создание администратора)
 
-    cd /var/www/MixRanker && source venv/bin/activate
+Выполняется вручную для первичной инициализации базы данных и учетной записи:
 
-    flask run --host=0.0.0.0
-http://0.0.0.0:5000
+```bash
+# 1. Генерация ключа
+python3 - - Обязательные переменные
+export SECRET_KEY="сгенерированный_ключ"
+export FLASK_CONFIG=production
 
-WSGI
+# 3. Переменные для создания первого администратора
+export BOOTSTRAP_ADMIN_USERNAME="admin"
+export BOOTSTRAP_ADMIN_PASSWORD="сложный_пароль"
+
+# 4. Запуск Gunicorn вручную
+gunicorn --workers 3 --bind unix:/var/www/MixRanker/mixranker.sock wsgi:app
+```
+
+*После этого зайдите в интерфейс под созданной учетной записью, смените пароль и удалите временные переменные из сессии:*
+```bash
+unset BOOTSTRAP_ADMIN_USERNAME
+unset BOOTSTRAP_ADMIN_PASSWORD
+```
+
+## 6. Настройка Systemd (Демонизация)
+
+Создайте файл сервиса:
+```bash
 sudo nano /etc/systemd/system/mixranker.service
+```
 
-    [Unit]
-    Description=Gunicorn instance to serve MixRanker Flask app
-    After=network.target
-    [Service]
-    User=*user
-    Group=www-data
-    WorkingDirectory=/var/www/MixRanker
-    Environment="PATH=/var/www/MixRanker/venv/bin"
-    Environment="SECRET_KEY=${SECRET_KEY}"
-    ExecStart=/var/www/MixRanker/venv/bin/gunicorn --workers 3 --bind nix:/var/www/MixRanker/mixranker.sock wsgi:app
+Конфигурация:
+```ini
+[Unit]
+Description=Gunicorn instance to serve MixRanker Flask app
+After=network.target
 
-    [Install]
-    WantedBy=multi-user.target
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/MixRanker
+Environment="PATH=/var/www/MixRanker/venv/bin"
+Environment="SECRET_KEY=ваш_секретный_ключ"
+ExecStart=/var/www/MixRanker/venv/bin/gunicorn --workers 3 --bind unix:/var/www/MixRanker/mixranker.sock wsgi:app
 
+[Install]
+WantedBy=multi-user.target
+```
+
+Управление сервисом:
+```bash
 sudo systemctl daemon-reload
 sudo systemctl enable mixranker
 sudo systemctl start mixranker
 sudo systemctl status mixranker
+```
 
-NGINX
+## 7. Настройка Nginx
+
+Создайте конфигурационный файл хоста:
+```bash
 sudo nano /etc/nginx/sites-available/mixranker
-  
-    server {
+```
+
+Конфигурация:
+```nginx
+server {
     listen 80;
     server_name _ ;
-
     location / {
-      include proxy_params;
-      proxy_pass http://unix:/var/www/MixRanker/mixranker.sock;
+        include proxy_params;
+        proxy_pass http://unix:/var/www/MixRanker/mixranker.sock;
     }
-
     location /static/ {
         alias /var/www/MixRanker/static/;
     }
-    }
+}
+```
 
+Активация конфигурации и перезапуск:
+```bash
 sudo ln -s /etc/nginx/sites-available/mixranker /etc/nginx/sites-enabled/
-
-sudo nginx -t
-
-sudo systemctl restart nginx
-
 sudo rm /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl restart nginx
+```
 
-sudo systemctl reload nginx
+## 8. Настройка UFW (Фаервол)
 
-UFW
+```bash
 sudo ufw allow OpenSSH
 sudo ufw allow 'Nginx Full'
 sudo ufw enable
 sudo ufw status
+```
 
-TEST
+## 9. Диагностика и логи
+
+Просмотр логов приложения:
+```bash
 sudo journalctl -u mixranker -f
 sudo journalctl -u mixranker -n 30 --no-pager
+```
 
+Просмотр логов Nginx:
+```bash
 sudo tail -f /var/log/nginx/error.log
+```
+
+Перезапуск компонентов при обновлении:
+```bash
 sudo systemctl daemon-reload
 sudo systemctl restart mixranker
 sudo systemctl restart nginx
+```
 
+---
 
-FIRST START (SECURE)
+## Важные примечания
+* Без установленной переменной `SECRET_KEY` приложение не запустится.
+* Если база данных пуста и при первом старте не переданы переменные `BOOTSTRAP_ADMIN_USERNAME` / `BOOTSTRAP_ADMIN_PASSWORD`, администратор создан не будет.
+* При переносе переменных в systemd (`Environment=`), указывайте их явные текстовые значения, так как системные демоны не считывают ваш `~/.bashrc`.
 
-    # 1) Перейди в проект и активируй venv
-    cd /var/www/MixRanker
-    source venv/bin/activate
+---
 
-    # 2) Сгенерируй SECRET_KEY (пример)
-    python3 - << 'PY'
-import secrets
-print(secrets.token_urlsafe(64))
-PY
+## Запуск на Windows (PowerShell)
 
-    # 3) Экспортируй обязательные переменные окружения
-    export SECRET_KEY="<вставь_сгенерированный_ключ>"
-    export FLASK_CONFIG=production
+Разработка ведется через WSL/Linux. Для локального запуска в среде Windows:
 
-    # 4) Создай первого администратора (только для первого запуска)
-    export BOOTSTRAP_ADMIN_USERNAME="admin"
-    export BOOTSTRAP_ADMIN_PASSWORD="<сложный_пароль>"
+```powershell
+cd C:\WORK\programming\mixranker
+.\venv\Scripts\Activate.ps1
 
-    # 5) Запусти приложение
-    gunicorn --workers 3 --bind unix:/var/www/MixRanker/mixranker.sock wsgi:app
+# Генерация ключа
+python -c "import secrets; print(secrets.token_urlsafe(64))"
 
-    # 6) Войди под bootstrap-учеткой и сразу смени пароль в интерфейсе
+# Установка окружения для текущей сессии
+\$env:SECRET_KEY = "сгенерированный_ключ"
+\$env:FLASK_CONFIG = "production"
+\$env:BOOTSTRAP_ADMIN_USERNAME = "admin"
+\$env:BOOTSTRAP_ADMIN_PASSWORD = "сложный_пароль"
 
-    # 7) После первого успешного входа удали bootstrap-переменные
-    unset BOOTSTRAP_ADMIN_USERNAME
-    unset BOOTSTRAP_ADMIN_PASSWORD
+# Запуск
+python app.py
 
-NOTES
-
-    - Без SECRET_KEY приложение не запустится.
-    - Если БД пустая и не заданы BOOTSTRAP_ADMIN_USERNAME/BOOTSTRAP_ADMIN_PASSWORD,
-      администратор не создается.
-    - Для systemd добавь SECRET_KEY и bootstrap-переменные
-      в Environment= (bootstrap-переменные только на первый старт).
-
-FIRST START (WINDOWS POWERSHELL)
-
-    # 1) Перейди в проект и активируй venv
-    cd C:\WORK\programming\mixranker
-    .\venv\Scripts\Activate.ps1
-
-    # 2) Сгенерируй SECRET_KEY
-    python -c "import secrets; print(secrets.token_urlsafe(64))"
-
-    # 3) Задай обязательные переменные окружения (для текущей сессии)
-    $env:SECRET_KEY = "<вставь_сгенерированный_ключ>"
-    $env:FLASK_CONFIG = "production"
-
-    # 4) Создай первого администратора (только для первого запуска)
-    $env:BOOTSTRAP_ADMIN_USERNAME = "admin"
-    $env:BOOTSTRAP_ADMIN_PASSWORD = "<сложный_пароль>"
-
-    # 5) Запусти приложение
-    python app.py
-
-    # 6) Войди под bootstrap-учеткой и сразу смени пароль в интерфейсе
-
-    # 7) После первого успешного входа удали bootstrap-переменные
-    Remove-Item Env:BOOTSTRAP_ADMIN_USERNAME
-    Remove-Item Env:BOOTSTRAP_ADMIN_PASSWORD
-
-WINDOWS NOTES
-
-    - Для постоянных переменных используй setx (или системные переменные Windows).
-    - Если используешь Gunicorn, запускай проект в WSL/Linux (на чистом Windows обычно не используется).
+# Удаление bootstrap-переменных после создания админа
+Remove-Item Env:BOOTSTRAP_ADMIN_USERNAME
+Remove-Item Env:BOOTSTRAP_ADMIN_PASSWORD
+```
