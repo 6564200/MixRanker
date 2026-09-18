@@ -58,6 +58,11 @@ class WinnerGenerator(HTMLBaseGenerator):
         winners_table = []
         winners_images = []
 
+        country_visibility_css = "" if court_data.get("_show_country_flags", True) else """
+    <style>
+        .player-flag, .flag-icon, .country_name { opacity: 0 !important; }
+    </style>"""
+
         for i, w in enumerate(winners[:2]):
             flag_url = get_flag_url(w.get("countryCode", ""))
             country_name = get_country_name_ru(w.get("countryCode", ""))
@@ -88,6 +93,7 @@ class WinnerGenerator(HTMLBaseGenerator):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{court_name} - Winner</title>
     <link rel="stylesheet" href="/static/css/winner.css">
+{country_visibility_css}
 </head>
 <body>
     <div class="winner" data-tournament-id="{tournament_id or ''}" data-court-id="{court_id or ''}">
