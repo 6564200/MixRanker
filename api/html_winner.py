@@ -69,7 +69,7 @@ class WinnerGenerator(HTMLBaseGenerator):
             logger.debug(f"Winner {i}: {full_name}, photo_url: {photo_url}")
 
             winners_table.append(f'''<div>
-                <img src="{flag_url}" class="flag-icon" data-field="winner{i}_flag" alt="{w.get('countryCode', '')}">
+                <img src="{flag_url}" class="player-flag" data-field="winner{i}_flag" alt="{w.get('countryCode', '')}">
                 <div class="player-info">
                     <div class="win_name" data-field="winner{i}_name">{full_name}</div>
                     <div class="country_name" data-field="winner{i}_country">{country_name}</div>
