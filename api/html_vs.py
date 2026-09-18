@@ -78,6 +78,11 @@ class VSGenerator(HTMLBaseGenerator):
         team1_photos = self._generate_player_photos_html(team1[:2], "team1")
         team2_photos = self._generate_player_photos_html(team2[:2], "team2")
 
+        country_visibility_css = "" if court_data.get("_show_country_flags", True) else """
+    <style>
+        .player-flag { opacity: 0 !important; }
+    </style>"""
+
         # Имена с флагами и data-field
         team1_names = ''
         for i, p in enumerate(team1[:2]):
@@ -104,6 +109,7 @@ class VSGenerator(HTMLBaseGenerator):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VS - {header_title}</title>
     <link rel="stylesheet" href="/static/css/vs.css">
+{country_visibility_css}
 </head>
 <body>
     <div class="vs-container" data-tournament-id="{tournament_id or ''}" data-court-id="{court_id or ''}">
