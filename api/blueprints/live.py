@@ -249,6 +249,11 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
     """
     bp = Blueprint("live_bp", __name__)
 
+    def _apply_country_flag_setting(court_data: dict) -> dict:
+        from api import get_settings
+        court_data["_show_country_flags"] = get_settings().get("showCountryFlags", True)
+        return court_data
+
     @bp.route('/api/html-live/<tournament_id>/<court_id>')
     def get_live_court_html(tournament_id, court_id):
         """
@@ -304,6 +309,7 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 court_data = _apply_no_referee_mode(court_data)
 
             court_data = enrich_court_data_with_photos(court_data)
+            court_data = _apply_country_flag_setting(court_data)
             html = html_generator.generate_scoreboard_full_html(court_data, tournament_data, tournament_id, court_id)
             return Response(html, mimetype='text/html; charset=utf-8')
         except Exception as e:
@@ -388,6 +394,7 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 court_data = _apply_no_referee_mode(court_data)
 
             court_data = enrich_court_data_with_photos(court_data)
+            court_data = _apply_country_flag_setting(court_data)
             html = html_generator.generate_court_vs_html(
                 court_data, tournament_data, tournament_id, court_id
             )
@@ -481,6 +488,7 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 court_data = _apply_no_referee_mode(court_data)
 
             court_data = enrich_court_data_with_photos(court_data)
+            court_data = _apply_country_flag_setting(court_data)
             html = html_generator.generate_match_introduction_html(court_data, match_info)
             return Response(html, mimetype='text/html; charset=utf-8')
         except Exception as e:
@@ -528,6 +536,7 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 return "<html><body><h1>Не найдено</h1></body></html>", 404
 
             court_data = enrich_court_data_with_photos(court_data)
+            court_data = _apply_country_flag_setting(court_data)
 
             all_ids = [
                 p.get("id")
