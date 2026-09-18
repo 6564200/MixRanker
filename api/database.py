@@ -648,6 +648,7 @@ def get_settings() -> Dict:
         "autoRefresh": True,
         "debugMode": False,
         "theme": "light",
+        "showCountryFlags": True,
         "finishedMatchesCount": 3
     }
 
