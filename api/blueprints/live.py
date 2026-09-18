@@ -869,15 +869,14 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 if not court_data:
                     continue
 
-                # Добавляем данные следующего матча
-                next_data = _get_next_match_participants(
-                    tournament_data,
-                    court_id,
-                    court_data.get("match_id", ""),
-                    court_data.get("first_participant", []),
-                    court_data.get("second_participant", []),
-                )
-                court_data.update(next_data)
+                # nextMatch уже приходит из RankedIn court API и сохраняется в courts_data.
+                # Не вычисляем его повторно через court_usage: это давало дубли текущего матча.
+                next_data = {
+                    "next_class_name": court_data.get("next_class_name", ""),
+                    "next_first_participant": court_data.get("next_first_participant", []),
+                    "next_second_participant": court_data.get("next_second_participant", []),
+                    "next_start_time": court_data.get("next_start_time", ""),
+                }
 
                 # Переводим технические значения draw-типа в читаемые названия
                 raw_class = court_data.get("class_name", "")
