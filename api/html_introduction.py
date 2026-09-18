@@ -49,6 +49,11 @@ class IntroductionGenerator(HTMLBaseGenerator):
         
         # Название раунда
         round_name = self._get_round_name(match_info) if match_info else court_data.get("class_name", "") or court_data.get("className", "")
+
+        country_visibility_css = "" if court_data.get("_show_country_flags", True) else """
+    <style>
+        .team1-flag1, .team1-flag2, .team2-flag1, .team2-flag2 { opacity: 0 !important; }
+    </style>"""
         
         return f'''<!DOCTYPE html>
 <html lang="ru">
@@ -57,6 +62,7 @@ class IntroductionGenerator(HTMLBaseGenerator):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Match Introduction</title>
     <link rel="stylesheet" href="/static/css/introduction.css">
+{country_visibility_css}
 </head>
 <body>
     <div class="intro-container" data-tournament-id="{tournament_id or ''}" data-court-id="{court_id or ''}">
