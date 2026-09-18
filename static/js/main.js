@@ -1202,6 +1202,7 @@ function applySettings(settings) {
     if (el('autoRefreshEnabled'))     el('autoRefreshEnabled').checked   = settings.autoRefresh !== false;
     if (el('debugMode'))              el('debugMode').checked             = settings.debugMode || false;
     if (el('themeSelect'))            el('themeSelect').value             = settings.theme || 'light';
+    if (el('showCountryFlags'))        el('showCountryFlags').checked       = settings.showCountryFlags !== false;
     if (el('finishedMatchesCount'))   el('finishedMatchesCount').value   = settings.finishedMatchesCount || 3;
     if (el('refreshInterval'))        el('refreshInterval').textContent  = settings.refreshInterval || 30;
 }
@@ -1232,6 +1233,7 @@ async function saveSettingsWithAuth() {
         autoRefresh: document.getElementById('autoRefreshEnabled').checked,
         debugMode: document.getElementById('debugMode').checked,
         theme: document.getElementById('themeSelect').value,
+        showCountryFlags: document.getElementById('showCountryFlags').checked,
         finishedMatchesCount: parseInt(document.getElementById('finishedMatchesCount').value) || 3,
         lastSaved: new Date().toISOString()
     };
