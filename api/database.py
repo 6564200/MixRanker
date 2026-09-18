@@ -109,6 +109,10 @@ def init_database():
                 is_first_participant_serving INTEGER,
                 is_serving_left INTEGER,
                 match_id TEXT,
+                next_class_name TEXT,
+                next_first_participant TEXT,
+                next_second_participant TEXT,
+                next_start_time TEXT,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (tournament_id) REFERENCES tournaments(id),
                 UNIQUE(tournament_id, court_id)
@@ -240,6 +244,14 @@ def init_database():
                 logger.info(f"Миграция: добавляем колонку {col} в courts_data")
                 cursor.execute(f"ALTER TABLE courts_data ADD COLUMN {col} {col_type}")
         
+        # Миграция: сохраняем nextMatch из court API для Media Dashboard
+        for col in ['next_class_name', 'next_first_participant', 'next_second_participant', 'next_start_time']:
+            try:
+                cursor.execute(f"SELECT {col} FROM courts_data LIMIT 1")
+            except sqlite3.OperationalError:
+                logger.info(f"Миграция: добавляем колонку {col} в courts_data")
+                cursor.execute(f"ALTER TABLE courts_data ADD COLUMN {col} TEXT")
+
         # Создаём окна пула (до 6) если их нет
         for i in range(1, 7):
             cursor.execute('SELECT COUNT(*) FROM display_windows WHERE type = "pool" AND slot_number = ?', (i,))
@@ -422,6 +434,7 @@ def get_court_data(tournament_id: str, court_id: str) -> Optional[Dict]:
                    first_participant_score, second_participant_score, 
                    detailed_result, first_participant, second_participant,
                    is_tiebreak, is_super_tiebreak, is_first_participant_serving, is_serving_left, match_id,
+                   next_class_name, next_first_participant, next_second_participant, next_start_time,
                    updated_at
             FROM courts_data 
             WHERE tournament_id = ? AND court_id = ?
@@ -449,11 +462,11 @@ def get_court_data(tournament_id: str, court_id: str) -> Optional[Dict]:
             "is_first_participant_serving": bool(row[12]) if row[12] is not None else None,
             "is_serving_left": bool(row[13]) if row[13] is not None else None,
             "match_id": row[14],
-            "updated_at": row[15],
-            "next_class_name": "",
-            "next_first_participant": [],
-            "next_second_participant": [],
-            "next_start_time": ""
+            "next_class_name": row[15] or "",
+            "next_first_participant": _safe_json_loads(row[16], []),
+            "next_second_participant": _safe_json_loads(row[17], []),
+            "next_start_time": row[18] or "",
+            "updated_at": row[19]
         }
 
     except Exception as e:
@@ -474,8 +487,9 @@ def save_courts_data(tournament_id: str, courts_data: List[Dict]) -> int:
                      first_participant_score, second_participant_score, 
                      detailed_result, first_participant, second_participant,
                      is_tiebreak, is_super_tiebreak, is_first_participant_serving, is_serving_left, match_id,
+                     next_class_name, next_first_participant, next_second_participant, next_start_time,
                      updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ''', (
                     tournament_id, str(court["court_id"]), court.get("court_name", ""),
                     court.get("event_state", ""), court.get("current_match_state", ""),
@@ -488,7 +502,11 @@ def save_courts_data(tournament_id: str, courts_data: List[Dict]) -> int:
                     1 if court.get("is_super_tiebreak") else 0,
                     1 if court.get("is_first_participant_serving") else (0 if court.get("is_first_participant_serving") is False else None),
                     1 if court.get("is_serving_left") else (0 if court.get("is_serving_left") is False else None),
-                    court.get("match_id", "")
+                    court.get("match_id", ""),
+                    court.get("next_class_name", ""),
+                    json.dumps(court.get("next_first_participant", [])),
+                    json.dumps(court.get("next_second_participant", [])),
+                    court.get("next_start_time", "")
                 ))
                 count += 1
         return count
