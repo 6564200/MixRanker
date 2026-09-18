@@ -98,7 +98,7 @@
         }
     }
 
-    function buildMatrix(matrix, rows = 8, cols = 14) {
+    function buildMatrix(matrix, rows = 8, cols = 18) {
         if (matrix.children.length) return; // уже построена
         const fragment = document.createDocumentFragment();
         for (let r = 0; r < rows; r++) {

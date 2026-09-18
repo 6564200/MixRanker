@@ -118,6 +118,7 @@ html, body {
 .set-block {
     width: 478px;
     height: 136px;
+	opacity: 0;
 }
 
 /* Зелёная шапка сета с надписью «SET N» */
@@ -145,6 +146,7 @@ html, body {
     height: 100px;
     background: linear-gradient(180deg, #202020 0%, #070707 100%);
     display: flex;
+	
 }
 
 /* Счёт одной команды в сете */
@@ -231,7 +233,7 @@ html, body {
     background-repeat: no-repeat;
     border-radius: 4px;
     flex-shrink: 0;
-    opacity: 0; /* скрыть флаги */
+    opacity: 1; /* скрыть флаги */
 }
 
 /* Имя игрока в плашке */
@@ -247,3 +249,20 @@ html, body {
 
 /* Утилита скрытия */
 .hidden { display: none !important; }
+
+/* === АНИМАЦИИ === */
+
+@keyframes fadeIn     { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInLeft  { from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(50px);  } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideInDown  { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Применение анимаций появления */
+.bottom-plashka { animation: fadeIn     0.5s ease-out; }
+.header-title    { animation: slideInDown 0.6s ease-out 0.1s both; }
+
+/* Левая команда выезжает слева */
+.team-container.team-left, .team-names.team-left { animation: slideInLeft  0.6s ease-out 0.2s both; }
+
+/* Правая команда выезжает справа */
+.team-container.team-right, .team-names.team-right { animation: slideInRight 0.6s ease-out 0.2s both; }

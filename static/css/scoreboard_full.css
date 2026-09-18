@@ -167,7 +167,7 @@ html, body {
     background-repeat: no-repeat;
     background-position: center;
     flex-shrink: 0;
-    opacity: 0;  /* скрыть флаги */
+    opacity: 1;  /* скрыть флаги */
 }
 
 /* Имя игрока */

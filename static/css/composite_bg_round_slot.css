@@ -24,14 +24,14 @@
 .logo  { height: 150px; }
 
 /* Ширина и задержка появления каждого логотипа */
-.logo3 { width:  140px; animation-delay: 0.7s; }
+.logo3 { width:  100px; animation-delay: 0.7s; }
 .logo2 { width:  180px; animation-delay: 0.4s; }
-.logo1 { width: 100px; animation-delay: 0.3s; }
+.logo1 { width: 110px; animation-delay: 0.3s; }
 
 /* Разделительная линия под шапкой */
 .header-line {
     top: 130px;
     left: 100px;
-    right: 45px;
-    background: linear-gradient(90deg, #AED557 0%, #84C100 50%, transparent 100%);
+    right: 1045px;
+    background: linear-gradient(90deg, #AED557 0%, #84C100 0%, transparent 100%);
 }

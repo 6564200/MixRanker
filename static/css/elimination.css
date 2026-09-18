@@ -33,7 +33,7 @@ body {
     padding: 0px;
     transform-origin: top left;
     position: absolute;
-	transform: scale(0.15);
+	transform: scale(0.2);
     top: 0;
     left: 0;
 }
@@ -43,7 +43,7 @@ body {
     text-align: left;
     margin-bottom: 40px;
     font-family: var(--font-primary);
-    font-size: 72px;
+    font-size: 45px;
     background-clip: text;
     -webkit-background-clip: text;
     background-image: var(--cell-gradient-l-bg);
@@ -64,8 +64,8 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-evenly;
-    gap: 12px;
-    width: 600px;
+    gap: 0px;  /*gap: 12px;*/
+    width: 950px;
     max-width: 100%;
 }
 
@@ -88,7 +88,7 @@ body {
     width: auto;
     font-family: 'Onest', sans-serif;
     margin-bottom: 20px;
-    margin-left: 20px;
+    margin-left: 60px;  /*margin-left: 120px;*/
 
     opacity: 0;
     transform: translateY(10px);
@@ -104,12 +104,20 @@ body {
 .bracket-grid .container:nth-child(6) { animation-delay: 0.35s; }
 .bracket-grid .container:nth-child(7) { animation-delay: 0.4s; }
 .bracket-grid .container:nth-child(8) { animation-delay: 0.45s; }
+.bracket-grid .container:nth-child(9) { animation-delay: 0.45s; }
+.bracket-grid .container:nth-child(10) { animation-delay: 0.4s; }
+.bracket-grid .container:nth-child(11) { animation-delay: 0.35s; }
+.bracket-grid .container:nth-child(12) { animation-delay: 0.3s; }
+.bracket-grid .container:nth-child(13) { animation-delay: 0.25s; }
+.bracket-grid .container:nth-child(14) { animation-delay: 0.2s; }
+.bracket-grid .container:nth-child(15) { animation-delay: 0.15s; }
+.bracket-grid .container:nth-child(16) { animation-delay: 0.1s; }
 
 /* Строка одного игрока внутри карточки матча */
 .row {
     display: flex;
     align-items: center;
-    height: 56px;
+    height: 58px;
     transition: background var(--transition-fast);
 }
 
@@ -141,8 +149,8 @@ body {
 
 /* Цифра посевного номера */
 .rank-number {
-    font-weight: 700;
-    font-size: 36px;
+    font-weight: 600;
+    font-size: 50px;
     color: #040404;
     transition: transform var(--transition-normal);
 }
@@ -160,7 +168,7 @@ body {
 /* Имя игрока */
 .name-main {
     font-weight: 700;
-    font-size: 26px;
+    font-size: 38px; /*font-size: 26px;*/
     line-height: 36px;
     color: #FFFFFF;
     text-transform: uppercase;
@@ -179,7 +187,7 @@ body {
 /* Блок счёта справа от имени */
 .score {
     font-weight: 700;
-    font-size: 32px;
+    font-size: 40px; /*font-size: 32px;*/
     line-height: 36px;
 	padding-right: 20px;
     color: #969696;

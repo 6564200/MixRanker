@@ -41,11 +41,13 @@ html, body {
     justify-content: center;
     align-items: center;
     padding: 12px 0 0;
-    width: 577px;
-    height: 52px;
+    width: auto;
+	min-width: 350px;
+	height: auto;
     background: var(--green-gradient);
     border-radius: 5px;
     margin-bottom: -5px;
+	
     z-index: 10;
 }
 
@@ -61,8 +63,10 @@ html, body {
     margin-top: -10px;    
     text-transform: uppercase;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+	height: auto;
+    /*overflow: hidden;*/
+    /*text-overflow: ellipsis;*/
+	padding: 0 30px;
     width: 100%;
 
 }
@@ -142,10 +146,10 @@ html, body {
     height: 36px;
     left: 52px;
     top: 40px;
-    background-size: 0%;
+    background-size: 100%;
     background-repeat: no-repeat;
     background-position: center;
-    opacity: 0;
+    opacity: 1;
 }
 
 .team1-flag2 {
@@ -154,10 +158,10 @@ html, body {
     height: 36px;
     left: 52px;
     top: 110px;
-    background-size: 0%;
+    background-size: 100%;
     background-repeat: no-repeat;
     background-position: center;
-    opacity: 0;
+    opacity: 1;
 }
 
 /* Имя первого игрока команды 2 (правая сторона) */
@@ -207,10 +211,10 @@ html, body {
     height: 36px;
     left: 1700px;
     top: 40px;
-    background-size: 0%;
+    background-size: 100%;
     background-repeat: no-repeat;
     background-position: center;
-    opacity: 0;
+    opacity: 1;
 }
 
 .team2-flag2 {
@@ -219,10 +223,10 @@ html, body {
     height: 36px;
     left: 1700px;
     top: 110px;
-    background-size: 0%;
+    background-size: 100%;
     background-repeat: no-repeat;
     background-position: center;
-    opacity: 0;
+    opacity: 1;
 }
 
 /* === АНИМАЦИИ === */
