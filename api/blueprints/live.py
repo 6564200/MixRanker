@@ -82,7 +82,13 @@ def _find_current_match_info(tournament_data: dict, court_id: str, logger) -> di
     return {}
 
 
-def _get_next_match_participants(tournament_data: dict, court_id: str, current_match_id: str = "") -> dict:
+def _get_next_match_participants(
+    tournament_data: dict,
+    court_id: str,
+    current_match_id: str = "",
+    current_first_participant: list = None,
+    current_second_participant: list = None,
+) -> dict:
     """
     Возвращает участников ближайшего запланированного (незавершённого) матча на корте.
     Ищет матч в court_usage по court_id, сортирует незавершённые по дате и берёт первый.
@@ -99,10 +105,25 @@ def _get_next_match_participants(tournament_data: dict, court_id: str, current_m
     court_id_int = int(court_id) if str(court_id).isdigit() else 0
     court_matches = [m for m in court_usage if m.get("CourtId") == court_id_int]
 
+    def participant_key(players: list) -> tuple:
+        names = []
+        for player in players or []:
+            full_name = (player.get("fullName") or "").strip()
+            if not full_name:
+                full_name = f"{player.get('firstName', '')} {player.get('lastName', '')}".strip()
+            if full_name:
+                names.append(" ".join(full_name.lower().split()))
+        return tuple(sorted(names))
+
+    current_first_key = participant_key(current_first_participant or [])
+    current_second_key = participant_key(current_second_participant or [])
+
     pending = []
     for match in court_matches:
         if match.get("ChallengerResult") or match.get("ChallengedResult"):
             continue
+
+        is_current_match = False
 
         if current_match_id:
             match_ids = {
@@ -111,8 +132,38 @@ def _get_next_match_participants(tournament_data: dict, court_id: str, current_m
                 str(match.get("ChallengeId", "")),
                 str(match.get("Id", "")),
             }
-            if str(current_match_id) in match_ids:
-                continue
+            is_current_match = str(current_match_id) in match_ids
+
+        # До первого live-события match_id может быть пустым или не совпадать
+        # с ID в court_usage. Тогда определяем текущий матч по участникам.
+        if not is_current_match and (current_first_key or current_second_key):
+            rich_match = matches_index.get(match.get("ChallengeId"), {})
+            challenger = rich_match.get("Challenger", {}) or {}
+            challenged = rich_match.get("Challenged", {}) or {}
+
+            match_first_key = participant_key([
+                {"fullName": challenger.get("Name", "")},
+                {"fullName": challenger.get("Player2Name", "")},
+            ])
+            match_second_key = participant_key([
+                {"fullName": challenged.get("Name", "")},
+                {"fullName": challenged.get("Player2Name", "")},
+            ])
+
+            same_order = (
+                current_first_key == match_first_key
+                and current_second_key == match_second_key
+                and (current_first_key or current_second_key)
+            )
+            swapped_order = (
+                current_first_key == match_second_key
+                and current_second_key == match_first_key
+                and (current_first_key or current_second_key)
+            )
+            is_current_match = same_order or swapped_order
+
+        if is_current_match:
+            continue
 
         date_str = match.get("MatchDate", "")
         try:
@@ -823,6 +874,8 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                     tournament_data,
                     court_id,
                     court_data.get("match_id", ""),
+                    court_data.get("first_participant", []),
+                    court_data.get("second_participant", []),
                 )
                 court_data.update(next_data)
 
