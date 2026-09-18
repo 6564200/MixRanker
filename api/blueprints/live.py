@@ -82,7 +82,7 @@ def _find_current_match_info(tournament_data: dict, court_id: str, logger) -> di
     return {}
 
 
-def _get_next_match_participants(tournament_data: dict, court_id: str) -> dict:
+def _get_next_match_participants(tournament_data: dict, court_id: str, current_match_id: str = "") -> dict:
     """
     Возвращает участников ближайшего запланированного (незавершённого) матча на корте.
     Ищет матч в court_usage по court_id, сортирует незавершённые по дате и берёт первый.
@@ -103,6 +103,17 @@ def _get_next_match_participants(tournament_data: dict, court_id: str) -> dict:
     for match in court_matches:
         if match.get("ChallengerResult") or match.get("ChallengedResult"):
             continue
+
+        if current_match_id:
+            match_ids = {
+                str(match.get("TournamentMatchId", "")),
+                str(match.get("MatchId", "")),
+                str(match.get("ChallengeId", "")),
+                str(match.get("Id", "")),
+            }
+            if str(current_match_id) in match_ids:
+                continue
+
         date_str = match.get("MatchDate", "")
         try:
             pending.append((datetime.fromisoformat(date_str.replace('Z', '')), match))
@@ -808,7 +819,11 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                     continue
 
                 # Добавляем данные следующего матча
-                next_data = _get_next_match_participants(tournament_data, court_id)
+                next_data = _get_next_match_participants(
+                    tournament_data,
+                    court_id,
+                    court_data.get("match_id", ""),
+                )
                 court_data.update(next_data)
 
                 # Переводим технические значения draw-типа в читаемые названия
