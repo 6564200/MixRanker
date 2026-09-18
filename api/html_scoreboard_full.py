@@ -52,6 +52,11 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
         # Формируем HTML для игроков
         team1_html = self._render_team_block(team1_players, "team1")
         team2_html = self._render_team_block(team2_players, "team2")
+
+        country_visibility_css = "" if court_data.get("_show_country_flags", True) else """
+    <style>
+        .player-flag { opacity: 0 !important; }
+    </style>"""
         
         # Проверяем наличие матча
         has_match = match["show_current_match"]
@@ -103,6 +108,7 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scoreboard Full - {tournament_name}</title>
     <link rel="stylesheet" href="/static/css/scoreboard_full.css">
+{country_visibility_css}
 </head>
 <body>
     <div class="scoreboard-full-container" data-tournament-id="{tournament_id}" data-court-id="{court_id}">
