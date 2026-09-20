@@ -61,6 +61,8 @@ class RankedinLiveClient:
     
     def _on_message(self, ws, message: str):
         """Обработка входящих сообщений SignalR"""
+        frame_received_perf = time.perf_counter()
+        frame_received_at = datetime.now().isoformat(timespec="milliseconds")
         frames = message.split(PROTOCOL_SEPARATOR)
         
         for frame in frames:
@@ -93,17 +95,21 @@ class RankedinLiveClient:
                     else:
                         incoming_court_id = "no_args"
                     
-                    logger.info(f"Court {self.court_id}: received {target}, incoming_courtId={incoming_court_id}, my_courtId={self.court_id}, match={incoming_court_id == self.court_id}")
+                    logger.info(
+                        f"WS TRACE court={self.court_id} stage=received target={target} "
+                        f"incoming_court={incoming_court_id} match={incoming_court_id == self.court_id} "
+                        f"received_at={frame_received_at}"
+                    )
                 
                 if target == "ReceiveMatchUpdate" and args:
                     # args[0] — это список обновлений
                     updates = args[0] if isinstance(args[0], list) else [args[0]]
-                    self._handle_match_update(updates)
+                    self._handle_match_update(updates, frame_received_perf, frame_received_at)
 
                 elif target == "ReceiveMatchAction" and args:
                     # args[0] — это список действий
                     actions = args[0] if isinstance(args[0], list) else [args[0]]
-                    self._handle_match_action(actions)
+                    self._handle_match_action(actions, frame_received_perf, frame_received_at)
             
             # type=6 — ping (keepalive)
             elif msg_type == 6:
@@ -112,7 +118,12 @@ class RankedinLiveClient:
                 except Exception:
                     pass
     
-    def _handle_match_update(self, updates: List[Dict]):
+    def _handle_match_update(
+        self,
+        updates: List[Dict],
+        received_perf: float = None,
+        received_at: str = ""
+    ):
         """Обработка обновления счёта (ReceiveMatchUpdate)"""
         for update in updates:
             if not isinstance(update, dict):
@@ -128,14 +139,38 @@ class RankedinLiveClient:
             
             logger.info(f"Court {self.court_id}: match update - score={update.get('score', {}).get('firstParticipantScore')}-{update.get('score', {}).get('secondParticipantScore')}, tiebreak={update.get('isTieBreak')}")
             
+            transform_started = time.perf_counter()
             court_data = self._transform_update(update)
-            
-            logger.info(f"Court {self.court_id}: transformed data court_id={court_data.get('court_id')}")
-            
+            transform_ms = (time.perf_counter() - transform_started) * 1000
+
+            court_data["_ws_received_perf"] = received_perf or transform_started
+            court_data["_ws_received_at"] = received_at or datetime.now().isoformat(timespec="milliseconds")
+            court_data["_ws_target"] = "ReceiveMatchUpdate"
+
+            total_before_callback_ms = (
+                (time.perf_counter() - court_data["_ws_received_perf"]) * 1000
+            )
+            logger.info(
+                f"WS TRACE court={self.court_id} stage=transformed target=ReceiveMatchUpdate "
+                f"transform_ms={transform_ms:.1f} total_ms={total_before_callback_ms:.1f}"
+            )
+
             if self.on_update:
+                callback_started = time.perf_counter()
                 self.on_update(court_data)
+                callback_ms = (time.perf_counter() - callback_started) * 1000
+                total_ms = (time.perf_counter() - court_data["_ws_received_perf"]) * 1000
+                logger.info(
+                    f"WS TRACE court={self.court_id} stage=callback_done target=ReceiveMatchUpdate "
+                    f"callback_ms={callback_ms:.1f} total_ms={total_ms:.1f}"
+                )
     
-    def _handle_match_action(self, actions: List[Dict]):
+    def _handle_match_action(
+        self,
+        actions: List[Dict],
+        received_perf: float = None,
+        received_at: str = ""
+    ):
         """Обработка действий в матче (ReceiveMatchAction) - содержит полные данные"""
         for action in actions:
             if not isinstance(action, dict):
@@ -151,9 +186,31 @@ class RankedinLiveClient:
             # courtModel содержит полные данные о матче
             court_model = action.get("courtModel")
             if court_model:
+                transform_started = time.perf_counter()
                 court_data = self._transform_action(action, court_model)
+                transform_ms = (time.perf_counter() - transform_started) * 1000
+
+                court_data["_ws_received_perf"] = received_perf or transform_started
+                court_data["_ws_received_at"] = received_at or datetime.now().isoformat(timespec="milliseconds")
+                court_data["_ws_target"] = "ReceiveMatchAction"
+
+                total_before_callback_ms = (
+                    (time.perf_counter() - court_data["_ws_received_perf"]) * 1000
+                )
+                logger.info(
+                    f"WS TRACE court={self.court_id} stage=transformed target=ReceiveMatchAction "
+                    f"transform_ms={transform_ms:.1f} total_ms={total_before_callback_ms:.1f}"
+                )
+
                 if self.on_update:
+                    callback_started = time.perf_counter()
                     self.on_update(court_data)
+                    callback_ms = (time.perf_counter() - callback_started) * 1000
+                    total_ms = (time.perf_counter() - court_data["_ws_received_perf"]) * 1000
+                    logger.info(
+                        f"WS TRACE court={self.court_id} stage=callback_done target=ReceiveMatchAction "
+                        f"callback_ms={callback_ms:.1f} total_ms={total_ms:.1f}"
+                    )
     
     def _transform_update(self, update: Dict) -> Dict:
         """Преобразование данных ReceiveMatchUpdate в формат БД"""
