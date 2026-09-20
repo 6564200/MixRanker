@@ -10,6 +10,7 @@ import time
 import threading
 import logging
 import socket
+import ssl
 from typing import Dict, Optional, Callable, List
 from datetime import datetime
 
@@ -387,10 +388,19 @@ class RankedinLiveClient:
                 raw_socket.settimeout(10)
                 try:
                     raw_socket.connect(sockaddr)
-                    prepared_socket = raw_socket
+
+                    ssl_context = ssl.create_default_context()
+                    tls_socket = ssl_context.wrap_socket(
+                        raw_socket,
+                        server_hostname=ws_host,
+                    )
+                    tls_socket.settimeout(10)
+                    prepared_socket = tls_socket
+
                     logger.info(
-                        f"Court {self.court_id}: IPv4 TCP connected "
-                        f"host={ws_host} ip={sockaddr[0]} port={sockaddr[1]}"
+                        f"Court {self.court_id}: IPv4 TLS connected "
+                        f"host={ws_host} ip={sockaddr[0]} port={sockaddr[1]} "
+                        f"tls={tls_socket.version()}"
                     )
                     break
                 except OSError as e:
