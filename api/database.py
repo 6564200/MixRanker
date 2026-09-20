@@ -522,6 +522,7 @@ def save_courts_data(tournament_id: str, courts_data: List[Dict]) -> int:
 
 
 def update_court_live_score(tournament_id: str, court_data: Dict) -> bool:
+    db_started = time.perf_counter()
     """Обновление данных корта из WebSocket.
     Счёт обновляется всегда (ReceiveMatchUpdate и ReceiveMatchAction).
     Участники обновляются только когда они есть в данных — это признак
@@ -595,9 +596,28 @@ def update_court_live_score(tournament_id: str, court_data: Dict) -> bool:
         return rows_affected > 0
 
     try:
-        return execute_with_retry(transaction)
+        result = execute_with_retry(transaction)
+        db_ms = (time.perf_counter() - db_started) * 1000
+        received_perf = court_data.get("_ws_received_perf")
+        total_ms = (
+            (time.perf_counter() - received_perf) * 1000
+            if isinstance(received_perf, (int, float))
+            else None
+        )
+        logger.info(
+            f"WS TRACE court={court_data.get('court_id')} stage=db_committed "
+            f"target={court_data.get('_ws_target', '')} db_ms={db_ms:.1f} "
+            f"total_ms={total_ms:.1f}" if total_ms is not None else
+            f"WS TRACE court={court_data.get('court_id')} stage=db_committed "
+            f"target={court_data.get('_ws_target', '')} db_ms={db_ms:.1f}"
+        )
+        return result
     except Exception as e:
-        logger.error(f"Ошибка обновления live-счёта корта {court_data.get('court_id')}: {e}")
+        db_ms = (time.perf_counter() - db_started) * 1000
+        logger.error(
+            f"WS TRACE court={court_data.get('court_id')} stage=db_error "
+            f"db_ms={db_ms:.1f} error={e}"
+        )
         return False
 
 
