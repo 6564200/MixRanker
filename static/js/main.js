@@ -39,18 +39,7 @@ function setupEventListeners() {
         mediaTab.addEventListener('shown.bs.tab', loadMediaImages);
     }
 
-    const authAltcha = document.getElementById('authAltcha');
-    if (authAltcha) {
-        authAltcha.addEventListener('verified', () => {
-            const submitBtn = document.getElementById('authSubmitBtn');
-            const status = document.getElementById('authAltchaStatus');
-            if (submitBtn) submitBtn.disabled = false;
-            if (status) status.textContent = 'Проверка пройдена';
-        });
-        authAltcha.addEventListener('expired', () => {
-            resetAuthAltcha();
-        });
-    }
+    initAuthAltcha();
 
     document.getElementById('authForm').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -149,30 +138,70 @@ function updateAuthUI(authenticated) {
     }
 }
 
-function resetAuthAltcha() {
+let authAltchaInitialized = false;
+
+async function initAuthAltcha() {
+    const widget = document.getElementById('authAltcha');
+    if (!widget) return;
+
+    const status = document.getElementById('authAltchaStatus');
+    const submitBtn = document.getElementById('authSubmitBtn');
+
+    try {
+        await customElements.whenDefined('altcha-widget');
+
+        if (!authAltchaInitialized) {
+            widget.addEventListener('verified', () => {
+                if (submitBtn) submitBtn.disabled = false;
+                if (status) status.textContent = 'Проверка пройдена';
+            });
+
+            widget.addEventListener('expired', () => {
+                resetAuthAltcha();
+            });
+
+            widget.addEventListener('statechange', (event) => {
+                const state = event.detail?.state || '';
+
+                if (state === 'verifying') {
+                    if (status) status.textContent = 'Проверка браузера...';
+                } else if (state === 'verified') {
+                    if (status) status.textContent = 'Проверка пройдена';
+                    if (submitBtn) submitBtn.disabled = false;
+                } else if (state === 'error') {
+                    const message = event.detail?.error?.message || event.detail?.error || 'Ошибка ALTCHA';
+                    console.error('ALTCHA state error:', event.detail);
+                    if (status) status.textContent = String(message);
+                    if (submitBtn) submitBtn.disabled = true;
+                }
+            });
+
+            authAltchaInitialized = true;
+        }
+    } catch (error) {
+        console.error('ALTCHA init error:', error);
+        if (status) status.textContent = 'Не удалось загрузить ALTCHA';
+        if (submitBtn) submitBtn.disabled = true;
+    }
+}
+
+async function resetAuthAltcha() {
     const widget = document.getElementById('authAltcha');
     const submitBtn = document.getElementById('authSubmitBtn');
     const status = document.getElementById('authAltchaStatus');
 
     if (submitBtn) submitBtn.disabled = true;
     if (status) status.textContent = 'Проверка браузера...';
-
     if (!widget) return;
 
-    const runVerification = () => {
-        try {
-            widget.reset();
-            widget.verify();
-        } catch (error) {
-            console.error('ALTCHA reset error:', error);
-            if (status) status.textContent = 'Ошибка проверки ALTCHA';
-        }
-    };
-
-    if (typeof widget.verify === 'function') {
-        runVerification();
-    } else {
-        widget.addEventListener('load', runVerification, { once: true });
+    try {
+        await customElements.whenDefined('altcha-widget');
+        await initAuthAltcha();
+        widget.reset();
+        widget.verify();
+    } catch (error) {
+        console.error('ALTCHA reset error:', error);
+        if (status) status.textContent = 'Ошибка проверки ALTCHA';
     }
 }
 
