@@ -160,7 +160,9 @@ sudo systemctl restart nginx
 ```bash
 sudo ufw allow OpenSSH
 sudo ufw allow 'Nginx Full'
+sudo ufw allow proto icmpv6
 sudo ufw enable
+sudo ufw reload
 sudo ufw status
 ```
 
