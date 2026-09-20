@@ -249,9 +249,11 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
     """
     bp = Blueprint("live_bp", __name__)
 
-    def _apply_country_flag_setting(court_data: dict) -> dict:
+    def _apply_display_settings(court_data: dict) -> dict:
         from api import get_settings
-        court_data["_show_country_flags"] = get_settings().get("showCountryFlags", True)
+        settings = get_settings()
+        court_data["_show_country_flags"] = settings.get("showCountryFlags", True)
+        court_data["_titles_english"] = settings.get("titlesEnglish", False)
         return court_data
 
     @bp.route('/api/html-live/<tournament_id>/<court_id>')
@@ -309,7 +311,7 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 court_data = _apply_no_referee_mode(court_data)
 
             court_data = enrich_court_data_with_photos(court_data)
-            court_data = _apply_country_flag_setting(court_data)
+            court_data = _apply_display_settings(court_data)
             html = html_generator.generate_scoreboard_full_html(court_data, tournament_data, tournament_id, court_id)
             return Response(html, mimetype='text/html; charset=utf-8')
         except Exception as e:
@@ -343,6 +345,7 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 court_data = _apply_no_referee_mode(court_data)
 
             court_data = enrich_court_data_with_photos(court_data)
+            court_data = _apply_display_settings(court_data)
 
             first_participant = court_data.get("first_participant", [])
             second_participant = court_data.get("second_participant", [])
@@ -371,6 +374,7 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 "is_serving_left": court_data.get("is_serving_left"),
                 "is_tiebreak": court_data.get("is_tiebreak", False),
                 "is_super_tiebreak": court_data.get("is_super_tiebreak", False),
+                "titles_english": court_data.get("_titles_english", False),
             })
         except Exception as e:
             logger.error(f"Ошибка получения данных корта: {e}")
@@ -394,7 +398,7 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 court_data = _apply_no_referee_mode(court_data)
 
             court_data = enrich_court_data_with_photos(court_data)
-            court_data = _apply_country_flag_setting(court_data)
+            court_data = _apply_display_settings(court_data)
             html = html_generator.generate_court_vs_html(
                 court_data, tournament_data, tournament_id, court_id
             )
@@ -488,7 +492,7 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 court_data = _apply_no_referee_mode(court_data)
 
             court_data = enrich_court_data_with_photos(court_data)
-            court_data = _apply_country_flag_setting(court_data)
+            court_data = _apply_display_settings(court_data)
             html = html_generator.generate_match_introduction_html(court_data, match_info)
             return Response(html, mimetype='text/html; charset=utf-8')
         except Exception as e:
@@ -536,7 +540,7 @@ def create_live_blueprint(api_client, html_generator, live_manager, logger):
                 return "<html><body><h1>Не найдено</h1></body></html>", 404
 
             court_data = enrich_court_data_with_photos(court_data)
-            court_data = _apply_country_flag_setting(court_data)
+            court_data = _apply_display_settings(court_data)
 
             all_ids = [
                 p.get("id")
