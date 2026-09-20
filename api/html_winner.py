@@ -27,6 +27,9 @@ class WinnerGenerator(HTMLBaseGenerator):
         court_name = court_data.get("court_name", "Court")
         event_state = court_data.get("event_state", "")
         class_name = court_data.get("class_name", "")
+        titles_english = court_data.get("_titles_english", False)
+        winner_label = "WINNER" if titles_english else "ПОБЕДИТЕЛЬ"
+        opponents_label = "OPPONENTS" if titles_english else "СОПЕРНИКИ"
 
         first_participant = court_data.get("first_participant", [])
         second_participant = court_data.get("second_participant", [])
@@ -99,11 +102,11 @@ class WinnerGenerator(HTMLBaseGenerator):
     <div class="winner" data-tournament-id="{tournament_id or ''}" data-court-id="{court_id or ''}">
         <div class="winner_container">
             <div class="class_name" data-field="class_name">{class_name}</div>
-            <div class="txt_winner">ПОБЕДИТЕЛЬ</div>
+            <div class="txt_winner">{winner_label}</div>
             <div class="winners_table">{''.join(winners_table)}</div>
             <div class="image_container">{''.join(winners_images)}</div>
             <div class="info_block">
-                <span>СОПЕРНИКИ</span>
+                <span>{opponents_label}</span>
                 <span class="loser" data-field="loser_name">{losers_name}</span>
                 <div class="score">{scores_html}</div>
             </div>
