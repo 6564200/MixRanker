@@ -112,27 +112,56 @@ sudo systemctl status mixranker
 ```bash
 sudo nano /etc/nginx/sites-available/mixranker
 ```
-
+Генерация сертификата на сервере:
+```bash
+sudo mkdir -p /etc/nginx/ssl
+sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+  -keyout /etc/nginx/ssl/mixranker.key \
+  -out /etc/nginx/ssl/mixranker.crt \
+  -subj "/CN=mixranker.ru" \
+  -addext "subjectAltName=DNS:mixranker.ru,DNS:www.mixranker.ru"
+```
 Конфигурация:
 ```nginx
 server {
+    # Говорим Nginx слушать оба порта
     listen 80;
-    server_name _ ;
+    listen 443 ssl;
+    
+    server_name mixranker.ru www.mixranker.ru;
+
+    # Пути к вашему самоподписанному сертификату (будут работать только при заходе через 443 порт)
+    ssl_certificate /etc/nginx/ssl/mixranker.crt;
+    ssl_certificate_key /etc/nginx/ssl/mixranker.key;
+
+    # Настройки безопасности SSL
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    # Проксирование на ваше приложение (работает для обоих портов)
     location / {
         include proxy_params;
         proxy_pass http://unix:/var/www/MixRanker/mixranker.sock;
     }
+
+    # Статика (работает для обоих портов)
     location /static/ {
         alias /var/www/MixRanker/static/;
     }
 }
 ```
-
+Скачивание сертификата
+```bash
+cat /etc/nginx/ssl/mixranker.crt
+```
+Скопируйте весь текст. Создайте у себя на компьютере текстовый файл, вставьте туда текст и сохраните как mixranker.crt
+Установить сертификат -> Текущий пользователь -> Доверенные корневые центры сертификации
 Активация конфигурации и перезапуск:
 ```bash
 sudo ln -s /etc/nginx/sites-available/mixranker /etc/nginx/sites-enabled/
 sudo rm /etc/nginx/sites-enabled/default
 sudo nginx -t
+sudo systemctl reload nginx
 sudo systemctl restart nginx
 ```
 
