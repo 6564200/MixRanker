@@ -9,6 +9,8 @@ let refreshInterval = 30000; // 30 секунд
 let isAuthenticated = false;
 let currentUsername = '';
 let pendingAuthAction = null;
+let authFailedAttempts = 0;
+const AUTH_MAX_FAILED_ATTEMPTS = 3;
 let mediaImages = [];
 
 // Опции popup-окна 4K (используется во всех окнах трансляции)
@@ -37,15 +39,35 @@ function setupEventListeners() {
         mediaTab.addEventListener('shown.bs.tab', loadMediaImages);
     }
 
+    const authAltcha = document.getElementById('authAltcha');
+    if (authAltcha) {
+        authAltcha.addEventListener('verified', () => {
+            const submitBtn = document.getElementById('authSubmitBtn');
+            const status = document.getElementById('authAltchaStatus');
+            if (submitBtn) submitBtn.disabled = false;
+            if (status) status.textContent = 'Проверка пройдена';
+        });
+        authAltcha.addEventListener('expired', () => {
+            resetAuthAltcha();
+        });
+    }
+
     document.getElementById('authForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         const username = document.getElementById('authUsername').value.trim();
         const password = document.getElementById('authPassword').value.trim();
+        const altchaPayload = new FormData(this).get('altcha') || '';
+
         if (!username || !password) {
             showAlert('Введите имя пользователя и пароль', 'warning');
             return;
         }
-        await performLogin(username, password);
+        if (!altchaPayload) {
+            showAlert('Дождитесь завершения проверки ALTCHA', 'warning');
+            resetAuthAltcha();
+            return;
+        }
+        await performLogin(username, password, altchaPayload);
     });
 
     const changePasswordForm = document.getElementById('changePasswordForm');
@@ -127,23 +149,58 @@ function updateAuthUI(authenticated) {
     }
 }
 
+function resetAuthAltcha() {
+    const widget = document.getElementById('authAltcha');
+    const submitBtn = document.getElementById('authSubmitBtn');
+    const status = document.getElementById('authAltchaStatus');
+
+    if (submitBtn) submitBtn.disabled = true;
+    if (status) status.textContent = 'Проверка браузера...';
+
+    if (!widget) return;
+
+    const runVerification = () => {
+        try {
+            widget.reset();
+            widget.verify();
+        } catch (error) {
+            console.error('ALTCHA reset error:', error);
+            if (status) status.textContent = 'Ошибка проверки ALTCHA';
+        }
+    };
+
+    if (typeof widget.verify === 'function') {
+        runVerification();
+    } else {
+        widget.addEventListener('load', runVerification, { once: true });
+    }
+}
+
 function showAuthModal(callback) {
     pendingAuthAction = callback;
+    authFailedAttempts = 0;
     document.getElementById('authOverlay').style.display = 'flex';
+    resetAuthAltcha();
 }
 
 function closeAuthModal() {
     document.getElementById('authOverlay').style.display = 'none';
     document.getElementById('authForm').reset();
+    authFailedAttempts = 0;
     pendingAuthAction = null;
+
+    const widget = document.getElementById('authAltcha');
+    if (widget && typeof widget.reset === 'function') {
+        widget.reset();
+    }
 }
 
-async function performLogin(username, password) {
+async function performLogin(username, password, altchaPayload) {
     try {
         const response = await fetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, password, altcha: altchaPayload })
         });
         const data = await response.json();
 
@@ -151,15 +208,28 @@ async function performLogin(username, password) {
             isAuthenticated = true;
             currentUsername = data.username;
             updateAuthUI(true);
+            const action = pendingAuthAction;
             closeAuthModal();
             showAlert('Успешная авторизация!', 'success');
-            if (pendingAuthAction) {
-                pendingAuthAction();
-                pendingAuthAction = null;
-            }
+            if (action) action();
             return true;
         } else {
-            showAlert(data.error || 'Ошибка авторизации', 'danger');
+            if (response.status === 401 && data.code === 'INVALID_CREDENTIALS') {
+                authFailedAttempts += 1;
+                const remaining = AUTH_MAX_FAILED_ATTEMPTS - authFailedAttempts;
+
+                if (authFailedAttempts >= AUTH_MAX_FAILED_ATTEMPTS) {
+                    showAlert('Три неудачные попытки входа. Окно авторизации закрыто.', 'danger');
+                    closeAuthModal();
+                    return false;
+                }
+
+                showAlert(`${data.error || 'Ошибка авторизации'}. Осталось попыток: ${remaining}`, 'danger');
+            } else {
+                showAlert(data.error || 'Ошибка авторизации', 'danger');
+            }
+
+            resetAuthAltcha();
             return false;
         }
     } catch (error) {
