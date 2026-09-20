@@ -1352,6 +1352,7 @@ function applySettings(settings) {
     if (el('debugMode'))              el('debugMode').checked             = settings.debugMode || false;
     if (el('themeSelect'))            el('themeSelect').value             = settings.theme || 'light';
     if (el('showCountryFlags'))        el('showCountryFlags').checked       = settings.showCountryFlags !== false;
+    if (el('titlesEnglish'))           el('titlesEnglish').checked          = settings.titlesEnglish === true;
     if (el('finishedMatchesCount'))   el('finishedMatchesCount').value   = settings.finishedMatchesCount || 3;
     if (el('refreshInterval'))        el('refreshInterval').textContent  = settings.refreshInterval || 30;
 }
@@ -1383,6 +1384,7 @@ async function saveSettingsWithAuth() {
         debugMode: document.getElementById('debugMode').checked,
         theme: document.getElementById('themeSelect').value,
         showCountryFlags: document.getElementById('showCountryFlags').checked,
+        titlesEnglish: document.getElementById('titlesEnglish').checked,
         finishedMatchesCount: parseInt(document.getElementById('finishedMatchesCount').value) || 3,
         lastSaved: new Date().toISOString()
     };
