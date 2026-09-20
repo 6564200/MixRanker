@@ -194,14 +194,64 @@ async function resetAuthAltcha() {
     if (status) status.textContent = 'Проверка браузера...';
     if (!widget) return;
 
+    if (!window.isSecureContext || !window.crypto || !window.crypto.subtle) {
+        const message = 'ALTCHA требует HTTPS (Web Crypto недоступен)';
+        console.error(message, {
+            isSecureContext: window.isSecureContext,
+            hasCrypto: !!window.crypto,
+            hasSubtleCrypto: !!window.crypto?.subtle,
+            protocol: window.location.protocol,
+            host: window.location.host,
+        });
+        if (status) status.textContent = message;
+        return;
+    }
+
     try {
+        const challengeResponse = await fetch('/api/auth/altcha/challenge', {
+            cache: 'no-store',
+            credentials: 'same-origin',
+        });
+
+        let challengeData = null;
+        try {
+            challengeData = await challengeResponse.json();
+        } catch (parseError) {
+            throw new Error('Challenge endpoint вернул не JSON');
+        }
+
+        if (!challengeResponse.ok) {
+            throw new Error(
+                challengeData?.error ||
+                'Challenge endpoint: HTTP ' + challengeResponse.status
+            );
+        }
+
+        if (
+            !challengeData?.parameters?.algorithm ||
+            !challengeData?.parameters?.salt ||
+            !challengeData?.parameters?.nonce ||
+            !challengeData?.signature
+        ) {
+            console.error('ALTCHA invalid challenge:', challengeData);
+            throw new Error('Неверный формат ALTCHA challenge');
+        }
+
+        console.debug('ALTCHA challenge OK:', {
+            algorithm: challengeData.parameters.algorithm,
+            cost: challengeData.parameters.cost,
+            expiresAt: challengeData.parameters.expiresAt,
+        });
+
         await customElements.whenDefined('altcha-widget');
         await initAuthAltcha();
         widget.reset();
         widget.verify();
     } catch (error) {
         console.error('ALTCHA reset error:', error);
-        if (status) status.textContent = 'Ошибка проверки ALTCHA';
+        if (status) {
+            status.textContent = 'ALTCHA: ' + (error?.message || 'ошибка проверки');
+        }
     }
 }
 
