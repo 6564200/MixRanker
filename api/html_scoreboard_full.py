@@ -45,7 +45,10 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
         show_game_score = not is_finished and (team1_game_score != 0 or team2_game_score != 0)
         
         # Формируем HTML для сетов
-        sets_header_html = self._render_sets_header(detailed_result)
+        titles_english = court_data.get("_titles_english", False)
+        set_label = "SET" if titles_english else "СЕТ"
+        score_label = "SCORE" if titles_english else "СЧЕТ"
+        sets_header_html = self._render_sets_header(detailed_result, set_label)
         team1_sets_html = self._render_team_sets(detailed_result, "first")
         team2_sets_html = self._render_team_sets(detailed_result, "second")
         
@@ -130,7 +133,7 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
             <div class="table-header">
               <div class="table-header-block">
                 {sets_header_html}
-                <div class="header-cell total">СЧЕТ</div>
+                <div class="header-cell total">{score_label}</div>
               </div>
             </div>
             
@@ -206,12 +209,12 @@ class ScoreboardFullGenerator(HTMLBaseGenerator):
         metadata = tournament_data.get("metadata", {})
         return metadata.get("name", "ТУРНИР")
 
-    def _render_sets_header(self, detailed_result: List) -> str:
+    def _render_sets_header(self, detailed_result: List, set_label: str = "СЕТ") -> str:
         """Рендерит заголовки сетов - только для сыгранных"""
         num_sets = len(detailed_result) if detailed_result else 0
         html = ""
         for i in range(num_sets):
-            html += f'<div class="header-cell">СЕТ {i + 1}</div>'
+            html += f'<div class="header-cell">{set_label} {i + 1}</div>'
         return html
 
     def _render_team_sets(self, detailed_result: List, team: str) -> str:
