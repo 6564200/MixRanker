@@ -106,7 +106,7 @@ class RankedinAPI(BaseAPI):
                     "is_super_tiebreak": False,
                     "current_match_state": "finished"
                 })
-            result.update(self._empty_next())
+            result.update(self._extract_next(nxt) if nxt else self._empty_next())
         else:
             result.update(self._empty_current())
             result.update(self._empty_next())
