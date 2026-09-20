@@ -124,27 +124,17 @@ sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
 Конфигурация:
 ```nginx
 server {
-    # Говорим Nginx слушать оба порта
     listen 80;
     listen 443 ssl;
-    
     server_name mixranker.ru www.mixranker.ru;
-
-    # Пути к вашему самоподписанному сертификату (будут работать только при заходе через 443 порт)
     ssl_certificate /etc/nginx/ssl/mixranker.crt;
     ssl_certificate_key /etc/nginx/ssl/mixranker.key;
-
-    # Настройки безопасности SSL
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
-
-    # Проксирование на ваше приложение (работает для обоих портов)
     location / {
         include proxy_params;
         proxy_pass http://unix:/var/www/MixRanker/mixranker.sock;
     }
-
-    # Статика (работает для обоих портов)
     location /static/ {
         alias /var/www/MixRanker/static/;
     }
