@@ -120,7 +120,8 @@ html, body {
 }
 
 .court-card.state-finished {
-    border-color: rgba(99, 102, 241, 0.5);
+    border-color: rgba(99, 102, 241, 0.35);
+    filter: brightness(0.58) saturate(0.72);
     animation: finishedPulse 1.8s ease-in-out 3;
 }
 
