@@ -37,8 +37,8 @@ class RankedinLiveClient:
         self.ws: Optional[websocket.WebSocketApp] = None
         self.ws_thread: Optional[threading.Thread] = None
         self.is_running = False
-        self.reconnect_delay = 5
-        self.max_reconnect_delay = 60
+        self.reconnect_delay = 3
+        self.max_reconnect_delay = 10
         self._stop_event = threading.Event()
         
     def _negotiate(self) -> Optional[Dict]:
@@ -323,7 +323,7 @@ class RankedinLiveClient:
         ws.send(json.dumps(join_msg) + PROTOCOL_SEPARATOR)
         logger.info(f"Court {self.court_id}: joined room")
         
-        self.reconnect_delay = 5
+        self.reconnect_delay = 3
     
     def _on_error(self, ws, error):
         """Обработка ошибки"""
@@ -354,6 +354,17 @@ class RankedinLiveClient:
         ws_url = nego["url"].replace("https://", "wss://")
         access_token = nego["accessToken"]
         ws_full_url = f"{ws_url}&access_token={access_token}"
+
+        try:
+            from urllib.parse import urlparse
+            ws_host = urlparse(ws_url).hostname or "unknown"
+        except Exception:
+            ws_host = "unknown"
+
+        logger.info(
+            f"Court {self.court_id}: connecting WebSocket host={ws_host} "
+            f"retry_delay={self.reconnect_delay}s"
+        )
         
         self.ws = websocket.WebSocketApp(
             ws_full_url,
