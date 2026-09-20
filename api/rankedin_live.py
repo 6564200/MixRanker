@@ -9,6 +9,7 @@ import json
 import time
 import threading
 import logging
+import socket
 from typing import Dict, Optional, Callable, List
 from datetime import datetime
 
@@ -357,22 +358,70 @@ class RankedinLiveClient:
 
         try:
             from urllib.parse import urlparse
-            ws_host = urlparse(ws_url).hostname or "unknown"
+            parsed_ws_url = urlparse(ws_url)
+            ws_host = parsed_ws_url.hostname or "unknown"
+            ws_port = parsed_ws_url.port or 443
         except Exception:
             ws_host = "unknown"
+            ws_port = 443
 
         logger.info(
             f"Court {self.court_id}: connecting WebSocket host={ws_host} "
-            f"retry_delay={self.reconnect_delay}s"
+            f"retry_delay={self.reconnect_delay}s transport=IPv4"
         )
-        
+
+        prepared_socket = None
+        try:
+            ipv4_addresses = socket.getaddrinfo(
+                ws_host,
+                ws_port,
+                family=socket.AF_INET,
+                type=socket.SOCK_STREAM,
+            )
+            if not ipv4_addresses:
+                raise OSError(f"No IPv4 addresses resolved for {ws_host}")
+
+            last_error = None
+            for family, socktype, proto, _canonname, sockaddr in ipv4_addresses:
+                raw_socket = socket.socket(family, socktype, proto)
+                raw_socket.settimeout(10)
+                try:
+                    raw_socket.connect(sockaddr)
+                    prepared_socket = raw_socket
+                    logger.info(
+                        f"Court {self.court_id}: IPv4 TCP connected "
+                        f"host={ws_host} ip={sockaddr[0]} port={sockaddr[1]}"
+                    )
+                    break
+                except OSError as e:
+                    last_error = e
+                    raw_socket.close()
+
+            if prepared_socket is None:
+                raise last_error or OSError(f"Unable to connect to {ws_host} over IPv4")
+
+        except Exception as e:
+            logger.error(
+                f"Court {self.court_id}: IPv4 WebSocket TCP connect failed "
+                f"host={ws_host}: {e}"
+            )
+            if self.is_running and not self._stop_event.is_set():
+                time.sleep(self.reconnect_delay)
+                self.reconnect_delay = min(
+                    self.reconnect_delay * 2,
+                    self.max_reconnect_delay
+                )
+                self._connect()
+            return
+
         self.ws = websocket.WebSocketApp(
             ws_full_url,
             header={"Origin": BASE_URL},
             on_open=self._on_open,
             on_message=self._on_message,
             on_error=self._on_error,
-            on_close=self._on_close
+            on_close=self._on_close,
+            socket=prepared_socket,
         )
         
         self.ws.run_forever(ping_interval=None)
