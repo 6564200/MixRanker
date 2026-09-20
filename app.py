@@ -86,9 +86,29 @@ def _start_background_services(app: Flask):
     logger.info('AutoRefresh service started')
 
     def on_live_update(tournament_id: str, court_data: Dict):
+        callback_started = time.perf_counter()
         try:
+            received_perf = court_data.get("_ws_received_perf")
+            queue_ms = (
+                (callback_started - received_perf) * 1000
+                if isinstance(received_perf, (int, float))
+                else None
+            )
+            logger.info(
+                f"WS TRACE court={court_data.get('court_id')} stage=app_callback "
+                f"target={court_data.get('_ws_target', '')} "
+                f"queue_ms={queue_ms:.1f}" if queue_ms is not None else
+                f"WS TRACE court={court_data.get('court_id')} stage=app_callback "
+                f"target={court_data.get('_ws_target', '')}"
+            )
+
             update_court_live_score(tournament_id, court_data)
-            logger.debug(f"Live update: court {court_data.get('court_id')}")
+
+            callback_ms = (time.perf_counter() - callback_started) * 1000
+            logger.info(
+                f"WS TRACE court={court_data.get('court_id')} stage=app_callback_done "
+                f"callback_ms={callback_ms:.1f}"
+            )
         except Exception as e:
             logger.error(f'Live update error: {e}')
 
