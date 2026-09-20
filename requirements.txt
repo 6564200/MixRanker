@@ -20,7 +20,7 @@ requests==2.33.1
 schedule==1.2.2
 six==1.17.0
 urllib3==2.7.0
-websocket==0.2.1
+websocket-client==1.9.2
 Werkzeug==3.1.8
 zope.event==6.2
 zope.interface==8.4
