@@ -8,6 +8,7 @@
     <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/vendor/fontawesome/css/all.min.css" rel="stylesheet">
     <link href="/static/css/main.css" rel="stylesheet">
+    <script async defer src="https://cdn.jsdelivr.net/gh/altcha-org/altcha@v3.2.1/dist/altcha.min.js" type="module"></script>
 	<link rel="shortcut icon" href="/static/favicon.ico">
 
 </head>
@@ -492,7 +493,17 @@
                     <label class="form-label">Пароль</label>
                     <input type="password" class="form-control" id="authPassword" required>
                 </div>
-                <button type="submit" class="btn btn-primary w-100 mb-2">
+                <div class="mb-3">
+                    <altcha-widget
+                        id="authAltcha"
+                        challenge="/api/auth/altcha/challenge"
+                        name="altcha"
+                        auto="off"
+                        display="invisible">
+                    </altcha-widget>
+                    <div class="form-text" id="authAltchaStatus">Проверка браузера...</div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 mb-2" id="authSubmitBtn" disabled>
                     <i class="fas fa-sign-in-alt me-2"></i>Войти
                 </button>
                 <button type="button" class="btn btn-outline-secondary w-100" onclick="closeAuthModal()">
