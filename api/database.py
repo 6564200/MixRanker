@@ -656,6 +656,7 @@ def get_settings() -> Dict:
         "debugMode": False,
         "theme": "light",
         "showCountryFlags": True,
+        "titlesEnglish": False,
         "finishedMatchesCount": 3
     }
 
