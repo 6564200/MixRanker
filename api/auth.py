@@ -2,15 +2,56 @@
 # -*- coding: utf-8 -*-
 """Модуль аутентификации"""
 
+import hashlib
+import hmac
 import logging
+import os
+import sqlite3
 from functools import wraps
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from flask import session, jsonify, request
 from werkzeug.security import check_password_hash, generate_password_hash
+from altcha import create_challenge, verify_solution
 
 from .database import get_db_connection
 
 logger = logging.getLogger(__name__)
+
+
+def _get_altcha_secret(app) -> str:
+    """Return a dedicated ALTCHA HMAC secret, derived safely when no override is set."""
+    explicit = os.environ.get("ALTCHA_HMAC_SECRET")
+    if explicit:
+        return explicit
+
+    app_secret = app.secret_key
+    if not app_secret:
+        raise RuntimeError("Flask SECRET_KEY is required for ALTCHA")
+
+    key = app_secret if isinstance(app_secret, bytes) else str(app_secret).encode("utf-8")
+    return hmac.new(key, b"MixRanker ALTCHA login v1", hashlib.sha256).hexdigest()
+
+
+def _consume_altcha_payload(payload: str) -> bool:
+    """Make a successfully verified ALTCHA payload single-use across all workers."""
+    payload_hash = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM altcha_used_payloads WHERE used_at < datetime('now', '-1 hour')"
+        )
+        cursor.execute(
+            "INSERT INTO altcha_used_payloads (payload_hash) VALUES (?)",
+            (payload_hash,)
+        )
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        conn.rollback()
+        return False
+    finally:
+        conn.close()
 
 
 def require_auth(f):
@@ -73,6 +114,24 @@ def check_user_credentials(username: str, password: str) -> bool:
 def register_auth_routes(app):
     """Регистрация роутов аутентификации"""
 
+    @app.route('/api/auth/altcha/challenge', methods=['GET'])
+    def altcha_challenge():
+        """Generate a short-lived ALTCHA proof-of-work challenge for login."""
+        try:
+            challenge = create_challenge(
+                algorithm="PBKDF2/SHA-256",
+                cost=5000,
+                expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+                data={"purpose": "login"},
+                hmac_secret=_get_altcha_secret(app),
+            )
+            response = jsonify(challenge.to_dict())
+            response.headers["Cache-Control"] = "no-store, max-age=0"
+            return response
+        except Exception as e:
+            logger.error(f"ALTCHA challenge error: {e}")
+            return jsonify({"error": "Не удалось создать проверку ALTCHA"}), 500
+
     @app.route('/api/auth/login', methods=['POST'])
     def login():
         """Авторизация пользователя"""
@@ -94,9 +153,37 @@ def register_auth_routes(app):
 
             username = data.get('username', '').strip()
             password = data.get('password', '').strip()
+            altcha_payload = data.get('altcha', '')
 
             if not username or not password:
                 return jsonify({'error': 'Введите имя пользователя и пароль'}), 400
+
+            if not altcha_payload:
+                return jsonify({
+                    'error': 'Требуется проверка ALTCHA',
+                    'code': 'ALTCHA_REQUIRED'
+                }), 400
+
+            try:
+                altcha_result = verify_solution(
+                    altcha_payload,
+                    _get_altcha_secret(app)
+                )
+            except Exception as e:
+                logger.warning(f"ALTCHA verification error: {e}")
+                altcha_result = None
+
+            if not altcha_result or not altcha_result.verified:
+                return jsonify({
+                    'error': 'Проверка ALTCHA не пройдена',
+                    'code': 'ALTCHA_INVALID'
+                }), 400
+
+            if not _consume_altcha_payload(altcha_payload):
+                return jsonify({
+                    'error': 'Проверка ALTCHA уже использована. Повторите проверку.',
+                    'code': 'ALTCHA_REPLAYED'
+                }), 400
 
             if check_user_credentials(username, password):
                 session['authenticated'] = True
@@ -112,7 +199,10 @@ def register_auth_routes(app):
                 })
             else:
                 logger.warning(f"Неудачная попытка авторизации: {username}")
-                return jsonify({'error': 'Неверные учетные данные'}), 401
+                return jsonify({
+                    'error': 'Неверные учетные данные',
+                    'code': 'INVALID_CREDENTIALS'
+                }), 401
 
         except Exception as e:
             logger.error(f"Ошибка авторизации: {e}")
