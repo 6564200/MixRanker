@@ -171,10 +171,21 @@
 
     function updateScoreboardFull(data) {
         updateTeamNamesFull(data);
+        updateScoreLabels(data);
         updateSetScores(data);
         updateGameScore(data);
         updateFlags(data);
         updateServeIndicator(data);
+    }
+
+    function updateScoreLabels(data) {
+        const english = data.titles_english === true;
+        const totalHeader = document.querySelector('.table-header-block .header-cell.total');
+        if (totalHeader) totalHeader.textContent = english ? 'SCORE' : 'СЧЕТ';
+
+        document.querySelectorAll('.table-header-block .header-cell:not(.total)').forEach((el, i) => {
+            el.textContent = `${english ? 'SET' : 'СЕТ'} ${i + 1}`;
+        });
     }
 
     function updateCellValue(selector, newValue) {
@@ -203,6 +214,7 @@
     }
 
     function updateSetScores(data) {
+        window.__scoreboardTitlesEnglish = data.titles_english === true;
         const sets = data.detailed_result || [];
         const tableHeader = document.querySelector('.table-header-block');
         const row1 = document.querySelector('.team-row[data-team="1"] .scores-block');
@@ -233,7 +245,7 @@
             const set = sets[i];
             const hCell = document.createElement('div');
             hCell.className = 'header-cell';
-            hCell.textContent = `СЕТ ${i + 1}`;
+            hCell.textContent = `${window.__scoreboardTitlesEnglish ? 'SET' : 'СЕТ'} ${i + 1}`;
             tableHeader.insertBefore(hCell, beforeH);
 
             const c1 = document.createElement('div');
