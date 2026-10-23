@@ -39,24 +39,16 @@ function setupEventListeners() {
         mediaTab.addEventListener('shown.bs.tab', loadMediaImages);
     }
 
-    initAuthAltcha();
-
     document.getElementById('authForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         const username = document.getElementById('authUsername').value.trim();
         const password = document.getElementById('authPassword').value.trim();
-        const altchaPayload = new FormData(this).get('altcha') || '';
 
         if (!username || !password) {
             showAlert('Введите имя пользователя и пароль', 'warning');
             return;
         }
-        if (!altchaPayload) {
-            showAlert('Дождитесь завершения проверки ALTCHA', 'warning');
-            resetAuthAltcha();
-            return;
-        }
-        await performLogin(username, password, altchaPayload);
+        await performLogin(username, password);
     });
 
     const changePasswordForm = document.getElementById('changePasswordForm');
@@ -138,128 +130,10 @@ function updateAuthUI(authenticated) {
     }
 }
 
-let authAltchaInitialized = false;
-
-async function initAuthAltcha() {
-    const widget = document.getElementById('authAltcha');
-    if (!widget) return;
-
-    const status = document.getElementById('authAltchaStatus');
-    const submitBtn = document.getElementById('authSubmitBtn');
-
-    try {
-        await customElements.whenDefined('altcha-widget');
-
-        if (!authAltchaInitialized) {
-            widget.addEventListener('verified', () => {
-                if (submitBtn) submitBtn.disabled = false;
-                if (status) status.textContent = 'Проверка пройдена';
-            });
-
-            widget.addEventListener('expired', () => {
-                resetAuthAltcha();
-            });
-
-            widget.addEventListener('statechange', (event) => {
-                const state = event.detail?.state || '';
-
-                if (state === 'verifying') {
-                    if (status) status.textContent = 'Проверка браузера...';
-                } else if (state === 'verified') {
-                    if (status) status.textContent = 'Проверка пройдена';
-                    if (submitBtn) submitBtn.disabled = false;
-                } else if (state === 'error') {
-                    const message = event.detail?.error?.message || event.detail?.error || 'Ошибка ALTCHA';
-                    console.error('ALTCHA state error:', event.detail);
-                    if (status) status.textContent = String(message);
-                    if (submitBtn) submitBtn.disabled = true;
-                }
-            });
-
-            authAltchaInitialized = true;
-        }
-    } catch (error) {
-        console.error('ALTCHA init error:', error);
-        if (status) status.textContent = 'Не удалось загрузить ALTCHA';
-        if (submitBtn) submitBtn.disabled = true;
-    }
-}
-
-async function resetAuthAltcha() {
-    const widget = document.getElementById('authAltcha');
-    const submitBtn = document.getElementById('authSubmitBtn');
-    const status = document.getElementById('authAltchaStatus');
-
-    if (submitBtn) submitBtn.disabled = true;
-    if (status) status.textContent = 'Проверка браузера...';
-    if (!widget) return;
-
-    if (!window.isSecureContext || !window.crypto || !window.crypto.subtle) {
-        const message = 'ALTCHA требует HTTPS (Web Crypto недоступен)';
-        console.error(message, {
-            isSecureContext: window.isSecureContext,
-            hasCrypto: !!window.crypto,
-            hasSubtleCrypto: !!window.crypto?.subtle,
-            protocol: window.location.protocol,
-            host: window.location.host,
-        });
-        if (status) status.textContent = message;
-        return;
-    }
-
-    try {
-        const challengeResponse = await fetch('/api/auth/altcha/challenge', {
-            cache: 'no-store',
-            credentials: 'same-origin',
-        });
-
-        let challengeData = null;
-        try {
-            challengeData = await challengeResponse.json();
-        } catch (parseError) {
-            throw new Error('Challenge endpoint вернул не JSON');
-        }
-
-        if (!challengeResponse.ok) {
-            throw new Error(
-                challengeData?.error ||
-                'Challenge endpoint: HTTP ' + challengeResponse.status
-            );
-        }
-
-        if (
-            !challengeData?.parameters?.algorithm ||
-            !challengeData?.parameters?.salt ||
-            !challengeData?.parameters?.nonce ||
-            !challengeData?.signature
-        ) {
-            console.error('ALTCHA invalid challenge:', challengeData);
-            throw new Error('Неверный формат ALTCHA challenge');
-        }
-
-        console.debug('ALTCHA challenge OK:', {
-            algorithm: challengeData.parameters.algorithm,
-            cost: challengeData.parameters.cost,
-            expiresAt: challengeData.parameters.expiresAt,
-        });
-
-        await customElements.whenDefined('altcha-widget');
-        await initAuthAltcha();
-        widget.reset();
-        widget.verify();
-    } catch (error) {
-        console.error('ALTCHA reset error:', error);
-        if (status) {
-            status.textContent = 'ALTCHA: ' + (error?.message || 'ошибка проверки');
-        }
-    }
-}
-
 function showAuthModal(callback) {
     pendingAuthAction = callback;
     authFailedAttempts = 0;
     document.getElementById('authOverlay').style.display = 'flex';
-    resetAuthAltcha();
 }
 
 function closeAuthModal() {
@@ -267,19 +141,14 @@ function closeAuthModal() {
     document.getElementById('authForm').reset();
     authFailedAttempts = 0;
     pendingAuthAction = null;
-
-    const widget = document.getElementById('authAltcha');
-    if (widget && typeof widget.reset === 'function') {
-        widget.reset();
-    }
 }
 
-async function performLogin(username, password, altchaPayload) {
+async function performLogin(username, password) {
     try {
         const response = await fetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, altcha: altchaPayload })
+            body: JSON.stringify({ username, password })
         });
         const data = await response.json();
 
@@ -308,7 +177,6 @@ async function performLogin(username, password, altchaPayload) {
                 showAlert(data.error || 'Ошибка авторизации', 'danger');
             }
 
-            resetAuthAltcha();
             return false;
         }
     } catch (error) {
