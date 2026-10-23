@@ -1,1 +1,110 @@
+/**
+ * broadcast_tokens.css — общие дизайн-токены для всех live/broadcast страниц.
+ * Подключается первым через @import во всех страницах трансляции.
+ */
 
+/* === ШРИФТЫ (брендбук: Onest — основной текст, TT Bluescreens Bold — заголовки) === */
+
+/* Onest Regular — основной текст */
+@font-face {
+    font-family: 'Onest';
+    src: url('../fonts/OnestRegular1602-hint.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
+
+/* Onest Bold — таблицы, расписание, имена (вес 700 сохранён для обратной совместимости) */
+@font-face {
+    font-family: 'Onest';
+    src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+/* Onest Medium — счёт матча, второстепенный текст */
+@font-face {
+    font-family: 'Onest Med';
+    src: url('../fonts/OnestMedium1602-hint.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+}
+
+/* Жирный Onest (алиас для явного указания bold) */
+@font-face {
+    font-family: 'Onest Bol';
+    src: url('/static/fonts/OnestBold1602-hint.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+/* Декоративный курсивный шрифт (заголовки, названия турниров) */
+@font-face {
+    font-family: 'Bluescreens';
+    src: url('../fonts/TT Bluescreens Trial Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+/* Алиас Bluescreens с префиксом TT_ (используется в ряде старых файлов) */
+@font-face {
+    font-family: 'TT_Bluescreens';
+    src: url('../fonts/TT Bluescreens Trial Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+:root {
+    /* Шрифтовые переменные */
+    --font-primary:    'Bluescreens', sans-serif;
+    --font-title:      'TT_Bluescreens', sans-serif;
+    --font-onest:      'Onest', sans-serif;
+    --font-onest-bold: 'Onest Bol', sans-serif;
+    --font-onest-med:  'Onest Med', sans-serif;
+
+    /* Цвета текста */
+    --text-dark:    #070707;  /* почти чёрный — на светлом фоне */
+    --text-light:   #f9f9f9;  /* почти белый — на тёмном фоне */
+    --text-white:   #ffffff;  /* чисто белый */
+    --text-muted:   #b5b5b5;  /* приглушённый серый */
+    --text-m-light: #b5b5b5;  /* алиас text-muted */
+
+    /* === ЦВЕТА ИЗ БРЕНДБУКА (справочно) === */
+    --brand-white:      #ffffff;
+    --brand-silver-1:   #c6c6c6;  /* серебристый градиент: начало */
+    --brand-silver-2:   #989898;  /* серебристый градиент: конец */
+    --brand-blue:       #014b94;
+    --brand-green:      #b1e733;
+
+    /* === ЦВЕТА ИЗ МАКЕТОВ (снято с PSD, используются в эфирной графике) === */
+    --bg-blue:          #181818;  /* фон страниц: яркий синий */
+    --lime-light:       #e6ffa2;  /* зелёный градиент: верх */
+    --lime:             #daff75;  /* зелёный градиент: низ, подзаголовки */
+    --lime-line:        #c7ee5e;  /* разделительные линии */
+    --lime-ball:        #dcf257;  /* цвет теннисных мячей */
+
+    /* Готовые градиенты */
+    --green-gradient: linear-gradient(180deg, var(--lime-light) 0%, var(--lime) 100%); /* зелёный сверху вниз */
+    --dark-gradient:  linear-gradient(180deg, #ffffff 0%, #e2e2e2 100%); /* тёмный сверху вниз (строки команд) */
+    --gray-gradient:  linear-gradient(360deg, #333333 0%, #737373 100%); /* серый снизу вверх */
+    --silver-gradient: linear-gradient(90deg, var(--brand-silver-1) 0%, var(--brand-silver-2) 100%);
+
+    /* Зелёные акценты (имена сохранены для старых CSS) */
+    --green-line:  var(--lime-line);
+    --green-solid: var(--lime);
+    --green-frame: var(--lime-line);
+    --black-bg:    #000000;
+
+    /* Алиасы для обратной совместимости со старыми CSS-файлами */
+    --cell-gradient-b-bg: var(--dark-gradient);
+    --cell-line-bg:       var(--green-line);
+    --cell-gradient-l-bg: var(--green-gradient);
+    --cell-dark-gradient: var(--dark-gradient);
+    --cell-green-line:    var(--green-line);
+    --cell-green-gradient: var(--green-gradient);
+
+    /* Скругление углов и скорости переходов */
+    --b-radius:          6px;
+    --transition-fast:   0.2s ease-out;
+    --transition-normal: 0.3s ease-out;
+    --transition-slow:   0.5s ease-out;
+}
