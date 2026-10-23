@@ -398,6 +398,13 @@
                                             </div>
                                             <div class="form-text">Переводит служебные подписи в Winner и Scoreboard Full: WINNER / OPPONENTS / SCORE / SET.</div>
                                         </div>
+                                        <div class="mb-3" id="designSwitch">
+                                            <label class="form-label" for="designSelect">Дизайн эфирной графики</label>
+                                            <select class="form-select" id="designSelect" disabled>
+                                                <option value="old">Старый</option>
+                                            </select>
+                                            <div class="form-text">Применяется после нажатия «Сохранить настройки». Папки дизайнов: static/themes. В vMix после смены обновите Browser Source.</div>
+                                        </div>
                                         <div class="mb-3">
                                             <label class="form-label">Кол-во сыгранных матчей в расписании</label>
                                             <input type="number" class="form-control" id="finishedMatchesCount" value="3" min="0" max="20">
@@ -626,6 +633,7 @@
     <script src="/static/js/photo-editor.js"></script>
     <script src="/static/js/display_manager.js"></script>
     <script src="/static/js/main.js"></script>
+    <script src="/static/js/design_switch.js"></script>
 
     <!-- Автокомплит стран: загружаем ПОСЛЕ main.js -->
     <script src="/static/js/country-autocomplete.js"></script>
