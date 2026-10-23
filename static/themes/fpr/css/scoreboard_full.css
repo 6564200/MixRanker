@@ -1,0 +1,351 @@
+/* scoreboard_full.css — полноэкранный scoreboard в формате 4K (3840×2160), масштабируется JS */
+
+@import url('broadcast_tokens.css');
+
+/* Сброс */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --dark-gradient:  linear-gradient(180deg, #202020 0%, #070707 100%);
+    --text-white:     #F9F9F9;
+    --text-dark:      #080609;
+}
+
+/* Страница — прозрачный фон для наложения в vMix */
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+}
+
+/* Корневой контейнер — 4K, масштабируется через JS transform */
+.scoreboard-full-container {
+    transform-origin: top left;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 198px 188px;
+    gap: 139px;
+    background: rgba(255, 255, 255, 0);
+}
+
+/* === ШАПКА === */
+
+/* Строка: название турнира слева + логотипы справа */
+.header {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 3464px;
+    height: 452px;
+    gap: 74px;
+}
+
+/* Название турнира крупным декоративным шрифтом */
+.tournament-name {
+    flex: 1;
+    max-width: 2500px;
+    height: 450px;
+    font-family: 'TT_Bluescreens';
+    font-weight: 800;
+    font-size: 190px;
+	padding-left: 0.25em;
+    line-height: 226px;
+    letter-spacing: 0em;
+    color: var(--text-white);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+/* Блок логотипов справа */
+.logos {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 70px;
+    height: 450px;
+}
+
+/* Один логотип */
+.logo {
+    height: 262px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.logo1 { width: 200px; }
+.logo2 { width: 350px; }
+.logo3 { width: 250px; }
+.logo4 { width: 0px; }  /* резервный слот */
+
+/* === ТАБЛИЦА === */
+
+.table {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 3450px;
+}
+
+.table-header, .header-cell {
+    color-scheme: only light; /* Запрещает браузеру менять цвета */
+}
+
+/* Заголовок таблицы: названия колонок (SET 1, SET 2, ИТОГО) */
+.table-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0 80px;
+    width: 3450px;
+    height: 159px;
+    background: var(--green-gradient);
+    border-radius: 10px 10px 0 0;
+	color: #080609;
+}
+
+/* Ячейка заголовка (SET N) */
+.header-cell {
+    width: 425px;
+    height: 159px;
+    font-family: 'Onest', sans-serif;
+    font-weight: 700;
+    font-size: 80px;
+    line-height: 102px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #080609;
+}
+
+/* Ячейка итогового счёта чуть шире */
+.header-cell.total { width: 477px; }
+
+/* Строка одной команды */
+.team-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 125px;
+    gap: 57px;
+    width: 3450px;
+    height: 314px;
+    background: var(--dark-gradient);
+}
+
+/* Блок имён игроков команды */
+.team-name-block {
+    position: relative;
+    width: 1431px;
+    height: 204px;
+}
+
+/* Строка одного игрока (имя + флаг) */
+.player-row {
+    display: flex;
+    align-items: center;
+    height: 102px;
+}
+
+/* Флаг страны игрока */
+.player-flag {
+    width: 100px;
+    height: 70px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    flex-shrink: 0;
+    opacity: 1;  /* скрыть флаги */
+}
+
+/* Имя игрока */
+.player-name {
+    margin-left: 50px;
+    font-family: 'Onest', sans-serif;
+    font-weight: 700;
+    font-size: 80px;
+    line-height: 102px;
+    letter-spacing: -0.04em;
+    color: var(--text-white);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Обёртка блока со счётами (выровнена вправо) */
+.table-header-block {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    width: 1750px;
+    height: 314px;
+}
+
+/* Контейнер числовых счётов */
+.scores-block {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    width: 1700px;
+    height: 314px;
+}
+
+/* Ячейка числового счёта сета */
+.score-cell {
+    width: 425px;
+    height: 314px;
+    font-family: 'Onest', sans-serif;
+    font-weight: 700;
+    font-size: 200px;
+    line-height: 255px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-white);
+}
+
+.score-cell.total { width: 425px; }
+
+/* Колонка текущего гейма (game-score) — выделена другим оттенком */
+.header-cell.game-score  { background: linear-gradient(180deg, var(--lime-line) 0%, #B2DE3F 100%); }
+.score-cell.game-score   { background: linear-gradient(180deg, #353535 0%, #1a1a1a 100%); }
+
+/* Зелёная разделительная полоска между строками команд */
+.green-line {
+    width: 3450px;
+    height: 8px;
+    background: var(--green-line);
+}
+
+/* === ПОДВАЛ === */
+
+/* Строка с баннерами (арена, адрес) */
+.footer {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 100px;
+    width: 3464px;
+    height: 139px;
+}
+
+/* Надпись в подвале (арена, адрес): простой белый текст, без плашки, обводки и тени */
+.banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    text-shadow: none;
+    -webkit-text-stroke: 0;
+    font-family: 'Onest Med', 'Onest', sans-serif;
+    font-weight: 500;
+    font-size: 68px;
+    line-height: 1.2;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: #FFFFFF;
+}
+
+.banner-arena,
+.banner-address { background: none; color: #FFFFFF; }
+
+/* === АНИМАЦИИ === */
+
+@keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse     { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+/* Пульсация ячейки при изменении счёта */
+@keyframes scoreUpdate {
+    0%   { transform: scale(1);    text-shadow: 0 0 0 transparent; }
+    50%  { transform: scale(1.15); text-shadow: 0 0 30px rgba(218, 255, 117, 0.8); }
+    100% { transform: scale(1);    text-shadow: 0 0 0 transparent; }
+}
+
+/* Подсветка строки при изменении счёта */
+@keyframes highlightRow {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Применение анимаций появления */
+.scoreboard-full-container { animation: fadeIn    0.5s ease-out; }
+.table-header              { animation: slideInUp 0.6s ease-out 0.1s both; }
+.team-row:nth-child(2)     { animation: slideInUp 0.6s ease-out 0.2s both; }
+.team-row:nth-child(4)     { animation: slideInUp 0.6s ease-out 0.3s both; }
+.footer                    { animation: slideInUp 0.6s ease-out 0.4s both; }
+
+/* Триггеры live-обновления */
+.score-cell.updating { animation: scoreUpdate 0.5s ease-out; }
+
+.team-row.updating {
+    background-size: 200% 200%;
+    background-image: linear-gradient(90deg, #202020 0%, #303030 25%, #404040 50%, #303030 75%, #202020 100%);
+    animation: highlightRow 1s ease-in-out;
+}
+
+/* Состояние «нет матча» */
+.no-match {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3450px;
+    height: 636px;
+    background: var(--dark-gradient);
+    border-radius: 0 0 10px 10px;
+}
+
+.no-match-text {
+    font-family: 'Onest';
+    font-weight: 700;
+    font-size: 120px;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+}
+
+/* Победитель: выделение итогового счёта и имени зелёным */
+.team-row.winner .score-cell.total { color: var(--green-line); }
+.team-row.winner .player-name      { color: var(--green-line); }
+
+/* === ИНДИКАТОР ПОДАЧИ === */
+
+/* Контейнер иконки подачи */
+.serve-indicator {
+    width: 110px;
+    height: 100px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 100px;
+}
+
+/* Иконка подачи — видна только у подающего игрока */
+.serve-indicator img {
+    width: 180px;
+    height: 180px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    margin-left: -100px;
+}
+
+.team-row.serving .serve-indicator img { opacity: 1; }

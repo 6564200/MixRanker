@@ -1,0 +1,441 @@
+/* schedule.css — страница расписания (все корты). Базовое разрешение FHD 1920×1080 */
+
+@import url('broadcast_tokens.css');
+
+/* Сброс */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* Страница — прозрачный фон для наложения в vMix */
+body {
+    font-family: 'Onest';
+    background: transparent;
+    color: #FFFFFF;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Корневой контейнер расписания — масштабируется JS */
+.schedule-container {
+    width: 1920px;
+    height: 1080px;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    transform-origin: top left;
+}
+
+/* === ШАПКА === */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 100px;
+    max-height: 150px;
+    margin-top: 18px;
+    margin-bottom: 20px;
+    padding: 0 0px 0px 0px;
+    box-sizing: border-box;
+    opacity: 0;
+    animation: fadeIn 0.4s ease-out forwards;
+    animation-delay: 0.05s;
+}
+
+.tournament-name {
+    flex: 1;
+    font-family: 'TT_Bluescreens';
+    font-weight: 800;
+    font-size: 120px;
+    line-height: 1.1;
+    letter-spacing: -0.00em;
+    color: #FAFAFA;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+    text-transform: uppercase;
+	text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+    padding-right: 0px; /* Отступ от логотипов */
+	margin-left: 80px;
+}
+
+/* Авто-уменьшение шрифта для длинных названий */
+.tournament-name.long-name {
+    font-size: 90px;
+}
+
+.tournament-name.very-long-name {
+    font-size: 60px;
+}
+
+.logos {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    height: 100px;
+    flex-shrink: 0;
+}
+
+.logo {
+    height: 100px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.logo1 { width: 100px; }
+.logo2 { width: 140px; }
+.logo3 { width: 100px; }
+
+
+/* === ОСНОВНАЯ СЕТКА КОРТОВ === */
+.main-grid {
+    display: flex;
+    flex: 1;
+    gap: 60px;
+    width: 97%;
+    max-height: 842px;
+    overflow: hidden;
+    position: relative;
+	margin-left: 00px;
+}
+
+
+/* === КОЛОНКИ КОРТОВ === */
+.courts-container {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.courts-header {
+    display: grid;
+    grid-template-columns: repeat(var(--court-cols, 1), 1fr);
+    margin-bottom: 8px;
+    gap: 35px;
+    opacity: 1;
+}
+
+.court-header {
+    background: var(--green-gradient);
+    text-align: center;
+    height: 38px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+	white-space: nowrap;
+	overflow: hidden; 
+	text-overflow: ellipsis;
+}
+
+.court-header h3 {
+    font-size: 23px;
+    font-weight: 700;
+    line-height: 24px;
+    color: #080609;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+/* === СЕТКА МАТЧЕЙ (grid по числу кортов) === */
+.matches-grid {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(var(--court-cols, 1), 1fr);
+    gap: 35px;
+    overflow: hidden;
+}
+
+.court-column {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow: hidden;
+}
+
+/* === КАРТОЧКА МАТЧА === */
+.match-item {
+    width: 100%;
+    height: 116px;
+    display: flex;
+    position: relative;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+
+.match-content {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    position: relative;
+}
+
+.match-teams-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.match-team {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    background: linear-gradient(180deg, #202020 0%, #070707 100%);
+    position: relative;
+    border-radius: 4px 6px 6px 4px;
+}
+
+.match-team:first-child {
+    border-radius: 6px 6px 0px 6px;
+}
+
+.match-team:last-child {
+    border-radius: 6px 0px 6px 6px;
+}
+
+.match-team-names {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-left: 12px;
+    padding-right: 8px;
+    overflow: hidden;
+}
+
+.match-player-name {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 26px;
+    color: #8F8F8F;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+	animation: fadeInUp 1s ease-out forwards;
+}
+
+.match-team-name {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 22px;
+    padding-left: 12px;
+    color: #8F8F8F;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+	animation: fadeInUp 1.5s ease-out forwards;
+}
+
+.match-team-score {
+    width: 36px;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--green-gradient);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 32px;
+    color: #080609;
+    flex-shrink: 0;
+}
+
+.match-team-wo {
+    padding-right: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 22px;
+    color: #8F8F8F;
+    display: flex;
+    align-items: center;
+}
+
+.match-team-ret {
+    padding-right: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 22px;
+    color: #C0792A;
+    display: flex;
+    align-items: center;
+}
+
+.match-team:first-child .match-team-score {
+    border-radius: 4px 4px 0 0;
+}
+
+.match-team:last-child .match-team-score {
+    border-radius: 0 0 4px 4px;
+}
+
+/* === СТАТУСЫ МАТЧА (цвет имён: завершён / активен / будущий) === */
+.match-finished .match-player-name,
+.match-finished .match-team-name {
+    color: #8F8F8F;
+}
+
+.match-finished.match-item {
+    animation: fadeInUpFinished 0.5s ease-out forwards;
+}
+
+.match-active .match-team {
+    background: linear-gradient(180deg, #2a2a2a 0%, #0f0f0f 100%);
+}
+
+.match-active .match-player-name,
+.match-active .match-team-name {
+    color: #FFFFFF;
+}
+
+.match-future .match-player-name,
+.match-future .match-team-name {
+    color: #FFFFFF;
+}
+
+/* === АНИМАЦИИ === */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateX(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeInUpFinished {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 0.85;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(218, 255, 117, 0);
+    }
+    50% {
+        box-shadow: 0 0 10px 3px rgba(218, 255, 117, 0.4);
+    }
+}
+
+/* Каскадные задержки для слотов времени */
+.time-slot:nth-child(1) { animation-delay: 0.1s; }
+.time-slot:nth-child(2) { animation-delay: 0.15s; }
+.time-slot:nth-child(3) { animation-delay: 0.2s; }
+.time-slot:nth-child(4) { animation-delay: 0.25s; }
+.time-slot:nth-child(5) { animation-delay: 0.3s; }
+.time-slot:nth-child(6) { animation-delay: 0.35s; }
+.time-slot:nth-child(7) { animation-delay: 0.4s; }
+.time-slot:nth-child(8) { animation-delay: 0.45s; }
+.time-slot:nth-child(9) { animation-delay: 0.5s; }
+.time-slot:nth-child(10) { animation-delay: 0.55s; }
+.time-slot:nth-child(11) { animation-delay: 0.6s; }
+.time-slot:nth-child(12) { animation-delay: 0.65s; }
+.time-slot:nth-child(13) { animation-delay: 0.7s; }
+.time-slot:nth-child(14) { animation-delay: 0.75s; }
+.time-slot:nth-child(15) { animation-delay: 0.8s; }
+.time-slot:nth-child(16) { animation-delay: 0.85s; }
+.time-slot:nth-child(17) { animation-delay: 0.9s; }
+.time-slot:nth-child(18) { animation-delay: 0.95s; }
+
+/* Каскадные задержки для строк матчей */
+.match-item.row-1 { animation-delay: 0.2s; }
+.match-item.row-2 { animation-delay: 0.25s; }
+.match-item.row-3 { animation-delay: 0.3s; }
+.match-item.row-4 { animation-delay: 0.35s; }
+.match-item.row-5 { animation-delay: 0.4s; }
+.match-item.row-6 { animation-delay: 0.45s; }
+.match-item.row-7 { animation-delay: 0.5s; }
+.match-item.row-8 { animation-delay: 0.55s; }
+.match-item.row-9 { animation-delay: 0.6s; }
+.match-item.row-10 { animation-delay: 0.65s; }
+.match-item.row-11 { animation-delay: 0.7s; }
+.match-item.row-12 { animation-delay: 0.75s; }
+.match-item.row-13 { animation-delay: 0.8s; }
+.match-item.row-14 { animation-delay: 0.85s; }
+.match-item.row-15 { animation-delay: 0.9s; }
+.match-item.row-16 { animation-delay: 0.95s; }
+.match-item.row-17 { animation-delay: 1.0s; }
+.match-item.row-18 { animation-delay: 1.05s; }
+
+/* Анимации live-обновления данных */
+.hide-for-refresh {
+    animation: fadeOut 0.4s ease-out forwards !important;
+}
+
+.match-item.updated {
+    animation: highlightUpdate 1s ease-out;
+}
+
+@keyframes highlightUpdate {
+    0% {
+        box-shadow: 0 0 0 0 rgba(218, 255, 117, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 20px 5px rgba(218, 255, 117, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(218, 255, 117, 0);
+    }
+}
+
+/* Сообщение «нет матчей» */
+.empty-message {
+    text-align: center;
+    margin-top: 100px;
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+.empty-message p {
+    font-size: 24px;
+    color: #CCCCCC;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
