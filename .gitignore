@@ -1,1 +1,7 @@
 data/tournaments.db
+data/active_design.txt
+__pycache__/
+*.pyc
+logs/
+venv/
+.venv/
