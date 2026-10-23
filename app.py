@@ -20,6 +20,7 @@ from api.html_generator import HTMLGenerator
 from api.rankedin_live import live_manager
 from api.xml_generator import XMLFileManager
 from api.display_windows import display_bp
+from api.design_switch import register_design_switch
 from api.composite_pages import composite_bp
 from api.blueprints import (
     create_tournaments_blueprint,
@@ -137,6 +138,8 @@ def create_app():
     app.register_blueprint(create_files_blueprint(api_client, xml_manager))
     app.register_blueprint(create_live_blueprint(api_client, html_generator, live_manager, logger))
     app.register_blueprint(create_settings_blueprint(api_client, lambda: auto_refresh, lambda: app.start_time))
+
+    register_design_switch(app)
 
     _register_core_routes(app)
     _start_background_services(app)
