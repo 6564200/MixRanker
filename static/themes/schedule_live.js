@@ -1,0 +1,401 @@
+/**
+ * Schedule Live Updates
+ * AJAX обновление расписания без перезагрузки страницы
+ * Базовое разрешение: FHD 1920x1080
+ */
+
+(function() {
+    'use strict';
+
+    // Защита от двойной инициализации
+    if (window._scheduleLiveInitialized) {
+        console.log('Schedule Live: already initialized, skipping');
+        return;
+    }
+    window._scheduleLiveInitialized = true;
+
+    // Конфигурация
+    const CONFIG = {
+        BASE_WIDTH: 1920,
+        BASE_HEIGHT: 1080,
+        updateInterval: 10000,  // 10 секунд - проверка изменений
+        animationDuration: 300,
+        retryDelay: 5000
+    };
+
+    // Состояние
+    let container = null;
+    let currentVersion = null;
+    let tournamentId = null;
+    let targetDate = null;
+    let updateTimer = null;
+    let isUpdating = false;
+    let isInitialized = false;
+
+    /**
+     * Масштабирование контейнера под размер окна
+     */
+    function scaleToFit() {
+        if (!container) return;
+        
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        
+        const scaleX = windowWidth / CONFIG.BASE_WIDTH;
+        const scaleY = windowHeight / CONFIG.BASE_HEIGHT;
+        const scale = Math.min(scaleX, scaleY);
+        
+        container.style.transform = `scale(${scale})`;
+        container.style.transformOrigin = 'top left';
+        
+        // Центрируем если есть свободное место
+        const scaledWidth = CONFIG.BASE_WIDTH * scale;
+        const scaledHeight = CONFIG.BASE_HEIGHT * scale;
+        
+        const offsetX = Math.max(0, (windowWidth - scaledWidth) / 2);
+        const offsetY = Math.max(0, (windowHeight - scaledHeight) / 2);
+        
+        container.style.position = 'absolute';
+        container.style.left = offsetX + 'px';
+        container.style.top = offsetY + 'px';
+    }
+
+    /**
+     * Инициализация
+     */
+    function init() {
+        if (isInitialized) {
+            console.log('Schedule Live: init already called, skipping');
+            return;
+        }
+        isInitialized = true;
+
+        container = document.querySelector('.schedule-container');
+        if (!container) {
+            console.error('Schedule container not found');
+            return;
+        }
+
+        tournamentId = container.dataset.tournamentId;
+        targetDate = container.dataset.targetDate || null;
+        currentVersion = container.dataset.version || null;
+
+        // Масштабирование
+        scaleToFit();
+        window.addEventListener('resize', scaleToFit);
+
+        if (!tournamentId) {
+            console.error('Tournament ID not found');
+            return;
+        }
+
+        console.log(`Schedule Live: initialized for tournament ${tournamentId}, version ${currentVersion}`);
+        
+        startUpdates();
+    }
+
+    /**
+     * Запуск периодических обновлений
+     */
+    function startUpdates() {
+        if (updateTimer) {
+            clearInterval(updateTimer);
+        }
+        
+        // Первая проверка через 1 секунду (даём странице загрузиться)
+        setTimeout(checkForUpdates, 1000);
+        
+        // Периодическая проверка
+        updateTimer = setInterval(checkForUpdates, CONFIG.updateInterval);
+    }
+
+    /**
+     * Проверка обновлений
+     */
+    async function checkForUpdates() {
+        if (isUpdating) return;
+        isUpdating = true;
+
+        try {
+            const url = `/api/schedule/${tournamentId}/data` + (targetDate ? `?date=${targetDate}` : '');
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.error) {
+                console.error('API error:', data.error);
+                return;
+            }
+
+            if (data.version !== currentVersion) {
+                console.log(`Schedule Live: updating (${currentVersion} -> ${data.version})`);
+                await updateSchedule(data);
+                currentVersion = data.version;
+            }
+
+        } catch (error) {
+            console.error('Update check failed:', error);
+        } finally {
+            isUpdating = false;
+        }
+    }
+
+    /**
+     * Обновление расписания
+     */
+    async function updateSchedule(data) {
+        const { courts, matches } = data;
+
+        const mainGrid = container.querySelector('.main-grid');
+        if (mainGrid) {
+            mainGrid.style.opacity = '0';
+            mainGrid.style.transition = 'opacity 0.3s ease-out';
+            mainGrid.style.setProperty('--court-cols', courts.length);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        updateCourtHeaders(courts);
+        rebuildMatches(matches);
+
+        if (mainGrid) {
+            mainGrid.style.opacity = '1';
+        }
+    }
+
+    /**
+     * Перестройка матчей по колонкам (без привязки к времени)
+     */
+    function rebuildMatches(matches) {
+        const matchesGrid = document.querySelector('.matches-grid');
+        if (!matchesGrid) return;
+
+        // Группируем по col, сортируем внутри по row
+        const byCourt = {};
+        matches.forEach(m => {
+            if (!byCourt[m.col]) byCourt[m.col] = [];
+            byCourt[m.col].push(m);
+        });
+
+        matchesGrid.innerHTML = '';
+        Object.keys(byCourt).sort((a, b) => a - b).forEach(col => {
+            const courtCol = document.createElement('div');
+            courtCol.className = 'court-column';
+            byCourt[col]
+                .sort((a, b) => a.row - b.row)
+                .forEach(m => courtCol.appendChild(createMatchElement(m)));
+            matchesGrid.appendChild(courtCol);
+        });
+    }
+
+    /**
+     * Обновление заголовков кортов
+     */
+    function updateCourtHeaders(courts) {
+        const courtsHeader = document.querySelector('.courts-header');
+        if (!courtsHeader) return;
+
+        const currentHeaders = Array.from(courtsHeader.querySelectorAll('.court-header h3'));
+        const currentCourts = currentHeaders.map(el => el.textContent.trim());
+
+        if (JSON.stringify(currentCourts) === JSON.stringify(courts)) {
+            return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        courts.forEach(court => {
+            const header = document.createElement('div');
+            header.className = 'court-header';
+            header.innerHTML = `<h3>${court}</h3>`;
+            fragment.appendChild(header);
+        });
+
+        courtsHeader.innerHTML = '';
+        courtsHeader.appendChild(fragment);
+    }
+
+    /**
+     * Определяет бейдж и чистый счёт из строки результата rankedin API.
+     * 'Won W.O.' → бейдж 'W.O.', счёт пустой
+     * 'Won R'    → бейдж 'Ret.', счёт пустой
+     * иначе      → бейдж пустой, счёт как есть
+     */
+    function parseResult(raw) {
+        if (raw === 'Won W.O.') return { badge: 'W.O.',  badgeClass: 'match-team-wo',  score: '' };
+        if (raw === 'Won R')    return { badge: 'Ret.',  badgeClass: 'match-team-ret', score: '' };
+        return { badge: '', badgeClass: '', score: raw || '' };
+    }
+
+    /**
+     * Обновление элемента матча
+     */
+    function updateMatchElement(el, data) {
+        const statusClass = `match-${data.status}`;
+        const rowClass = `row-${data.row}`;
+
+        el.classList.remove('match-finished', 'match-active', 'match-future');
+        el.classList.add(statusClass);
+
+        el.className = el.className.replace(/row-\d+/g, '');
+        el.classList.add(rowClass);
+
+        // Обновляем имена (поддержка обоих форматов)
+        const teamNamesContainers = el.querySelectorAll('.match-team-names');
+        const teamNamesSingle = el.querySelectorAll('.match-team-name');
+
+        if (teamNamesContainers.length >= 2) {
+            // Новый формат с вертикальными именами
+            updatePlayerNames(teamNamesContainers[0], data.challenger_players || [data.challenger]);
+            updatePlayerNames(teamNamesContainers[1], data.challenged_players || [data.challenged]);
+        } else if (teamNamesSingle.length >= 2) {
+            // Старый формат
+            teamNamesSingle[0].textContent = data.challenger;
+            teamNamesSingle[1].textContent = data.challenged;
+        }
+
+        // Обновляем бейджи (W.O. / Ret.) и счёт
+        const scores = el.querySelectorAll('.match-team-score');
+        const teams  = el.querySelectorAll('.match-team');
+
+        [
+            { result: parseResult(data.challenger_score), teamEl: teams[0], scoreEl: scores[0] },
+            { result: parseResult(data.challenged_score), teamEl: teams[1], scoreEl: scores[1] },
+        ].forEach(({ result, teamEl, scoreEl }) => {
+            if (!teamEl) return;
+
+            // Убираем старые бейджи и обновляем/удаляем элемент счёта
+            teamEl.querySelectorAll('.match-team-wo, .match-team-ret').forEach(b => b.remove());
+
+            if (result.badge) {
+                const badgeDiv = document.createElement('div');
+                badgeDiv.className = result.badgeClass;
+                badgeDiv.textContent = result.badge;
+                teamEl.appendChild(badgeDiv);
+                if (scoreEl) scoreEl.remove();
+            } else if (result.score) {
+                if (scoreEl) {
+                    scoreEl.textContent = result.score;
+                } else {
+                    const scoreDiv = document.createElement('div');
+                    scoreDiv.className = 'match-team-score';
+                    scoreDiv.textContent = result.score;
+                    teamEl.appendChild(scoreDiv);
+                }
+            } else {
+                if (scoreEl) scoreEl.remove();
+            }
+        });
+
+        const matchNumber = el.querySelector('.match-number');
+        if (matchNumber) matchNumber.textContent = data.episode;
+
+        el.classList.add('updated');
+        setTimeout(() => el.classList.remove('updated'), 1000);
+    }
+
+    /**
+     * Обновление имён игроков в контейнере
+     */
+    function updatePlayerNames(container, players) {
+        container.innerHTML = '';
+        players.forEach(player => {
+            const div = document.createElement('div');
+            div.className = 'match-player-name';
+            div.textContent = player;
+            container.appendChild(div);
+        });
+    }
+
+    /**
+     * Разбиение имени команды на игроков
+     */
+    function splitTeamName(teamName) {
+        if (!teamName) return ['TBD'];
+        if (teamName.includes('/')) {
+            return teamName.split('/').map(p => p.trim()).filter(p => p);
+        }
+        return [teamName];
+    }
+
+    /**
+     * Создание элемента матча
+     */
+    function createMatchElement(data) {
+        const el = document.createElement('div');
+        el.className = `match-item match-${data.status}`;
+
+        const chR  = parseResult(data.challenger_score);
+        const cdR  = parseResult(data.challenged_score);
+        const challengerPlayers = data.challenger_players || splitTeamName(data.challenger);
+        const challengedPlayers = data.challenged_players || splitTeamName(data.challenged);
+
+        function teamHtml(players, result) {
+            const badgeHtml = result.badge ? `<div class="${result.badgeClass}">${result.badge}</div>` : '';
+            const scoreHtml = result.score ? `<div class="match-team-score">${result.score}</div>` : '';
+            if (players.length === 1) {
+                return `<div class="match-team"><div class="match-team-name">${players[0]}</div>${badgeHtml}${scoreHtml}</div>`;
+            }
+            const ph = players.slice(0, 2).map(p => `<div class="match-player-name">${p}</div>`).join('');
+            return `<div class="match-team"><div class="match-team-names">${ph}</div>${badgeHtml}${scoreHtml}</div>`;
+        }
+
+        el.innerHTML = `<div class="match-content"><div class="match-teams-wrapper">${teamHtml(challengerPlayers, chR)}${teamHtml(challengedPlayers, cdR)}</div></div>`;
+        return el;
+    }
+
+    /**
+     * Добавляем CSS для анимаций обновления
+     */
+    function injectStyles() {
+        const style = document.createElement('style');
+        style.textContent = `
+            .fade-out {
+                animation: fadeOutDown 0.3s ease-out forwards !important;
+            }
+            
+            @keyframes fadeOutDown {
+                from {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+            }
+            
+            .match-item.updated {
+                animation: highlightUpdate 1s ease-out;
+            }
+            
+            @keyframes highlightUpdate {
+                0% {
+                    box-shadow: 0 0 0 0 rgba(218, 255, 117, 0.7);
+                }
+                50% {
+                    box-shadow: 0 0 20px 5px rgba(218, 255, 117, 0.5);
+                }
+                100% {
+                    box-shadow: 0 0 0 0 rgba(218, 255, 117, 0);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Запуск при загрузке страницы
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            injectStyles();
+            init();
+        });
+    } else {
+        injectStyles();
+        init();
+    }
+
+})();
