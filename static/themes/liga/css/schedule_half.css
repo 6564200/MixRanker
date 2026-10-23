@@ -283,9 +283,13 @@ body {
 }
 
 /* === СТАТУСЫ МАТЧА (цвет имён: завершён / активен / будущий) === */
+.match-finished .match-team {
+    background: linear-gradient(180deg, #ffffff 0%, #e2e2e2 100%);
+}
+
 .match-finished .match-player-name,
 .match-finished .match-team-name {
-    color: #666666;
+    color: #8F8F8F;
 }
 
 .match-finished.match-item {
@@ -293,7 +297,7 @@ body {
 }
 
 .match-active .match-team {
-    background: linear-gradient(180deg, #f4ffd1 0%, #e6ffa2 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #e2e2e2 100%);
 }
 
 .match-active .match-player-name,
