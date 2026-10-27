@@ -88,3 +88,10 @@ html, body {
         letter-spacing: -0.02em;
     }
 }
+
+/* Эфирная графика идёт на ТВ и в vMix: не даём Android/ТВ-браузерам принудительно
+   перекрашивать цвета (Auto Dark / algorithmic darkening). color-scheme ставится на
+   потомков body, а не на :root, чтобы не менять прозрачный фон страницы. */
+body * {
+    color-scheme: light dark;
+}

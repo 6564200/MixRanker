@@ -128,3 +128,10 @@ html, body {
     from { opacity: 0; transform: scaleX(0); transform-origin: left; }
     to   { opacity: 1; transform: scaleX(1); }
 }
+
+/* Эфирная графика идёт на ТВ и в vMix: не даём Android/ТВ-браузерам принудительно
+   перекрашивать цвета (Auto Dark / algorithmic darkening). color-scheme ставится на
+   потомков body, а не на :root, чтобы не менять прозрачный фон страницы. */
+body * {
+    color-scheme: light dark;
+}
