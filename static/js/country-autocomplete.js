@@ -58,6 +58,7 @@ class CountryAutocomplete {
 		{ name: 'Нигерия', name_en: 'Nigeria', code: 'NGR', iso2: 'NG' },
 		{ name: 'Оман', name_en: 'Oman', code: 'OMA', iso2: 'OM' },
 		{ name: 'Пакистан', name_en: 'Pakistan', code: 'PAK', iso2: 'PK' },
+		{ name: 'Парагвай', name_en: 'Paraguái', code: 'PRY', iso2: 'PY' },
 		{ name: 'Перу', name_en: 'Peru', code: 'PER', iso2: 'PE' },
 		{ name: 'Румыния', name_en: 'Romania', code: 'ROU', iso2: 'RO' },
 		{ name: 'Сингапур', name_en: 'Singapore', code: 'SGP', iso2: 'SG' },
