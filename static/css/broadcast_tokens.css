@@ -85,3 +85,10 @@
     --transition-normal: 0.3s ease-out;
     --transition-slow:   0.5s ease-out;
 }
+
+/* Эфирная графика идёт на ТВ и в vMix: не даём Android/ТВ-браузерам принудительно
+   перекрашивать цвета (Auto Dark / algorithmic darkening). color-scheme ставится на
+   потомков body, а не на :root, чтобы не менять прозрачный фон страницы. */
+body * {
+    color-scheme: light dark;
+}
